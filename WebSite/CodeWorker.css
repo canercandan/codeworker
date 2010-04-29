@@ -1,0 +1,487 @@
+BODY
+{
+    FONT-SIZE: 80%;
+    MARGIN: 2px 0px 0px 3px;
+    COLOR: #000000;
+    BACKGROUND-COLOR: #eeeedd;
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif
+}
+P
+{
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif
+}
+P.center
+{
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif;
+	TEXT-ALIGN: center
+}
+H1
+{
+    COLOR: #900b09;
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 300%;
+    FONT-FAMILY: "Courier New",monospace;
+    TEXT-ALIGN: center
+}
+H2
+{
+    FONT-SIZE: 150%;
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif;
+    TEXT-ALIGN: center
+}
+H3
+{
+    FONT-SIZE: 120%;
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif
+}
+H4
+{
+    FONT-SIZE: 100%
+}
+H5
+{
+    FONT-SIZE: 90%
+}
+H6
+{
+    FONT-SIZE: 80%
+}
+TABLE
+{
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif
+}
+TD
+{
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif
+}
+TH
+{
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif
+}
+UL
+{
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif
+}
+OL
+{
+    FONT-FAMILY: verdana,helvetica,arial,sans-serif
+}
+TABLE
+{
+    FONT-SIZE: 100%
+}
+INPUT
+{
+    FONT-SIZE: 100%
+}
+TABLE.ex
+{
+    FONT-SIZE: 100%;
+    COLOR: #000000;
+    BACKGROUND-COLOR: #eeeedd
+}
+TABLE.db
+{
+    FONT-SIZE: 100%;
+    COLOR: #000000;
+    BACKGROUND-COLOR: #ffffff
+}
+TH.db
+{
+    COLOR: #000000;
+    BACKGROUND-COLOR: #eeeedd
+}
+DIV
+{
+    WIDTH: 100%
+}
+
+TD.right
+{
+    COLOR: #000000;
+    BACKGROUND-COLOR: #ffffff
+}
+TD.links
+{
+    BACKGROUND-COLOR: #f2f2e0
+}
+TD.content
+{
+    BACKGROUND-COLOR: #FFFFFF;
+    TEXT-ALIGN: justify
+}
+TD.company
+{
+    BACKGROUND-COLOR: #F8F8F0;
+	FONT-WEIGHT: bold;
+    TEXT-ALIGN: center
+}
+TD.role
+{
+    BACKGROUND-COLOR: #F4FAFA;
+	FONT-STYLE: italic
+}
+TD.changes
+{
+    BACKGROUND-COLOR: #F4FAFA;
+	FONT-WEIGHT: bold;
+	FONT-STYLE: italic;
+    TEXT-ALIGN: center
+}
+TD.deprecated
+{
+    COLOR: #ff0000;
+    BACKGROUND-COLOR: transparent
+}
+TD.red
+{
+    COLOR: #ff0000;
+    BACKGROUND-COLOR: transparent
+}
+TD.title
+{
+    COLOR: #900b09;
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 200%;
+    TEXT-ALIGN: center
+}
+TD.license
+{
+    COLOR: #0000FF;
+	FONT-WEIGHT: bold;
+    BACKGROUND-COLOR: transparent
+}
+P.red
+{
+    COLOR: #ff0000;
+    BACKGROUND-COLOR: transparent
+}
+P.intro
+{
+    MARGIN-TOP: 10px;
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 100%;
+    COLOR: #000000;
+    BACKGROUND-COLOR: transparent
+}
+P.introcenter
+{
+    FONT-SIZE: 110%;
+    COLOR: #8b4513;
+    BACKGROUND-COLOR: transparent;
+    TEXT-ALIGN: center
+}
+PRE
+{
+    FONT-SIZE: 110%;
+    MARGIN-BOTTOM: 0px;
+    MARGIN-LEFT: 0px;
+    FONT-FAMILY: "Courier New",monospace
+}
+SPAN.red
+{
+    COLOR: #ff0000;
+    BACKGROUND-COLOR: transparent
+}
+SPAN.ieonly
+{
+    FONT-SIZE: 70%;
+    COLOR: #000080;
+    BACKGROUND-COLOR: transparent
+}
+SPAN.t
+{
+    FONT-SIZE: 80%;
+    COLOR: #0033cc;
+    BACKGROUND-COLOR: transparent
+}
+IMG.float
+{
+    FLOAT: left
+}
+TABLE.front
+{
+    COLOR: #000000;
+    BACKGROUND-COLOR: #8b4513
+}
+TH.front
+{
+    COLOR: #ffffff;
+    BACKGROUND-COLOR: #900b08
+}
+TD.front
+{
+    COLOR: #000000;
+    BACKGROUND-COLOR: #eeeedd
+}
+A.nounderline
+{
+    TEXT-DECORATION: none
+}
+A:link
+{
+    COLOR: #900b09;
+    BACKGROUND-COLOR: transparent
+}
+A:visited
+{
+    COLOR: #900b09;
+    BACKGROUND-COLOR: transparent
+}
+A:active
+{
+    COLOR: #ff0000;
+    BACKGROUND-COLOR: transparent
+}
+A:hover
+{
+    COLOR: #ff0000;
+    BACKGROUND-COLOR: transparent
+}
+A.left:link
+{
+    COLOR: blue;
+    FONT-WEIGHT: bold;
+    BACKGROUND-COLOR: transparent;
+    TEXT-DECORATION: none
+}
+A.left:visited
+{
+    COLOR: blue;
+    BACKGROUND-COLOR: transparent;
+    TEXT-DECORATION: none
+}
+A.left:hover
+{
+    COLOR: #900b09;
+    FONT-WEIGHT: bold;
+    BACKGROUND-COLOR: transparent;
+    TEXT-DECORATION: underline
+}
+A.left:active
+{
+    COLOR: #900b09;
+    BACKGROUND-COLOR: transparent;
+    TEXT-DECORATION: underline
+}
+ma.right:link
+{
+    COLOR: black;
+    BACKGROUND-COLOR: transparent;
+    TEXT-DECORATION: none
+}
+ma.right:visited
+{
+    COLOR: black;
+    BACKGROUND-COLOR: transparent;
+    TEXT-DECORATION: none
+}
+ma.right:hover
+{
+    COLOR: #900b09;
+    BACKGROUND-COLOR: transparent;
+    TEXT-DECORATION: underline
+}
+ma.right:active
+{
+    COLOR: #900b09;
+    BACKGROUND-COLOR: transparent;
+    TEXT-DECORATION: underline
+}
+A.red:link
+{
+    COLOR: #900b09;
+    BACKGROUND-COLOR: transparent
+}
+A.red:visited
+{
+    COLOR: #900b09;
+    BACKGROUND-COLOR: transparent
+}
+A.red:active
+{
+    COLOR: #ff0000;
+    BACKGROUND-COLOR: transparent
+}
+A.red:hover
+{
+    COLOR: #ff0000;
+    BACKGROUND-COLOR: transparent
+}
+.CodeWorker
+{
+    COLOR: #900b09;
+    FONT-WEIGHT: bold;
+    FONT-FAMILY: "Courier New",monospace
+}
+.Verbatim
+{
+    FONT-FAMILY: "Courier New",monospace;
+    BACKGROUND-COLOR: white
+}
+.AllTT
+{
+    FONT-FAMILY: "Courier New",monospace;
+    BACKGROUND-COLOR: white
+}
+BODY.TOC
+{
+    FONT-SIZE: 60%;
+    MARGIN: 2px 0px 0px 3px;
+    BACKGROUND-COLOR: #f2f2e0
+}
+BODY.index
+{
+    FONT-SIZE: 60%;
+    MARGIN: 2px 0px 0px 3px;
+    BACKGROUND-COLOR: #f2f2e0
+}
+
+
+SPAN.libcurl
+{
+    COLOR: #705050;
+    WHITE-SPACE: nowrap;
+    TEXT-DECORATION: none
+}
+
+
+
+BODY.script
+{
+    FONT-FAMILY: "Courier New",monospace;
+    BACKGROUND-COLOR: #ffffee
+}
+
+SPAN.comment
+{
+    COLOR: #007b00;
+    BACKGROUND-COLOR: transparent
+}
+SPAN.raw_text
+{
+    COLOR: #FF0000;
+    FONT-WEIGHT: bold;
+    BACKGROUND-COLOR: #FFFF00
+}
+SPAN.directive
+{
+    COLOR: #00008b;
+    BACKGROUND-COLOR: transparent
+}
+SPAN.numeric
+{
+    COLOR: #8b008b;
+    BACKGROUND-COLOR: transparent
+}
+SPAN.string
+{
+    COLOR: #F74848;
+	FONT-STYLE: italic;
+    BACKGROUND-COLOR: transparent
+}
+
+A.instruction {
+    FONT-WEIGHT: bold;
+    COLOR: #000000;
+    TEXT-DECORATION: none
+}
+A.instruction:visited
+{
+    COLOR: #000000
+}
+A.instruction:active
+{
+    FONT-WEIGHT: normal;
+    COLOR: #000000;
+    TEXT-DECORATION: underline
+}
+A.instruction:hover
+{
+    FONT-WEIGHT: bold;
+    COLOR: #0000FF
+}
+
+A.procedure {
+    FONT-WEIGHT: bold;
+    COLOR: #000080;
+    TEXT-DECORATION: none
+}
+A.procedure:visited
+{
+    COLOR: #000080
+}
+A.procedure:active
+{
+    FONT-WEIGHT: normal;
+    COLOR: #000080;
+    TEXT-DECORATION: underline
+}
+A.procedure:hover
+{
+    FONT-WEIGHT: bold;
+    COLOR: #0000FF
+}
+
+A.function {
+    FONT-WEIGHT: bold;
+    COLOR: #0000C0;
+    TEXT-DECORATION: none
+}
+A.function:visited
+{
+    COLOR: #0000C0
+}
+A.function:active
+{
+    FONT-WEIGHT: normal;
+    COLOR: #0000C8;
+    TEXT-DECORATION: underline
+}
+A.function:hover
+{
+    FONT-WEIGHT: bold;
+    COLOR: #0000FF
+}
+
+A.constant {
+    FONT-WEIGHT: bold;
+    COLOR: #A80000;
+    TEXT-DECORATION: none
+}
+A.constant:visited
+{
+    COLOR: #A80000
+}
+A.constant:active
+{
+    FONT-WEIGHT: normal;
+    COLOR: #A80000;
+    TEXT-DECORATION: underline
+}
+A.constant:hover
+{
+    FONT-WEIGHT: bold;
+    COLOR: #0000FF
+}
+
+A.directive {
+    FONT-WEIGHT: bold;
+    COLOR: #A80000;
+    TEXT-DECORATION: none
+}
+A.directive:visited
+{
+    COLOR: #A80000
+}
+A.directive:active
+{
+    FONT-WEIGHT: normal;
+    COLOR: #A80000;
+    TEXT-DECORATION: underline
+}
+A.directive:hover
+{
+    FONT-WEIGHT: bold;
+    COLOR: #0000FF
+}

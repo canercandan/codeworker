@@ -1,0 +1,84 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+changes ::= #ignore(C++) [version]* #continue #empty;
+version ::=	#readIdentifier : "version" #continue
+			[#readCString:sVersion | #readIdentifier : "current" : sVersion]
+			=> insert project.listOfVersions[sVersion] = sVersion;
+			=> localref myVersion = project.listOfVersions[sVersion];
+			[
+				#readIdentifier:"private"
+				=> insert myVersion.private = true;
+			]?
+			[
+				"remark" #continue
+				description(myVersion)
+			]?
+			[
+				"abstract" #continue
+				#readCString:myVersion.abstract
+				[#readCString:sText => set myVersion.abstract += endl() + sText;]*
+			]?
+			[
+				DATE:sDate #continue
+				=> pushItem myVersion.listOfChanges;
+				=> localref myChange = myVersion.listOfChanges#back;
+				=> insert myChange.date = sDate;
+				[#readCString:sCaller => insert myChange.caller = sCaller;]?
+				#readIdentifier : sKeyword
+				=> insert myChange.type = sKeyword;
+				keyword<sKeyword>(myChange)
+			]*;
+keyword<"behaviour">(myChange : node) ::= description(myChange);
+keyword<"bug_fix">(myChange : node) ::= description(myChange);
+keyword<"deprecated">(myChange : node) ::= description(myChange);
+keyword<"feature">(myChange : node) ::= description(myChange);
+keyword<"function">(myChange : node) ::=
+		#continue
+		#readIdentifier:sFunction
+		=> insert myChange.listOfFunctions[sFunction] = sFunction;
+		[
+			',' #continue
+			#readIdentifier:sFunction
+			=> insert myChange.listOfFunctions[sFunction] = sFunction;
+		]* ';';
+keyword<"improvement">(myChange : node) ::= description(myChange);
+keyword<"note">(myChange : node) ::= description(myChange);
+keyword<"option">(myChange : node) ::=
+		#continue
+		=> local sOption;
+		[
+				#readIdentifier:sOption
+			|
+				#readCString:sOption
+		]
+		=> insert myChange.listOfOptions[sOption] = sOption;
+		[
+			',' #continue
+			#readIdentifier:sOption
+			=> insert myChange.listOfFunctions[sOption] = sOption;
+		]* ';';
+
+description(myChange : node) ::=
+		#continue #readCString:myChange.description
+		[#readCString:sText => set myChange.description += endl() + sText;]*;
+
+DATE ::= #!ignore ['0'..'9']2 ['a'..'z']3 ['0'..'9']4;

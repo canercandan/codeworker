@@ -1,0 +1,99 @@
+doxygen2HTML	::=
+		#ignore(C++/Doxygen)
+		#continue
+		[title]?
+		[body]?
+		#empty;
+
+title	::=
+		"//!"
+		=> {@<h3>@}
+		line(theContext)
+		=> {@</h3>@}
+		;
+
+body	::= "/*!" #continue [line(theContext)]* "*/";
+
+line(theContext : node)	: #!ignore ::=
+		![#ignore(blanks) "*/"]
+		[#ignore(blanks) '*']?
+		[
+				!![['\r']? '\n' | "*/"]
+				=> if !theContext.is_verbatim {
+					while !theContext.bullet_shift.empty() {
+						@</li>@endl()@</ul>@endl()@@
+						removeLastElement(theContext.bullet_shift);
+					}
+					@<p/>@
+				}
+			|
+				=> local iBlanks = 0;
+				[
+					[
+							' ' => increment(iBlanks);
+						|
+							'\t' => set iBlanks = $iBlanks + 4$;
+					]
+				]*
+				'-'
+				=> {
+					if theContext.bullet_shift.empty() || $theContext.bullet_shift#back < iBlanks$ {
+						pushItem theContext.bullet_shift = iBlanks;
+						@<ul>@endl()@<li>@
+					} else if $theContext.bullet_shift#back > iBlanks$ {
+						do {
+							@</li>@endl()@</ul>@endl()@@
+							removeLastElement(theContext.bullet_shift);
+						} while $theContext.bullet_shift#back > iBlanks$;
+						@<li>@
+					} else if $theContext.bullet_shift#back == iBlanks$ {
+						@</li>@endl()@<li>@
+					}
+				}
+		]?
+		[
+				#check(!theContext.is_verbatim)
+				[
+						"\\" #readIdentifier:"code"
+						=>{
+							@<br>@endl()@<kbd>@
+							insert theContext.is_verbatim = true;
+						}
+					|
+						'<' #readIdentifier:sTag '>'
+						=> {
+							@<@sTag@>@
+							if sTag == "tt" || sTag == "kbd" insert theContext.is_truetype = true;
+						}
+					|
+						'<' '/' #readIdentifier:sTag '>'
+						=> {@</@sTag@>@}
+				]
+			|
+				#check(theContext.is_truetype || theContext.is_verbatim)
+				[
+						' ' => {@&nbsp;@}
+					|
+						'\t' => {@&nbsp;&nbsp;&nbsp;&nbsp;@}
+				]
+			|
+				#check(theContext.is_verbatim)
+				[
+						"\\" #readIdentifier:"endcode"
+						=>{
+							@</kbd><br>@endl()@@
+							insert theContext.is_verbatim = false;
+						}
+				]
+			|
+				~[['\r']? '\n' | "*/"]:cChar
+				=> {@@composeHTMLLikeString(cChar)@@}
+		]*
+		[
+			['\r']? '\n'
+			=> {
+				if theContext.is_verbatim {@<br>@}
+				@@endl()@@
+			}
+		]?
+		;

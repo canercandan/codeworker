@@ -1,0 +1,311 @@
+@switch(this.function) {
+	case "insertText":
+		{
+			@I'll drink a bottle of 'Margaux' year 1994@
+newFloatingLocation("You'll be drunk!");
+@ before smoking a cigar.@
+traceLine("My glass is empty, let's try another bottle, year 1996");
+insertText(getFloatingLocation("You'll be drunk!"), " and year 1996");
+traceLine("My glass is empty once again, let's try another bottle, year 2000");
+insertText(getFloatingLocation("You'll be drunk!"), " and year 2000");
+
+		}
+		break;
+	case "insertTextOnce":
+		{
+			@@
+newFloatingLocation("include files");
+@
+void f(const std::string& s) {
+...
+}
+@
+traceLine("I need an include: <string>!");
+insertTextOnce(getFloatingLocation("include files"), "#include <string>" + endl());
+@std::vector<std::string> g() {
+...
+}
+@
+traceLine("I need two includes: <string> and <vector>!");
+insertTextOnce(getFloatingLocation("include files"), "#include <string>" + endl());
+insertTextOnce(getFloatingLocation("include files"), "#include <vector>" + endl());
+
+		}
+		break;
+	case "overwritePortion":
+		{
+			@I'll drink a bottle of '@
+newFloatingLocation("You'll be drunk!");
+@Margaux' year 1994 before smoking a cigar.@
+traceLine("Finally, I prefer to drink a bottle of Saint-Estephe,");
+traceLine("I correct the output:");
+local iPosition = getFloatingLocation("You'll be drunk!");
+overwritePortion(iPosition, "Saint-Estephe", 7 /*size of 'Margaux'*/);
+
+		}
+		break;
+	case "populateProtectedArea":
+		{
+			@code to generate
+@
+if !getProtectedArea("reserved for the user")
+	populateProtectedArea("reserved for the user", "I can't stand an empty protected area" + endl());
+@I continue the code to generate@
+
+		}
+		break;
+	case "resizeOutputStream":
+		{
+			@I write 22 characters.@
+traceLine("Current position to the output stream = " + getOutputLocation());
+setOutputLocation(8);
+@15@
+resizeOutputStream(15);
+
+		}
+		break;
+	case "setFloatingLocation":
+		{
+			@Roger Rabbit doesn't like spinash@
+setFloatingLocation("Roger Rabbit", 5);
+traceLine("the floating location 'Roger Rabbit' points just after 'Roger' = " + getFloatingLocation("Roger Rabbit"));
+
+		}
+		break;
+	case "setOutputLocation":
+		{
+			@I write 22 characters.@
+traceLine("Current position to the output stream = " + getOutputLocation());
+setOutputLocation(8);
+@one sentence, finally!@
+
+		}
+		break;
+	case "setProtectedArea":
+		{
+			@code to generate
+@
+setProtectedArea("reserved for the user");
+@I continue the code to generate@
+
+		}
+		break;
+	case "writeBytes":
+		{
+			@codeworker@
+writeBytes("4066726565");
+@.fr@
+
+		}
+		break;
+	case "writeText":
+		{
+			@codeworker@
+writeText("@");
+@free.fr@
+
+		}
+		break;
+	case "writeTextOnce":
+		{
+			@@
+traceLine("Do you know that Roger Rabbit is tired?");
+writeTextOnce("Roger Rabbit is tired");
+traceLine("Once again, Roger Rabbit is tired!");
+writeTextOnce("Roger Rabbit is tired");
+traceLine("Once more, Roger Rabbit is tired!");
+writeTextOnce("Roger Rabbit is tired");
+traceLine("The message hasn't been repeated into the generated text.");
+
+		}
+		break;
+	case "equalLastWrittenChars":
+		{
+			@let's write some characters@
+			traceLine("equalLastWrittenChars(\"characters\") = '" + equalLastWrittenChars("characters") + "'");
+
+		}
+		break;
+	case "existFloatingLocation":
+		{
+			@Roger Rabbit@
+			newFloatingLocation("Roger Rabbit");
+			@ doesn't like spinash@
+			traceLine("Does the floating location 'Roger Rabbit' exists? '" + existFloatingLocation("Roger Rabbit", false) + "'");
+
+		}
+		break;
+	case "getFloatingLocation":
+		{
+			@Roger Rabbit@
+			newFloatingLocation("Roger Rabbit");
+			@ doesn't like spinash@
+			traceLine("Position just after 'Roger Rabbit' is " + getFloatingLocation("Roger Rabbit"));
+
+		}
+		break;
+	case "getLastWrittenChars":
+		{
+			@let's write some characters@
+			traceLine("getLastWrittenChars(10) = '" + getLastWrittenChars(10) + "'");
+
+		}
+		break;
+	case "getMarkupKey":
+		{
+			@@
+			if getMarkupKey() == "examples" {
+				@A little example?@
+			} else {
+				@We are doing the LaTeX documentation in expansion mode!@
+				traceLine("current markup of the LaTeX documentation = '" + getMarkupKey() + "'");
+			}
+
+		}
+		break;
+	case "getMarkupValue":
+		{
+			@{
+			    int iHashCode = 0;
+			    std::string sKey = @coreString(getMarkupKey(), 7, 1)@;
+			    for (int i = 0; i < sKey.length(); i++) {
+			        unsigned char c = sKey[i];
+			        iHashCode = (31*iHashCode + (c%31)) % 64000000;
+			    }
+			    switch(iHashCode) {
+			@
+			local sData = getMarkupValue();
+			while sData {
+				local iIndex = sData.findString('\n');
+				if $iIndex < 0$ || !sData.startString("//") error("syntax error");
+				local sKey = sData.midString(2, $iIndex - 2$);
+				if sKey.endString('\r') set sKey = sKey.rsubString(1);
+				local iHashCode = 0;
+				local i = 0;
+				while $i < sKey.length()$ {
+					local c = sKey.charAt(i);
+					iHashCode = $(31*iHashCode + (c.charToInt()%31)) % 64000000$;
+					increment(i);
+				}
+				@        case @iHashCode@: // "@sKey@"
+			@
+				setProtectedArea("case \"" + sKey + "\":");
+				set sData = sData.subString($iIndex + 1$);
+			}
+			@        default:
+			@
+			setProtectedArea("default:");
+			@    }
+			}
+			@
+
+		}
+		break;
+	case "getOutputLocation":
+		{
+			@I write 22 characters.@
+			traceLine("Current position to the output stream = " + getOutputLocation());
+
+		}
+		break;
+	case "getProtectedArea":
+		{
+			@@
+			setProtectedArea("keep this code for me, please!");
+			if !getProtectedArea("keep this code for me, please!") {
+				traceLine("you have never populated the protected area!");
+			}
+
+		}
+		break;
+	case "getProtectedAreaKeys":
+		{
+			@My first protected area:
+			@
+			local listOfKeys;
+			local iNbKeys = getProtectedAreaKeys(listOfKeys);
+			traceLine("Number of preserved area at the beginning = " + iNbKeys + ":");
+			foreach i in listOfKeys traceLine("	'" + i + "'");
+			setProtectedArea("hand-typed code");
+			traceLine("after removing and setting protected areas,");
+			traceLine("the function behaves the same");
+			removeProtectedArea("don't forget me, please!");
+			if $getProtectedAreaKeys(listOfKeys) != 2$ error("bad behavior");
+			@Now, you can erase text, I don't care.
+			@
+
+		}
+		break;
+	case "indentText":
+		{
+			@int f(int i) {
+			switch (i) {
+			case 1:
+			g(i + 1);
+			break;
+			case 2:
+			case 3:
+			if (i == 2) {
+			h();
+			}
+			g(i - 1);
+			break;
+						}
+			}@
+			if indentText("C++") traceLine("the output stream wasn't indented correctly");
+
+		}
+		break;
+	case "newFloatingLocation":
+		{
+			@Roger Rabbit@
+			newFloatingLocation("Roger Rabbit");
+			@ doesn't like spinash@
+			traceLine("Position just after 'Roger Rabbit' is " + getFloatingLocation("Roger Rabbit"));
+
+		}
+		break;
+	case "remainingProtectedAreas":
+		{
+			@My first protected area:
+			@
+			local listOfKeys;
+			local iHowMany = remainingProtectedAreas(listOfKeys);
+			traceLine("It remains " + iHowMany + " keys to set into the output file:");
+			foreach i in listOfKeys traceLine("	'" + i + "'");
+			traceLine("writing of protected area 'hand-typed code'");
+			setProtectedArea("hand-typed code");
+			@My second protected area:
+			@
+			set iHowMany = remainingProtectedAreas(listOfKeys);
+			traceLine("It remains " + iHowMany + " keys to set into the output file:");
+			foreach i in listOfKeys traceLine("	'" + i + "'");
+			traceLine("writing of protected area '" + listOfKeys#front + "'");
+			setProtectedArea(listOfKeys#front);
+			@Now, you can erase text, I don't care.
+			@
+			set iHowMany = remainingProtectedAreas(listOfKeys);
+			if $iHowMany != 0$ error("shouldn't remain any protected area!");
+			traceLine("It doesn't remain any area to set into the output file");
+
+		}
+		break;
+	case "removeProtectedArea":
+		{
+			@Finally, I have changed my mind and I keep only one protected area:
+			@
+			local listOfKeys;
+			local iHowMany = remainingProtectedAreas(listOfKeys);
+			traceLine("It remains " + iHowMany + " keys to set into the output file:");
+			foreach i in listOfKeys traceLine("	'" + i + "'");
+			traceLine("Protected area 'don't forget me, please!' is removed");
+			removeProtectedArea("don't forget me, please!");
+			set iHowMany = remainingProtectedAreas(listOfKeys);
+			traceLine("It remains " + iHowMany + " keys to set into the output file:");
+			foreach i in listOfKeys traceLine("	'" + i + "'");
+			traceLine("writing of protected area 'hand-typed code'");
+			setProtectedArea("hand-typed code");
+
+		}
+		break;
+}

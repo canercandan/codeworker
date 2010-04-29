@@ -1,0 +1,62 @@
+package derivatives {
+	package market_data {
+		abstract class Volatility {
+			double getValue(double K, date T) const;
+		};
+
+		class ConstantVolatility extends Volatility {
+			double value;
+		};
+
+
+		class Currency {
+		};
+
+
+		abstract class Instrument {
+		};
+
+		class Stock extends Instrument {
+			double spot;
+			Volatility volatility;
+			Currency currency;
+		};
+	}
+
+	package products {
+		abstract class Product {
+			Instrument underlying;
+			double lotSize;
+		};
+
+		class Vanilla extends Product {
+			double strike;
+			date maturity;
+		};
+
+
+		class Trade {
+			Product product;
+			double nominal;
+		};
+	}
+
+	package pricing {
+		abstract class Result {
+		};
+
+		class PricingIndicator {
+		} PREMIUM, DELTA;
+
+		class PricingResult extends Result {
+			map<string, double> numericResults;
+
+			double getResult(const Trade trade, const PricingIndicator request) const;
+		};
+
+
+		service Revaluation {
+			PricingResult price(const Trade[] trades, const PricingIndicator[] requests);
+		};
+	}
+}

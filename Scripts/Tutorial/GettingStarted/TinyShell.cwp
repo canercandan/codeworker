@@ -1,0 +1,32 @@
+tinyShell	::=
+		#ignore(C++)
+		#continue
+		[
+			#readIdentifier:sCommand
+			#ignore(blanks) #continue
+			command<sCommand>
+		]* #empty;
+
+//----------------------------//
+// commands of the tiny shell //
+//----------------------------//
+command<"copy">	::=
+		#continue parameter:sSource parameter:sDestination
+		=> {copyFile(sSource, sDestination);};
+
+command<"rmdir">	::=
+		#continue parameter:sDirectory
+		=> {removeDirectory(sDirectory);};
+
+command<"del">	::=
+		#continue parameter:sFile
+		=> {deleteFile(sFile);};
+
+
+//--------------------
+// Some useful clauses
+//--------------------
+parameter:value	::=
+		#readCString:parameter
+			|
+		#!ignore #continue [~[' ' | '\t' | '\r' | '\n']]+:parameter;

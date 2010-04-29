@@ -1,0 +1,57 @@
+digraph SigC {
+	ranksep=2
+	node [shape=record,style=filled];
+@
+
+function toGraphvizText(sText : value) {
+	sText = sText.replaceString(" < ", "\\n<\\n");
+	sText = sText.replaceString(" > ", "\\n>\\n");
+	sText = sText.replaceString(' ', "\\ ");
+	sText = sText.replaceString('"', "\\\"");
+	return sText;
+}
+
+function writeAction<"duration">(action : node) {
+	@|@
+	local sStreet = toGraphvizText('"' + action.crossroad_entry.street + '"');
+	if action.crossroad_entry.direction == "c->s" {
+		@@action.crossroad_entry.crossroad@-\>@sStreet@\n@
+	} else {
+		@@sStreet@-\>@action.crossroad_entry.crossroad@\n@
+	}
+	foreach i in action.durations {
+		if !i.first() {
+			@/@
+		}
+		local iSec = $i%60$;
+		if iSec.length() == 1 iSec = '0' + iSec;
+		@@floor($i/60$)@min@iSec@@
+	}
+}
+
+function writeAction<"activate">(action : node) {
+	@|@action.strategy@@
+}
+
+function writeAction<"desactivate">(action : node) {}
+
+@	@this.name@ [style=filled, fillcolor="#A1E1FF",fontname="Arial-Narrow"];
+	@this.name@_start [label="@toGraphvizText(this.start)@",fontname="Arial-Narrow",shape=box];
+	@this.name@ -> @this.name@_start [label="start",fontname="Arial-Narrow",fontcolor="red",color="red",style="bold"];
+	ranksep=4
+@
+foreach rule in this.rules {
+	@
+	@this.name@_rule@rule.key()@ [label="@toGraphvizText(rule.condition)@",fontname="Arial-Narrow",shape=box];
+	@this.name@ -> @this.name@_rule@rule.key()@ [color="purple",style="bold"];
+@
+	foreach action in rule.actions {
+		@	@this.name@_rule@rule.key()@_@action.key()@ [shape=record,label="{@action@@
+		writeAction<action>(action);
+		@}",fontname="Arial-Narrow",fillcolor=yellow];
+	@this.name@_rule@rule.key()@ -> @this.name@_rule@rule.key()@_@action.key()@ [color="orange",style="bold"];
+@
+	}
+}
+
+@}

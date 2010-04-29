@@ -1,0 +1,56 @@
+//------------------------------------------------------------------
+//                    CodeWorker as a DSL builder
+//
+//
+// This tiny project demonstrates the capability of CodeWorker
+// to implement DSL.
+//
+// The current script drives the project:
+//   - parsing of the specification,
+//   - definition of some functions used in template-based scripts
+//   - generation of C++ header/body skeletons.
+//
+// It calls:
+//   - "tinyDSL_parsing.cwp": extended-BNF parsing script of the DSL
+//   - "tinyDSL_headerCpp.cwt": template-based script for C++ header
+//   - "tinyDSL_bodyCpp.cwt": template-based script for C++ body
+//
+// Type:
+//   CodeWorker -script tinyDSL_leader.cws
+//
+// After running the project, all C++ classes appear in the new
+// directory "framework/".
+// Under Windows/VC++ 6.0, see "DSLbuilder.dsp" to compile the
+// framework freshly created.
+//------------------------------------------------------------------
+
+// Parsing of specifications
+parseAsBNF("tinyDSL_parsing.cwp", project, "tinyDSL_spec.txt");
+
+// Function converting a type node to a C++ type
+function getCppType(theType : node) {
+	local sType;
+	if theType.isObject set sType = theType.name + '*';
+	else {
+		switch(theType.name) {
+			case "double": set sType = "double";break;
+			case "string": set sType = "std::string";break;
+		}
+	}
+	if theType.isArray set sType = "std::vector<" + sType + '>';
+	return sType;
+}
+
+// Function converting a type node to a C++ type for passing
+// or returning parameters
+function getCppReturnType(theType : node) {
+	local sType = getCppType(theType);
+	if theType.isArray || theType.name == "string" set sType = "const " + sType + '&';
+	return sType;
+}
+
+// Iterates all classes and generates their C++ header/body.
+foreach i in project.classes {
+	generate("tinyDSL_headerCpp.cwt", i, "framework/" + i.name + ".h");
+	generate("tinyDSL_bodyCpp.cwt", i, "framework/" + i.name + ".cpp");
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<HTML>
+<HEAD>
+	<TITLE>Last changes of CodeWorker</title>
+	<META http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+	<META name="Description" content="Last changes of CodeWorker, a parsing tool and a source code generator that interprets a scripting language to drive the processing of parsing and source code generation. It insists on offering powerful functionalities to do intensive code generation.">
+	<META http-equiv="pragma" content="no-cache" />
+	<META http-equiv="cache-control" content="no-cache" />
+
+<LINK rel="stylesheet" type="text/css" href="CodeWorker.css" />
+
+</HEAD>
+<BODY>
+	<H1>CodeWorker</H1>
+	<BR />
+	<BR />
+							<TABLE border="1" cellpadding="7" cellspacing="0" width="100%">
+								<TR>
+									<TD class="changes" valign="top" colspan="4">Changes on version 2.13</TD>
+								</TR>
+								<TR>
+									<TD class="role" valign="top">Date</TD>
+									<TD class="role" valign="top">Type</TD>
+									<TD class="role" valign="top">Caller</TD>
+									<TD class="role" valign="top">Description</TD>
+								</TR>
+								<TR>
+									<TD class="content" valign="top">27may2003</TD>
+									<TD class="content" valign="top">bug_fix</TD>
+									<TD class="content" valign="top">-</TD>
+									<TD class="content" valign="top">When called via a C++ binding, bad context variable passed to <EM>CGRuntime::expand()</EM>,
+<EM>CGRuntime::parseAsBNF()</EM> and <EM>CGRuntime::generate()</EM>.</TD>
+								</TR>
+								<TR>
+									<TD class="content" valign="top">26may2003</TD>
+									<TD class="content" valign="top">feature</TD>
+									<TD class="content" valign="top">-</TD>
+									<TD class="content" valign="top">Add of template BNF clauses (non&#150;terminal symbols) where the instantiation isn&#145;t resolved.
+<P/>
+<B>Example:</B><BR/>
+<EM>nonterminal&lt;&quot;Case 1&quot;&gt; ::= ...;<BR/>
+nonterminal&lt;&quot;Case 2&quot;&gt; ::= ...;</EM><BR/>
+are instantiations of <EM>nonterminal</EM> resolved for <EM>&quot;Case 1&quot;</EM> and <EM>&quot;Case 2&quot;</EM>.<BR/>
+<EM>nonterminal&lt;T&gt; ::= ...;</EM><BR/>
+is a template BNF clause where the instantiation isn&#145;t resolved and that describes the
+generic implementation of the production rule. It will be called for <EM>&quot;Case 3&quot;</EM> or
+any constant different of <EM>&quot;Case 1&quot;</EM> and <EM>&quot;Case 2&quot;</EM>.</TD>
+								</TR>
+							</TABLE>
+</BODY>
+</HTML>

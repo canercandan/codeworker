@@ -1,0 +1,10 @@
+if !getProperty("FILE") error("property 'FILE' expected: points to the class diagram");
+
+local sPrefix = getProperty("FILE");
+local iIndex = sPrefix.findLastString('.');
+if $iIndex > 0$ set sPrefix = sPrefix.leftString(iIndex);
+
+parseAsBNF("tinyC++ClassDiagramParser.cwp", project, getProperty("FILE"));
+generate("tinyC++ClassDiagramHTML.cwt", project, sPrefix + ".html");
+
+//codeworker tinyC++ClassDiagram.cws -I c:/projects/generator/WebSite/repository/ -D FILE=c:/projects/ptd_oak/MarketMaking.cdg

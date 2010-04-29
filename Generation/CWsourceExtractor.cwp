@@ -1,0 +1,224 @@
+function existType(T : value, root : node, scope : node) {
+	if scope.types.findElement(T) return true;
+	if scope.parent.existVariable() return T.existType(root, scope.parent);
+	return root.types.findElement(T);
+}
+
+toto ::= CWsourceBrowser;
+
+#ignore ::=
+	#skipIgnore(C++)
+	[
+		'#' #continue
+		#skipIgnore(blanks)
+		[
+				[
+					#readIdentifier:"include"
+					#skipIgnore(blanks)
+					#readCString:sHeaderFile
+					#check(!project.headerFiles.findElement(sHeaderFile))
+					#continue
+					#parsedFile(sHeaderFile)
+					CWsourceBrowser
+				]
+			&|
+				->['\\' ['\r']? '\n' #nextStep #check(false) | '\n']
+		]
+		#skipIgnore(C++)
+	]*
+	;
+
+CWsourceBrowser ::=
+	=> local theRoot;
+	=> local sShortName = getShortFilename(getInputFilename());
+	=>	if sShortName.endString(".h") {
+			insert project.headerFiles[sShortName];
+			ref theRoot = project.headerFiles[sShortName];
+		} else if sShortName.endString(".cpp") {
+			insert project.sourceFiles[sShortName];
+			ref theRoot = project.sourceFiles[sShortName];
+		}
+	#continue
+	#ignore
+	#skipIgnore
+	=> local scope;
+	[statement(theRoot, scope)]*
+	#empty
+	;
+
+statement(root : node, scope : node) ::=
+		#readIdentifier:sKeyword
+		#continue
+		statement<sKeyword>(root, scope)
+	|
+		'{' #continue
+		=> pushItem scope.instructions = "{}";
+		[statement(root, scope.instructions#back)]*
+		'}'
+	;
+
+statement<T>(root : node, scope : node) ::=
+		#check(T.existType(root, scope))
+		#continue
+		=> local theType = T;
+		declaration(theType, root, scope)
+	|
+		=> error("statement<\"" + T + "\">(root : node, scope : node) hasn't been implemented yet");
+	;
+
+statement<"typedef">(root : node, scope : node) ::=
+	#continue
+	#readIdentifier:sKeyword
+	=> local theType;
+	type_declaration<sKeyword>(root, scope, theType)
+	#readIdentifier:sType
+	=> setall scope.types[sType].is_typedef = theType;
+	';'
+	;
+
+statement<"extern">(root : node, scope : node) ::= #continue "\"C\"" statement(root, scope);
+
+type_declaration<"unsigned">(root : node, scope : node, theType : node) ::=
+	type(root, scope, theType)
+	=> insert decl.modifiers["unsigned"];
+	;
+type_declaration<"struct">(root : node, scope : node, theType : node) ::=
+	#continue
+	[
+			#readIdentifier:sType
+			=> insert scope.types[sType] = sType;
+			=> ref theType.is_struct = scope.types[sType];
+		|
+			=> insert theType.is_struct = true;
+	]
+	=> ref theType.parent = scope;
+	'{' [statement(root, theType)]* '}'
+	;
+
+statement<"namespace">(root : node, scope : node) ::=
+	#continue
+	#readIdentifier:sNamespace
+	=> local subScope;
+	=> if scope.is_namespace {
+		insert scope.namespaces[sNamespace] = sNamespace;
+		ref subScope = scope.namespaces[sNamespace];
+		insert subScope.is_namespace = true;
+		ref subScope.parent = scope;
+	} else {
+		insert root.namespaces[sNamespace] = sNamespace;
+		ref subScope = root.namespaces[sNamespace];
+		insert subScope.is_namespace = true;
+		ref subScope.parent = scope;
+	}
+	'{'
+	[statement(root, subScope)]*
+	'}'
+	;
+
+statement<"int">(root : node, scope : node) ::=
+	=> local theType = "int";
+	declaration(theType, root, scope)
+	;
+statement<"char">(root : node, scope : node) ::=
+	=> local theType = "char";
+	declaration(theType, root, scope)
+	;
+statement<"void">(root : node, scope : node) ::=
+	=> local theType = "void";
+	declaration(theType, root, scope)
+	;
+statement<"bool">(root : node, scope : node) ::=
+	=> local theType = "bool";
+	declaration(theType, root, scope)
+	;
+statement<"static">(root : node, scope : node) ::=
+	type(root, scope, theType)
+	=> insert theType.modifiers["static"];
+	declaration(theType, root, scope)
+	;
+
+statement<"std">(root : node, scope : node) ::=
+	#continue
+	std_type(root, scope, theType)
+	declaration(sType, root, scope)
+	;
+
+declaration(theType : node, root : node, scope : node) ::=
+	type_postfix(theType, scope)
+	declarator(root, scope)
+	;
+
+std_type(root : node, scope : node, theType : node) ::=
+	#continue
+	"::"
+	#readIdentifier:{"list", "map", "set", "string", "vector"}:sType
+	[
+			#check(sType in {"list", "set", "vector"})
+			#continue '<' type(root, scope, theType.arg) '>'
+		|
+			#check(sType == "map")
+			#continue '<' type(root, scope, theType.arg1) ',' type(root, scope, theType.arg2) '>'
+	]?
+	;
+
+type_postfix(theType : node, scope : node) ::=
+	[
+			#readIdentifier:"const"
+			=> pushItem theType.postfixes = "const";
+		|
+			'*'
+			=> pushItem theType.postfixes = "*";
+		|
+			'&'
+			=> pushItem theType.postfixes = "&";
+		|
+			'[' #continue ->']'
+			=> pushItem theType.postfixes = "[]";
+	]*
+	;
+
+name(path : node):value ::= [#readIdentifier "::"]* #readIdentifier:name;
+
+declarator(root : node, scope : node) ::=
+	#continue
+	name(path)
+	[
+			'(' #continue [parameters(root, scope)]? ')'
+			[
+					';'
+				|
+					'{'
+			]
+		|
+			['[' #continue ->']']?
+			[
+					'='
+				|
+					';'
+			]
+	]
+	;
+
+parameters(root : node, scope : node) ::= parameter(root, scope, param) [',' #continue parameter(root, scope, param)]*;
+
+parameter(root : node, scope : node, param : node) ::=
+	#continue
+	type(root, scope, param.type)
+	[name(path)]?
+	['[' #continue ->']']?
+	;
+
+type(root : node, scope : node, theType : node) ::=
+	[
+		#readIdentifier:{"const", "signed", "static", "virtual", "volatile", "unsigned"}:sModifier
+		=> insert theType.modifiers[sModifier];
+	]*
+	[
+			#readIdentifier:"std"
+			#continue
+			std_type(root, scope, theType)
+		|
+			name(path):sType
+	]
+	type_postfix(theType, scope)
+	;

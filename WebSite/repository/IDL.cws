@@ -1,0 +1,4 @@
+forfile i in "idl/*.idl" {
+	traceLine("Parsing \"" + i + "\"...");
+	parseAsBNF("IDL-parser.cwp", project, i);
+}

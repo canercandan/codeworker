@@ -1,0 +1,311 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-@formatDate(getNow(), "%Y")@ Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@writeText('@');@free.fr
+*/
+
+#ifdef WIN32
+#pragma warning (disable : 4786)
+#endif
+
+#include "ScpStream.h"
+#include "CppCompilerEnvironment.h"
+#include "CGRuntime.h"
+@
+local includeList;
+foreach i in this.parameterList {
+	switch(i.type) {
+		case "int":
+		case "bool":
+		case "double":
+		case "ulong":
+		case "ushort":
+		case "script":
+			insert includeList["basic_type"] = "\"ExprScriptExpression.h\"";
+			break;
+		case "string":
+			insert includeList["basic_type"] = "\"ExprScriptExpression.h\"";
+			insert includeList["<string>"] = "<string>";
+			break;
+		case "stringref":
+			insert includeList["variable"] = "\"DtaScriptVariable.h\"";
+			insert includeList["<string>"] = "<string>";
+			break;
+		case "stringlist":
+			insert includeList["<string>"] = "<string>";
+			insert includeList["<list>"] = "<list>";
+		case "iterator":
+		case "doubleref":
+		case "boolref":
+		case "treeref":
+		case "tree":
+			insert includeList["variable"] = "\"DtaScriptVariable.h\"";
+		case "treexpr":
+			insert includeList["tree"] = "\"ExprScriptVariable.h\"";
+			break;
+	}
+}
+foreach i in includeList {
+	@#include @i@
+@
+}
+if findElement("user", this.modifierList) {
+	@
+@
+	setProtectedArea("INCLUDE FILES");
+	@
+@
+}
+@#include "Grf@transformUnderscores(this.name)@.h"
+
+namespace CodeWorker {
+	Grf@transformUnderscores(this.name)@::~Grf@transformUnderscores(this.name)@() {
+@
+foreach i in this.parameterList {
+	@		delete _p@transformUnderscores(i.name)@;
+@
+}
+@	}
+
+	SEQUENCE_INTERRUPTION_LIST Grf@transformUnderscores(this.name)@::executeInternal(DtaScriptVariable& visibility) {
+@
+local bOutParams = "";
+local bDefaultParameters;
+foreach i in this.parameterList {
+	if i.default bDefaultParameters = true;
+	switch(i.type) {
+		case "int":
+			@		std::string @getCppVariable(i.name, "string")@ = _p@transformUnderscores(i.name)@->getValue(visibility);
+		@getCppType(i.type)@ @getCppVariable(i.name, i.type)@ = atoi(@getCppVariable(i.name, "string")@.c_str());
+@
+			break;
+		case "bool":
+			@		std::string @getCppVariable(i.name, "string")@ = _p@transformUnderscores(i.name)@->getValue(visibility);
+		@getCppType(i.type)@ @getCppVariable(i.name, i.type)@ = !@getCppVariable(i.name, "string")@.empty();
+@
+			break;
+		case "double":
+			@		std::string @getCppVariable(i.name, "string")@ = _p@transformUnderscores(i.name)@->getValue(visibility);
+		@getCppType(i.type)@ @getCppVariable(i.name, i.type)@ = atof(@getCppVariable(i.name, "string")@.c_str());
+@
+			break;
+		case "string":
+			@		@getCppType(i.type)@ @getCppVariable(i.name, i.type)@ = _p@transformUnderscores(i.name)@->getValue(visibility);
+@
+			break;
+		case "ulong":
+			@		std::string @getCppVariable(i.name, "string")@ = _p@transformUnderscores(i.name)@->getValue(visibility);
+		char* tc@transformUnderscores(i.name)@;
+		@getCppType(i.type)@ @getCppVariable(i.name, i.type)@ = strtoul(@getCppVariable(i.name, "string")@.c_str(), &tc@transformUnderscores(i.name)@, 10);
+@
+			break;
+		case "ushort":
+			@		std::string @getCppVariable(i.name, "string")@ = _p@transformUnderscores(i.name)@->getValue(visibility);
+		@getCppType(i.type)@ @getCppVariable(i.name, i.type)@ = (@getCppType(i.type)@) atoi(@getCppVariable(i.name, "string")@.c_str());
+@
+			break;
+		case "doubleref":
+			set bOutParams = "true";
+			@		DtaScriptVariable* @getCppVariable(i.name, "tree")@ = visibility.getExistingVariable(*_p@transformUnderscores(i.name)@);
+		if (@getCppVariable(i.name, "tree")@ == NULL) throw UtlException("parameter '@i.name@' of procedure '@this.name@' takes unexisting variable '" + _p@transformUnderscores(i.name)@->toString() + "' as argument");
+		double @getCppVariable(i.name, "double")@ = @getCppVariable(i.name, "tree")@.getDoubleValue();
+@
+			break;
+		case "boolref":
+			set bOutParams = "true";
+			@		DtaScriptVariable* @getCppVariable(i.name, "tree")@ = visibility.getExistingVariable(*_p@transformUnderscores(i.name)@);
+		if (@getCppVariable(i.name, "tree")@ == NULL) throw UtlException("parameter '@i.name@' of procedure '@this.name@' takes unexisting variable '" + _p@transformUnderscores(i.name)@->toString() + "' as argument");
+		bool @getCppVariable(i.name, "bool")@ = @getCppVariable(i.name, "tree")@.getBooleanValue();
+@
+			break;
+		case "stringref":
+			set bOutParams = "true";
+			@		DtaScriptVariable* @getCppVariable(i.name, "tree")@ = visibility.getExistingVariable(*_p@transformUnderscores(i.name)@);
+		if (@getCppVariable(i.name, "tree")@ == NULL) throw UtlException("parameter '@i.name@' of procedure '@this.name@' takes unexisting variable '" + _p@transformUnderscores(i.name)@->toString() + "' as argument");
+		std::string @getCppVariable(i.name, "string")@ = @getCppVariable(i.name, "tree")@.getValue();
+@
+			break;
+		case "stringlist":
+			set bOutParams = "true";
+			@		DtaScriptVariable* @getCppVariable(i.name, "tree")@ = visibility.getExistingVariable(*_p@transformUnderscores(i.name)@);
+		if (@getCppVariable(i.name, "tree")@ == NULL) throw UtlException("parameter '@i.name@' of procedure '@this.name@' takes unexisting variable '" + _p@transformUnderscores(i.name)@->toString() + "' as argument");
+		@getCppType(i.type)@ @getCppVariable(i.name, "stringlist")@;
+@
+			break;
+		case "iterator":
+			@		DtaScriptVariable* @getCppVariable(i.name, i.type)@ = visibility.getIterator(_p@transformUnderscores(i.name)@->getName().c_str());
+		if (@getCppVariable(i.name, i.type)@ == NULL) {
+			@getCppVariable(i.name, i.type)@ = visibility.getExistingVariable(_p@transformUnderscores(i.name)@);
+			if (@getCppVariable(i.name, i.type)@ == NULL) throw UtlException("parameter '@i.name@' of procedure '@this.name@' takes unexisting iterator '" + _p@transformUnderscores(i.name)@->toString() + "' as argument");
+		}
+@
+			break;
+		case "treeref":
+			@		DtaScriptVariable* @getCppVariable(i.name, i.type)@ = visibility.getExistingVariable(*_p@transformUnderscores(i.name)@);
+@
+			break;
+		case "tree":
+			@		DtaScriptVariable* @getCppVariable(i.name, i.type)@ = visibility.getVariable(*_p@transformUnderscores(i.name)@);
+@
+			break;
+		case "treexpr":
+			@		ExprScriptVariable& @getCppVariable(i.name, i.type)@ = *_p@transformUnderscores(i.name)@;
+@
+			break;
+	}
+}
+
+if findElement("user", this.modifierList) {
+	setProtectedArea("execute");
+}
+
+if bOutParams {
+	@		SEQUENCE_INTERRUPTION_LIST result = @
+} else {
+	@		return @
+}
+@CGRuntime::@this.name@(@
+if findElement("visibility", this.modifierList) {
+	@visibility@
+	if !isEmpty(this.parameterList) {
+		@, @
+	}
+}
+foreach i in this.parameterList {
+	if !first(i) {
+		@, @
+	}
+	@@getCppVariable(i.name, i.type)@@
+}
+@);
+@
+if bOutParams {
+	foreach i in this.parameterList {
+		if i.type == "stringref" {
+			@		@getCppVariable(i.name, "tree")@->setValue(@getCppVariable(i.name, "string")@);
+@
+		} else if i.type == "stringlist" {
+			@		@getCppVariable(i.name, "tree")@->setValue(@getCppVariable(i.name, "stringlist")@);
+@
+		} else if i.type == "doubleref" {
+			@		@getCppVariable(i.name, "tree")@->setValue(@getCppVariable(i.name, "double")@);
+@
+		} else if i.type == "boolref" {
+			@		@getCppVariable(i.name, "tree")@->setValue(@getCppVariable(i.name, "bool")@);
+@
+		}
+	}
+	@		return result;
+@
+}
+@	}
+
+@
+if bDefaultParameters {
+	@	void Grf@transformUnderscores(this.name)@::populateDefaultParameters() {
+@
+		foreach i in this.parameterList {
+			if i.default {
+				@		if (_p@transformUnderscores(i.name)@ == NULL) _p@transformUnderscores(i.name)@ = new @
+				local sText = i.default;
+				if sText.startString('"') || sText.charAt(0) in {'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} {
+					@ExprScriptConstant@
+				} else {
+					@ExprScriptVariable@
+					sText = '"' + sText + '"';
+				}
+				@(@sText@);
+@
+			}
+		}
+@	}
+
+@
+}
+if findElement("user", this.modifierList) {
+	setProtectedArea("implementation");
+	@
+@
+}
+if findElement("visibility", this.modifierList) {
+	@	void Grf@transformUnderscores(this.name)@::compileCpp(CppCompilerEnvironment& theCompilerEnvironment) const {
+		CW_BODY_INDENT << "// procedure '@this.name@' cannot be translated to C++";
+		CW_BODY_ENDL;
+}
+@
+} else {
+	@	void Grf@transformUnderscores(this.name)@::compileCpp(CppCompilerEnvironment& theCompilerEnvironment) const {
+		CW_BODY_INDENT << "CGRuntime::@this.name@(";
+@
+foreach i in this.parameterList {
+	if !first(i) {
+		@		CW_BODY_STREAM << ", ";
+@
+	}
+	switch(i.type) {
+		case "bool":
+			@		_p@transformUnderscores(i.name)@->compileCppBoolean(theCompilerEnvironment, false);
+@
+			break;
+		case "int":
+			@		_p@transformUnderscores(i.name)@->compileCppInt(theCompilerEnvironment);
+@
+			break;
+		case "double":
+			@		_p@transformUnderscores(i.name)@->compileCppDouble(theCompilerEnvironment);
+@
+			break;
+		case "script": // TO DO!
+		case "string":
+			@		_p@transformUnderscores(i.name)@->compileCppString(theCompilerEnvironment);
+@
+			break;
+		case "ulong":
+			@		_p@transformUnderscores(i.name)@->compileCppUnsignedLong(theCompilerEnvironment);
+@
+			break;
+		case "ushort":
+			@		_p@transformUnderscores(i.name)@->compileCppUnsignedShort(theCompilerEnvironment);
+@
+			break;
+		case "doubleref":
+		case "boolref":
+		case "stringref":
+		case "stringlist":
+			@		_p@transformUnderscores(i.name)@->compileCppForSet(theCompilerEnvironment);
+@
+			break;
+		case "iterator":
+		case "treeref":
+		case "tree":
+			@		_p@transformUnderscores(i.name)@->compileCpp(theCompilerEnvironment);
+@
+			break;
+		case "treexpr":
+			@		_p@transformUnderscores(i.name)@->compileCppExpr(theCompilerEnvironment);
+@
+			break;
+	}
+}
+@		CW_BODY_STREAM << ");";
+		CW_BODY_ENDL;
+	}
+@
+}
+
+@}

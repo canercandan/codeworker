@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><span class="comment">// iterate all strategy file having the extension &quot;.tlc&quot;</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#forfile">forfile</A> strategyFile <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <span class="string">&quot;*.tlc&quot;</span> {
+    <span class="comment">// The BNF parse script &quot;TrafficLight.cwp&quot; applies on the strategy file</span>
+    <span class="comment">// and populates the global variable &#39;project&#39;.</span>
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#parseAsBNF">parseAsBNF</A>(<a href="TrafficLight.cwp.html" class="string">&quot;TrafficLight.cwp&quot;</a>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, strategyFile);
+
+    <span class="comment">// Iterate all strategies and generates a C++ header and body but also</span>
+    <span class="comment">// a picture for each.</span>
+    <span class="comment">// The template-based script applies on a sub node of the parse tree,</span>
+    <span class="comment">// corresponding to the specification of the current strategy, and generates</span>
+    <span class="comment">// a C++ file or a Graphviz input file.</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>.strategies {
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#generate">generate</A>(<a href="TrafficLight-headerC++.cwt.html" class="string">&quot;TrafficLight-headerC++.cwt&quot;</a>, i, <span class="string">&quot;output/&quot;</span> + i.name + <span class="string">&quot;.h&quot;</span>);
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#generate">generate</A>(<a href="TrafficLight-bodyC++.cwt.html" class="string">&quot;TrafficLight-bodyC++.cwt&quot;</a>, i, <span class="string">&quot;output/&quot;</span> + i.name + <span class="string">&quot;.cpp&quot;</span>);
+        <span class="comment">// Generate the input file for Graphviz, which will build a PNG picture</span>
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#generate">generate</A>(<a href="TrafficLight-Graphviz.cwt.html" class="string">&quot;TrafficLight-Graphviz.cwt&quot;</a>, i, i.name + <span class="string">&quot;.grz&quot;</span>);
+        <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#system">system</A>(<span class="string">&quot;../../../bin/dot.exe -Tpng -o &quot;</span> + i.name + <span class="string">&quot;.png &quot;</span> + i.name + <span class="string">&quot;.grz&quot;</span>);
+    }
+
+
+    <span class="comment">// The translation script &quot;TrafficLight2OpenOffice20.cwp&quot; applies on the</span>
+    <span class="comment">// strategy file and generates the content of an Open Office 2.0 text</span>
+    <span class="comment">// document. We didn&#39;t put here the zip compression of the generated file</span>
+    <span class="comment">// with some others and its renaming to a &quot;.odt&quot; extension.</span>
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#translate">translate</A>(<a href="TrafficLight2OpenOffice20.cwp.html" class="string">&quot;TrafficLight2OpenOffice20.cwp&quot;</a>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, strategyFile, <span class="string">&quot;OpenOffice2.0/content.xml&quot;</span>);
+}
+
+<span class="comment">// strategies for test are injected directly into the Java simulator</span>
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#expand">expand</A>(<a href="TrafficLight-embeddedJava.cwt.html" class="string">&quot;TrafficLight-embeddedJava.cwt&quot;</a>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, <span class="string">&quot;TrafficLightSimulator.java&quot;</span>);
+
+<span class="comment">// Save the parse tree to a XML file, just for showing the structure of the tree</span>
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#saveProject">saveProject</A>(<span class="string">&quot;strategies.xml&quot;</span>);
+
+<span class="comment">//--------------------------------------------------------------------------------</span>
+
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#forfile">forfile</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <span class="string">&quot;*.cw*&quot;</span> {
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> theOptions;
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theOptions.docURL = <span class="string">&quot;http://www.codeworker.org/&quot;</span>;
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#translate">translate</A>(<span class="string">&quot;../../repository/CWScript2HTML.cwp&quot;</span>, theOptions, i, <span class="string">&quot;highlighting/&quot;</span> + i + <span class="string">&quot;.html&quot;</span>);
+}
+
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setCommentBegin">setCommentBegin</A>(<span class="string">&quot;&lt;!--&quot;</span>);
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setCommentEnd">setCommentEnd</A>(<span class="string">&quot;--&gt;&quot;</span>);
+<a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#clearVariable">clearVariable</A>();
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#translate">translate</A>(<span class="string">&quot;../../../Generation/CWcode2Codeworker.cwp&quot;</span>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, <span class="string">&quot;tutorialSite.txt&quot;</span>, <span class="string">&quot;tutorial.html&quot;</span>);
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#translate">translate</A>(<span class="string">&quot;utils/DevCom2CW.cwp&quot;</span>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, <span class="string">&quot;tutorial.html&quot;</span>, <span class="string">&quot;tutorial.html&quot;</span>);
+<span class="comment">//translate(&quot;../../../Generation/CWcode2Freshmeat.cwp&quot;, project, &quot;tutorial.txt&quot;, &quot;tutorial.html&quot;);</span>
+<span class="comment">//translate(&quot;utils/jeffcovey.cwp&quot;, project, &quot;tutorial.html&quot;, &quot;tutorial.html&quot;);</span>
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setCommentBegin">setCommentBegin</A>(<span class="string">&quot;//&quot;</span>);
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setCommentEnd">setCommentEnd</A>(<span class="string">&quot;\n&quot;</span>);
+
+</pre><hr />
+		Generated by <I class="CodeWorker">CodeWorker</I> v3.11.0.1 from <a href="http://www.codeworker.org/CWscript2HTML.html">CWscript2HTML.cwp</a>.
+	</body>
+</html>

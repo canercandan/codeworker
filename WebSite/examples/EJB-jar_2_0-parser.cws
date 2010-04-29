@@ -1,0 +1,1534 @@
+/*description:
+{
+	Walks through the AST of a DTD file parsed previously, and generates a \CodeWorker\ script
+	for parsing and validating any XML file that conforms to the DTD.
+
+	If you encounter some bugs, please sen a mail to \email{\WebSite\ }.
+}
+*/
+
+function normalizeClauseName(sClauseName) {
+	return replaceString("-", "_", sClauseName);
+}
+
+/**
+This is the XML DTD for the EJB 2.0 deployment descriptor.
+All EJB 2.0 deployment descriptors must include a DOCTYPE
+of the following form:
+
+  <!DOCTYPE ejb-jar PUBLIC
+	"-//Sun Microsystems, Inc.//DTD Enterprise JavaBeans 2.0//EN"
+	"http://java.sun.com/dtd/ejb-jar_2_0.dtd">
+
+The following conventions apply to all J2EE deployment descriptor
+elements unless indicated otherwise.
+
+- In elements that contain PCDATA, leading and trailing whitespace
+  in the data may be ignored.
+
+- In elements whose value is an "enumerated type", the value is
+  case sensitive.
+
+- In elements that specify a pathname to a file within the same
+  JAR file, relative filenames (i.e., those not starting with "/")
+  are considered relative to the root of the JAR file's namespace.
+  Absolute filenames (i.e., those starting with "/") also specify
+  names in the root of the JAR file's namespace.  In general, relative
+  names are preferred.  The exception is .war files where absolute
+  names are preferred for consistency with the servlet API.
+**/
+
+XML_DOCUMENT	::=
+		#ignore(XML)
+		[
+			"<?xml" #continue
+			"version" '=' #readCString
+			["encoding" #continue '=' #readCString]?
+			"?>"
+		]?
+		[
+			"<!DOCTYPE" #continue
+			IDENTIFIER EXTERNAL_DOCTYPE
+			[#readCString]* '>'
+		]?
+		#continue ejb_jar(this) #empty;
+
+/**
+The ejb-jar element is the root element of the EJB deployment
+descriptor. It contains
+
+	- an optional description of the ejb-jar file
+	- an optional display name
+	- an optional small icon file name
+	- an optional large icon file name
+	- mandatory structural information about all included
+	  enterprise beans
+	- a descriptor for container managed relationships, if any
+	- an optional application-assembly descriptor
+	- an optional name of an ejb-client-jar file for the ejb-jar.
+**/
+ejb_jar(myCurrentNode : node)	::= "<ejb-jar" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? [#pushItem(myCurrentNode.display_name) display_name(myCurrentNode.display_name#back)]? [#pushItem(myCurrentNode.small_icon) small_icon(myCurrentNode.small_icon#back)]? [#pushItem(myCurrentNode.large_icon) large_icon(myCurrentNode.large_icon#back)]? enterprise_beans(myCurrentNode.enterprise_beans) [#pushItem(myCurrentNode.relationships) relationships(myCurrentNode.relationships#back)]? [#pushItem(myCurrentNode.assembly_descriptor) assembly_descriptor(myCurrentNode.assembly_descriptor#back)]? [#pushItem(myCurrentNode.ejb_client_jar) ejb_client_jar(myCurrentNode.ejb_client_jar#back)]? "</ejb-jar>";
+
+/**
+The abstract-schema-name element specifies the name of the abstract
+schema type of an entity bean with cmp-version 2.x. It is used in EJB
+QL queries.
+
+For example, the abstract-schema-name for an entity bean whose local
+interface is com.acme.commerce.Order might be Order.
+
+Used in: entity
+**/
+abstract_schema_name(myCurrentNode : node)	::= "<abstract-schema-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</abstract-schema-name>";
+
+/**
+
+The acknowledge-mode element specifies whether JMS AUTO_ACKNOWLEDGE or
+DUPS_OK_ACKNOWLEDGE message acknowledgment semantics should be used
+for the onMessage message of a message-driven bean that uses bean
+managed transaction demarcation.
+
+The acknowledge-mode element must be one of the two following:
+
+	<acknowledge-mode>Auto-acknowledge</acknowledge-mode>
+	<acknowledge-mode>Dups-ok-acknowledge</acknowledgemode>
+
+Used in: message-driven
+**/
+acknowledge_mode(myCurrentNode : node)	::= "<acknowledge-mode" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</acknowledge-mode>";
+
+/**
+The assembly-descriptor element contains application-assembly information.
+
+The application-assembly information consists of the following parts:
+the definition of security roles, the definition of method
+permissions, the definition of transaction attributes for
+enterprise beans with container-managed transaction demarcation and
+a list of methods to be excluded from being invoked.
+
+All the parts are optional in the sense that they are omitted if the
+lists represented by them are empty.
+
+Providing an assembly-descriptor in the deployment descriptor is
+optional for the ejb-jar file producer.
+
+Used in: ejb-jar
+**/
+assembly_descriptor(myCurrentNode : node)	::= "<assembly-descriptor" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.security_role) security_role(myCurrentNode.security_role#back)]* [#pushItem(myCurrentNode.method_permission) method_permission(myCurrentNode.method_permission#back)]* [#pushItem(myCurrentNode.container_transaction) container_transaction(myCurrentNode.container_transaction#back)]* [#pushItem(myCurrentNode.exclude_list) exclude_list(myCurrentNode.exclude_list#back)]? "</assembly-descriptor>";
+
+/**
+The cascade-delete element specifies that, within a particular
+relationship, the lifetime of one or more entity beans is dependent
+upon the lifetime of another entity bean. The cascade-delete element
+can only be specified for an ejb-relationship-role element contained
+in an ejb-relation element in which the other ejb-relationship-role
+element specifies a multiplicity of One.
+
+Used in: ejb-relationship-role
+**/
+cascade_delete(myCurrentNode : node)	::= "<cascade-delete/>";
+
+/**
+The cmp-field element describes a container-managed field. The
+field element includes an optional description of the field, and the
+name of the field.
+
+Used in: entity
+**/
+cmp_field(myCurrentNode : node)	::= "<cmp-field" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? field_name(myCurrentNode.field_name) "</cmp-field>";
+
+/**
+The cmp-version element specifies the version of an entity bean
+with container-managed persistence.
+
+The cmp-version element must be one of the two following:
+
+	<cmp-version>1.x</cmp-version>
+	<cmp-version>2.x</cmp-version>
+
+The default value of the cmp-version element is 2.x.
+
+Used in: entity
+**/
+cmp_version(myCurrentNode : node)	::= "<cmp-version" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</cmp-version>";
+
+/**
+
+The cmr-field element describes the bean provider's view of a
+relationship. It consists of an optional description, and the name and
+the class type of a field in the source of a role of a
+relationship. The cmr-field-name element corresponds to the name used
+for the get and set accessor methods for the relationship. The
+cmr-field-type element is used only for collection-valued
+cmr-fields. It specifies the type of the collection that is used.
+
+Used in: ejb-relationship-role
+**/
+cmr_field(myCurrentNode : node)	::= "<cmr-field" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? cmr_field_name(myCurrentNode.cmr_field_name) [#pushItem(myCurrentNode.cmr_field_type) cmr_field_type(myCurrentNode.cmr_field_type#back)]? "</cmr-field>";
+
+/**
+The cmr-field-name element specifies the name of a logical
+relationship field in the entity bean class. The name of the cmr-field
+must begin with a lowercase letter. This field is accessed by methods
+whose names consist of the name of the field specified by
+cmr-field-name in which the first letter is uppercased, prefixed by
+"get" or "set".
+
+Used in: cmr-field
+**/
+cmr_field_name(myCurrentNode : node)	::= "<cmr-field-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</cmr-field-name>";
+
+/**
+The cmr-field-type element specifies the class of a
+collection-valued logical relationship field in the entity bean
+class. The value of the cmr-field-type element must be either:
+java.util.Collection or java.util.Set.
+
+Used in: cmr-field
+**/
+cmr_field_type(myCurrentNode : node)	::= "<cmr-field-type" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</cmr-field-type>";
+
+/**
+The container-transaction element specifies how the container
+must manage transaction scopes for the enterprise bean's method
+invocations. The element consists of an optional description, a list
+of method elements, and a transaction attribute. The transaction
+attribute is to be applied to all the specified methods.
+
+Used in: assembly-descriptor
+**/
+container_transaction(myCurrentNode : node)	::= "<container-transaction" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? [#pushItem(myCurrentNode.method) method(myCurrentNode.method#back)]+ trans_attribute(myCurrentNode.trans_attribute) "</container-transaction>";
+
+/**
+The description element is used to provide text describing the parent
+element.  The description element should include any information that
+the enterprise bean ejb-jar file producer wants to provide to the consumer of
+the enterprise bean ejb-jar file (i.e., to the Deployer). Typically, the tools
+used by the enterprise bean ejb-jar file consumer will display the description
+when processing the parent element that contains the description.
+
+Used in: cmp-field, cmr-field, container-transaction, ejb-jar,
+ejb-local-ref, ejb-ref, ejb-relation, ejb-relationship-role, entity,
+env-entry, exclude-list, message-driven, method, method-permission,
+query, relationship-role-source, relationships, resource-env-ref,
+resource-ref, run-as, security-identity, security-role,
+security-role-ref, session
+**/
+description(myCurrentNode : node)	::= "<description" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</description>";
+
+/**
+The destination-type element specifies the type of the JMS
+destination. The type is specified by the Java interface expected to
+be implemented by the destination.
+
+The destination-type element must be one of the two following:
+
+<destination-type>javax.jms.Queue</destination-type>
+<destination-type>javax.jms.Topic</destination-type>
+
+Used in: message-driven-destination
+**/
+destination_type(myCurrentNode : node)	::= "<destination-type" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</destination-type>";
+
+/**
+The display-name element contains a short name that is intended to be
+displayed by tools.  The display name need not be unique.
+
+Used in: ejb-jar, entity, message-driven, session
+
+Example:
+
+<display-name>Employee Self Service</display-name>
+**/
+display_name(myCurrentNode : node)	::= "<display-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</display-name>";
+
+/**
+The ejb-class element contains the fully-qualified name of the
+enterprise bean's class.
+
+Used in: entity, message-driven, session
+
+Example:
+
+<ejb-class>com.wombat.empl.EmployeeServiceBean</ejb-class>
+**/
+ejb_class(myCurrentNode : node)	::= "<ejb-class" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</ejb-class>";
+
+/**
+The optional ejb-client-jar element specifies a JAR file that contains
+the class files necessary for a client program to access the
+enterprise beans in the ejb-jar file.
+
+Used in: ejb-jar
+
+Example:
+
+<ejb-client-jar>employee_service_client.jar</ejb-client-jar>
+**/
+ejb_client_jar(myCurrentNode : node)	::= "<ejb-client-jar" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</ejb-client-jar>";
+
+/**
+The ejb-link element is used in the ejb-ref or ejb-local-ref
+elements to specify that an EJB reference is linked to an
+enterprise bean.
+
+The value of the ejb-link element must be the ejb-name of an
+enterprise bean in the same ejb-jar file or in another ejb-jar
+file in the same J2EE application unit.
+
+Alternatively, the name in the ejb-link element may be composed of a
+path name specifying the ejb-jar containing the referenced enterprise
+bean with the ejb-name of the target bean appended and separated from
+the path name by "#".  The path name is relative to the ejb-jar file
+containing the enterprise bean that is referencing the enterprise bean.
+This allows multiple enterprise beans with the same ejb-name to be
+uniquely identified.
+
+Used in: ejb-local-ref, ejb-ref
+
+Examples:
+
+	<ejb-link>EmployeeRecord</ejb-link>
+
+	<ejb-link>../products/product.jar#ProductEJB</ejb-link>
+
+**/
+ejb_link(myCurrentNode : node)	::= "<ejb-link" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</ejb-link>";
+
+/**
+The ejb-local-ref element is used for the declaration of a reference to
+an enterprise bean's local home. The declaration consists of:
+
+	- an optional description
+	- the EJB reference name used in the code of the enterprise bean
+	  that's referencing the enterprise bean
+	- the expected type of the referenced enterprise bean
+	- the expected local home and local interfaces of the referenced
+	  enterprise bean
+	- optional ejb-link information, used to specify the referenced
+	  enterprise bean
+
+Used in: entity, message-driven, session
+**/
+ejb_local_ref(myCurrentNode : node)	::= "<ejb-local-ref" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? ejb_ref_name(myCurrentNode.ejb_ref_name) ejb_ref_type(myCurrentNode.ejb_ref_type) local_home(myCurrentNode.local_home) local(myCurrentNode.local) [#pushItem(myCurrentNode.ejb_link) ejb_link(myCurrentNode.ejb_link#back)]? "</ejb-local-ref>";
+
+/**
+The ejb-name element specifies an enterprise bean's name. This name is
+assigned by the ejb-jar file producer to name the enterprise bean in
+the ejb-jar file's deployment descriptor. The name must be unique
+among the names of the enterprise beans in the same ejb-jar file.
+
+There is no architected relationship between the ejb-name in the
+deployment descriptor and the JNDI name that the Deployer will assign
+to the enterprise bean's home.
+
+The name for an entity bean with cmp-version 2.x must conform to the
+lexical rules for an NMTOKEN. The name for an entity bean with
+cmp-version 2.x must not be a reserved literal in EJB QL.
+
+Used in: entity, message-driven, method, relationship-role-source,
+session
+
+Example:
+
+<ejb-name>EmployeeService</ejb-name>
+**/
+ejb_name(myCurrentNode : node)	::= "<ejb-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</ejb-name>";
+
+/**
+The ejb-ql element contains the EJB QL query string that defines
+a finder or select query. This element is defined within the scope of
+a query element whose contents specify the finder or the select method
+that uses the query. The content must be a valid EJB QL query string
+for the entity bean for which the query is specified.
+
+The ejb-ql element must be specified for all queries that are
+expressible in EJB QL.
+
+Used in: query
+
+Example:
+<query>
+    <query-method>
+        <method-name>ejbSelectPendingLineitems</method-name>
+        <method-params/>
+    </query-method>
+    <ejb-ql>SELECT OBJECT(l) FROM LineItems l WHERE l.shipped <> TRUE
+    </ejb-ql>
+</query>
+
+**/
+ejb_ql(myCurrentNode : node)	::= "<ejb-ql" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</ejb-ql>";
+
+/**
+The ejb-ref element is used for the declaration of a reference to
+an enterprise bean's home. The declaration consists of:
+
+	- an optional description
+	- the EJB reference name used in the code of
+	  the enterprise bean that's referencing the enterprise bean
+	- the expected type of the referenced enterprise bean
+	- the expected home and remote interfaces of the referenced
+	  enterprise bean
+	- optional ejb-link information, used to specify the referenced
+	  enterprise bean
+
+Used in: entity, message-driven, session
+**/
+ejb_ref(myCurrentNode : node)	::= "<ejb-ref" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? ejb_ref_name(myCurrentNode.ejb_ref_name) ejb_ref_type(myCurrentNode.ejb_ref_type) home(myCurrentNode.home) remote(myCurrentNode.remote) [#pushItem(myCurrentNode.ejb_link) ejb_link(myCurrentNode.ejb_link#back)]? "</ejb-ref>";
+
+/**
+The ejb-ref-name element contains the name of an EJB reference. The
+EJB reference is an entry in the enterprise bean's environment and is
+relative to the java:comp/env context.  The name must be unique
+within the enterprise bean.
+
+It is recommended that name is prefixed with "ejb/".
+
+Used in: ejb-local-ref, ejb-ref
+
+Example:
+
+<ejb-ref-name>ejb/Payroll</ejb-ref-name>
+**/
+ejb_ref_name(myCurrentNode : node)	::= "<ejb-ref-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</ejb-ref-name>";
+
+/**
+The ejb-ref-type element contains the expected type of the
+referenced enterprise bean.
+
+The ejb-ref-type element must be one of the following:
+
+	<ejb-ref-type>Entity</ejb-ref-type>
+	<ejb-ref-type>Session</ejb-ref-type>
+
+Used in: ejb-local-ref, ejb-ref
+**/
+ejb_ref_type(myCurrentNode : node)	::= "<ejb-ref-type" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</ejb-ref-type>";
+
+/**
+
+The ejb-relation element describes a relationship between two
+entity beans with container-managed persistence.  An ejb-relation
+element contains a description; an optional ejb-relation-name element;
+and exactly two relationship role declarations, defined by the
+ejb-relationship-role elements. The name of the relationship, if
+specified, is unique within the ejb-jar file.
+
+Used in: relationships
+**/
+ejb_relation(myCurrentNode : node)	::= "<ejb-relation" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? [#pushItem(myCurrentNode.ejb_relation_name) ejb_relation_name(myCurrentNode.ejb_relation_name#back)]? ejb_relationship_role(myCurrentNode.ejb_relationship_role) ejb_relationship_role(myCurrentNode.ejb_relationship_role) "</ejb-relation>";
+
+/**
+The ejb-relation-name element provides a unique name for a relationship.
+
+Used in: ejb-relation
+**/
+ejb_relation_name(myCurrentNode : node)	::= "<ejb-relation-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</ejb-relation-name>";
+
+/**
+The ejb-relationship-role element describes a role within a
+relationship. There are two roles in each relationship.
+
+The ejb-relationship-role element contains an optional description; an
+optional name for the relationship role; a specification of the
+multiplicity of the role; an optional specification of cascade-delete
+functionality for the role; the role source; and a declaration of the
+cmr-field, if any, by means of which the other side of the
+relationship is accessed from the perspective of the role source.
+
+The multiplicity and role-source element are mandatory.
+
+The relationship-role-source element designates an entity bean by
+means of an ejb-name element. For bidirectional relationships, both
+roles of a relationship must declare a relationship-role-source
+element that specifies a cmr-field in terms of which the relationship
+is accessed. The lack of a cmr-field element in an
+ejb-relationship-role specifies that the relationship is
+unidirectional in navigability and the entity bean that participates
+in the relationship is "not aware" of the relationship.
+
+Used in: ejb-relation
+
+Example:
+
+<ejb-relation>
+    <ejb-relation-name>Product-LineItem</ejb-relation-name>
+    <ejb-relationship-role>
+        <ejb-relationship-role-name>product-has-lineitems
+        </ejb-relationship-role-name>
+        <multiplicity>One</multiplicity>
+        <relationship-role-source>
+        <ejb-name>ProductEJB</ejb-name>
+        </relationship-role-source>
+     </ejb-relationship-role>
+
+**/
+ejb_relationship_role(myCurrentNode : node)	::= "<ejb-relationship-role" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? [#pushItem(myCurrentNode.ejb_relationship_role_name) ejb_relationship_role_name(myCurrentNode.ejb_relationship_role_name#back)]? multiplicity(myCurrentNode.multiplicity) [#pushItem(myCurrentNode.cascade_delete) cascade_delete(myCurrentNode.cascade_delete#back)]? relationship_role_source(myCurrentNode.relationship_role_source) [#pushItem(myCurrentNode.cmr_field) cmr_field(myCurrentNode.cmr_field#back)]? "</ejb-relationship-role>";
+
+/**
+The ejb-relationship-role-name element defines a name for a role that
+is unique within an ejb-relation. Different relationships can use the
+same name for a role.
+
+Used in: ejb-relationship-role
+**/
+ejb_relationship_role_name(myCurrentNode : node)	::= "<ejb-relationship-role-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</ejb-relationship-role-name>";
+
+/**
+The enterprise-beans element contains the declarations of one or more
+enterprise beans.
+**/
+enterprise_beans(myCurrentNode : node)	::= "<enterprise-beans" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [session(myCurrentNode.session) | entity(myCurrentNode.entity) | message_driven(myCurrentNode.message_driven)]+ "</enterprise-beans>";
+
+/**
+The entity element declares an entity bean. The declaration
+consists of:
+
+	- an optional description
+	- an optional display name
+	- an optional small icon file name
+	- an optional large icon file name
+	- a unique name assigned to the enterprise bean
+	  in the deployment descriptor
+	- the names of the entity bean's remote home and remote
+          interfaces, if any
+	- the names of the entity bean's local home and local
+	  interfaces, if any
+	- the entity bean's implementation class
+	- the entity bean's persistence management type
+	- the entity bean's primary key class name
+	- an indication of the entity bean's reentrancy
+	- an optional specification of the entity bean's cmp-version
+	- an optional specification of the entity bean's abstract
+	  schema name
+	- an optional list of container-managed fields
+	- an optional specification of the primary key field
+	- an optional declaration of the bean's environment entries
+	- an optional declaration of the bean's EJB references
+	- an optional declaration of the bean's local EJB references
+	- an optional declaration of the security role references
+	- an optional declaration of the security identity
+	  to be used for the execution of the bean's methods
+	- an optional declaration of the bean's resource manager
+          connection factory references
+	- an optional declaration of the bean's
+	  resource environment references
+	- an optional set of query declarations
+	  for finder and select methods for an entity
+	  bean with cmp-version 2.x.
+
+The optional abstract-schema-name element must be specified for an
+entity bean with container-managed persistence and cmp-version 2.x.
+
+The optional primkey-field may be present in the descriptor if the
+entity's persistence-type is Container.
+
+The optional cmp-version element may be present in the descriptor if
+the entity's persistence-type is Container. If the persistence-type is
+Container and the cmp-version element is not specified, its value
+defaults to 2.x.
+
+The optional home and remote elements must be specified if the entity
+bean cmp-version is 1.x.
+
+The optional home and remote elements must be specified if the entity
+bean has a remote home and remote interface.
+
+The optional local-home and local elements must be specified if the
+entity bean has a local home and local interface.
+
+Either both the local-home and the local elements or both the
+home and the remote elements must be specified.
+
+The optional query elements must be present if the persistence-type is
+Container and the cmp-version is 2.x and query methods other than
+findByPrimaryKey have been defined for the entity bean.
+
+The other elements that are optional are "optional" in the sense that
+they are omitted if the lists represented by them are empty.
+
+At least one cmp-field element must be present in the descriptor if
+the entity's persistence-type is Container and the cmp-version is 1.x,
+and none must not be present if the entity's persistence-type is Bean.
+
+Used in: enterprise-beans
+
+**/
+entity(myCurrentNode : node)	::= "<entity" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? [#pushItem(myCurrentNode.display_name) display_name(myCurrentNode.display_name#back)]? [#pushItem(myCurrentNode.small_icon) small_icon(myCurrentNode.small_icon#back)]? [#pushItem(myCurrentNode.large_icon) large_icon(myCurrentNode.large_icon#back)]? ejb_name(myCurrentNode.ejb_name) [#pushItem(myCurrentNode.home) home(myCurrentNode.home#back)]? [#pushItem(myCurrentNode.remote) remote(myCurrentNode.remote#back)]? [#pushItem(myCurrentNode.local_home) local_home(myCurrentNode.local_home#back)]? [#pushItem(myCurrentNode.local) local(myCurrentNode.local#back)]? ejb_class(myCurrentNode.ejb_class) persistence_type(myCurrentNode.persistence_type) prim_key_class(myCurrentNode.prim_key_class) reentrant(myCurrentNode.reentrant) [#pushItem(myCurrentNode.cmp_version) cmp_version(myCurrentNode.cmp_version#back)]? [#pushItem(myCurrentNode.abstract_schema_name) abstract_schema_name(myCurrentNode.abstract_schema_name#back)]? [#pushItem(myCurrentNode.cmp_field) cmp_field(myCurrentNode.cmp_field#back)]* [#pushItem(myCurrentNode.primkey_field) primkey_field(myCurrentNode.primkey_field#back)]? [#pushItem(myCurrentNode.env_entry) env_entry(myCurrentNode.env_entry#back)]* [#pushItem(myCurrentNode.ejb_ref) ejb_ref(myCurrentNode.ejb_ref#back)]* [#pushItem(myCurrentNode.ejb_local_ref) ejb_local_ref(myCurrentNode.ejb_local_ref#back)]* [#pushItem(myCurrentNode.security_role_ref) security_role_ref(myCurrentNode.security_role_ref#back)]* [#pushItem(myCurrentNode.security_identity) security_identity(myCurrentNode.security_identity#back)]? [#pushItem(myCurrentNode.resource_ref) resource_ref(myCurrentNode.resource_ref#back)]* [#pushItem(myCurrentNode.resource_env_ref) resource_env_ref(myCurrentNode.resource_env_ref#back)]* [#pushItem(myCurrentNode.query) query(myCurrentNode.query#back)]* "</entity>";
+
+/**
+The env-entry element contains the declaration of an enterprise bean's
+environment entry. The declaration consists of an optional
+description, the name of the environment entry, and an optional
+value.  If a value is not specified, one must be supplied
+during deployment.
+
+Used in: entity, message-driven, session
+**/
+env_entry(myCurrentNode : node)	::= "<env-entry" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? env_entry_name(myCurrentNode.env_entry_name) env_entry_type(myCurrentNode.env_entry_type) [#pushItem(myCurrentNode.env_entry_value) env_entry_value(myCurrentNode.env_entry_value#back)]? "</env-entry>";
+
+/**
+The env-entry-name element contains the name of an enterprise bean's
+environment entry.  The name is a JNDI name relative to the
+java:comp/env context.  The name must be unique within an enterprise bean.
+
+Used in: env-entry
+
+Example:
+
+<env-entry-name>minAmount</env-entry-name>
+**/
+env_entry_name(myCurrentNode : node)	::= "<env-entry-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</env-entry-name>";
+
+/**
+The env-entry-type element contains the fully-qualified Java type of
+the environment entry value that is expected by the enterprise bean's
+code.
+
+The following are the legal values of env-entry-type:
+
+	java.lang.Boolean
+	java.lang.Byte
+	java.lang.Character
+	java.lang.String
+	java.lang.Short
+	java.lang.Integer
+	java.lang.Long
+	java.lang.Float
+	java.lang.Double
+
+
+Used in: env-entry
+
+Example:
+
+<env-entry-type>java.lang.Boolean</env-entry-type>
+**/
+env_entry_type(myCurrentNode : node)	::= "<env-entry-type" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</env-entry-type>";
+
+/**
+The env-entry-value element contains the value of an enterprise bean's
+environment entry. The value must be a String that is valid for the
+constructor of the specified type that takes a single String
+parameter, or for java.lang.Character, a single character.
+
+Used in: env-entry
+
+Example:
+
+<env-entry-value>100.00</env-entry-value>
+**/
+env_entry_value(myCurrentNode : node)	::= "<env-entry-value" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</env-entry-value>";
+
+/**
+The exclude list element specifies one or more methods which the
+Assembler marks to be uncallable.
+
+If the method permission relation contains methods that are in the
+exclude list, the Deployer should consider those methods to be
+uncallable.
+
+Used in: assembly-descriptor
+**/
+exclude_list(myCurrentNode : node)	::= "<exclude-list" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? [#pushItem(myCurrentNode.method) method(myCurrentNode.method#back)]+ "</exclude-list>";
+
+/**
+The field-name element specifies the name of a container managed
+field.
+
+The name of the cmp-field of an entity bean with cmp-version 2.x must
+begin with a lowercase letter. This field is accessed by methods whose
+names consists of the name of the field specified by field-name in
+which the first letter is uppercased, prefixed by "get" or "set".
+
+The name of the cmp-field of an entity bean with cmp-version 1.x must
+denote a public field of the enterprise bean class or one of its
+superclasses.
+
+Used in: cmp-field
+
+Example:
+
+
+	<field-name>firstName</field-Name>
+
+**/
+field_name(myCurrentNode : node)	::= "<field-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</field-name>";
+
+/**
+The home element contains the fully-qualified name of the enterprise
+bean's home interface.
+
+Used in: ejb-ref, entity, session
+
+Example:
+
+<home>com.aardvark.payroll.PayrollHome</home>
+**/
+home(myCurrentNode : node)	::= "<home" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</home>";
+
+/**
+The large-icon element contains the name of a file
+containing a large (32 x 32) icon image. The file
+name is a relative path within the enterprise bean's
+ejb-jar file.
+
+The image may be either in the JPEG or GIF format.
+The icon can be used by tools.
+
+Used in: ejb-jar, entity, message-driven, session
+
+Example:
+
+<large-icon>employee-service-icon32x32.jpg</large-icon>
+**/
+large_icon(myCurrentNode : node)	::= "<large-icon" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</large-icon>";
+
+/**
+
+The local element contains the fully-qualified name of the
+enterprise bean's local interface.
+
+Used in: ejb-local-ref, entity, session
+
+**/
+local(myCurrentNode : node)	::= "<local" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</local>";
+
+/**
+
+The local-home element contains the fully-qualified name of the
+enterprise bean's local home interface.
+
+Used in: ejb-local-ref, entity, session
+**/
+local_home(myCurrentNode : node)	::= "<local-home" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</local-home>";
+
+/**
+
+The message-driven element declares a message-driven bean. The
+declaration consists of:
+
+	- an optional description
+	- an optional display name
+	- an optional small icon file name
+	- an optional large icon file name
+	- a name assigned to the enterprise bean in
+	  the deployment descriptor
+	- the message-driven bean's implementation class
+	- the message-driven bean's transaction management type
+	- an optional declaration of the message-driven bean's
+	  message selector
+	- an optional declaration of the
+	  acknowledgment mode for the message-driven bean
+	  if bean-managed transaction demarcation is used
+	- an optional declaration of the
+	  intended destination type of the message-driven bean
+	- an optional declaration of the bean's environment entries
+	- an optional declaration of the bean's EJB references
+	- an optional declaration of the bean's local EJB references
+	- an optional declaration of the security
+	  identity to be used for the execution of the bean's methods
+	- an optional declaration of the bean's resource manager
+	  connection factory references
+	- an optional declaration of the bean's resource
+          environment references.
+
+Used in: enterprise-beans
+**/
+message_driven(myCurrentNode : node)	::= "<message-driven" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? [#pushItem(myCurrentNode.display_name) display_name(myCurrentNode.display_name#back)]? [#pushItem(myCurrentNode.small_icon) small_icon(myCurrentNode.small_icon#back)]? [#pushItem(myCurrentNode.large_icon) large_icon(myCurrentNode.large_icon#back)]? ejb_name(myCurrentNode.ejb_name) ejb_class(myCurrentNode.ejb_class) transaction_type(myCurrentNode.transaction_type) [#pushItem(myCurrentNode.message_selector) message_selector(myCurrentNode.message_selector#back)]? [#pushItem(myCurrentNode.acknowledge_mode) acknowledge_mode(myCurrentNode.acknowledge_mode#back)]? [#pushItem(myCurrentNode.message_driven_destination) message_driven_destination(myCurrentNode.message_driven_destination#back)]? [#pushItem(myCurrentNode.env_entry) env_entry(myCurrentNode.env_entry#back)]* [#pushItem(myCurrentNode.ejb_ref) ejb_ref(myCurrentNode.ejb_ref#back)]* [#pushItem(myCurrentNode.ejb_local_ref) ejb_local_ref(myCurrentNode.ejb_local_ref#back)]* [#pushItem(myCurrentNode.security_identity) security_identity(myCurrentNode.security_identity#back)]? [#pushItem(myCurrentNode.resource_ref) resource_ref(myCurrentNode.resource_ref#back)]* [#pushItem(myCurrentNode.resource_env_ref) resource_env_ref(myCurrentNode.resource_env_ref#back)]* "</message-driven>";
+
+/**
+The message-driven-destination element provides advice to the Deployer
+as to whether a message-driven bean is intended for a Queue or a
+Topic. The declaration consists of: the type of the message-driven
+bean's intended destination and an optional declaration of whether a
+durable or non-durable subscription should be used if the
+destination-type is javax.jms.Topic.
+
+Used in: message-driven
+**/
+message_driven_destination(myCurrentNode : node)	::= "<message-driven-destination" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' destination_type(myCurrentNode.destination_type) [#pushItem(myCurrentNode.subscription_durability) subscription_durability(myCurrentNode.subscription_durability#back)]? "</message-driven-destination>";
+
+/**
+The message-selector element is used to specify the JMS message
+selector to be used in determining which messages a message-driven
+bean is to receive.
+
+Example:
+<message-selector>JMSType = `car' AND color = `blue' AND weight &gt; 2500
+</message-selector>
+
+Used in: message-driven
+**/
+message_selector(myCurrentNode : node)	::= "<message-selector" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</message-selector>";
+
+/**
+
+The method element is used to denote a method of an enterprise
+bean's home or component interface, or, in the case of a message-driven
+bean, the bean's onMessage method, or a set of methods. The ejb-name
+element must be the name of one of the enterprise beans declared in
+the deployment descriptor; the optional method-intf element allows to
+distinguish between a method with the same signature that is multiply
+defined across in both the home and component interfaces; the
+method-name element specifies the method name; and the optional
+method-params elements identify a single method among multiple methods
+with an overloaded method name.
+
+There are three possible styles of the method element syntax:
+
+1.
+<method>
+    <ejb-name>EJBNAME</ejb-name>
+    <method-name>*</method-name>
+</method>
+
+   This style is used to refer to all the methods of the specified
+   enterprise bean's home and component interfaces.
+
+2.
+<method>
+    <ejb-name>EJBNAME</ejb-name>
+    <method-name>METHOD</method-name>
+</method>>
+
+   This style is used to refer to the specified method of the
+   specified enterprise bean. If there are multiple methods with
+   the same overloaded name, the element of this style refers to
+   all the methods with the overloaded name.
+
+
+3.
+<method>
+    <ejb-name>EJBNAME</ejb-name>
+    <method-name>METHOD</method-name>
+    <method-params>
+        <method-param>PARAM-1</method-param>
+        <method-param>PARAM-2</method-param>
+        ...
+        <method-param>PARAM-n</method-param>
+    </method-params>
+<method>
+
+
+   This style is used to refer to a single method within a set of
+   methods with an overloaded name. PARAM-1 through PARAM-n are the
+   fully-qualified Java types of the method's input parameters (if
+   the method has no input arguments, the method-params element
+   contains no method-param elements). Arrays are specified by the
+   array element's type, followed by one or more pair of square
+   brackets (e.g. int[][]). If there are multiple methods with the
+   same overloaded name, this style refers to all of the overloaded
+   methods.
+
+
+Used in: container-transaction, exclude-list, method-permission
+
+Examples:
+
+Style 1: The following method element refers to all the methods of
+the EmployeeService bean's home and component interfaces:
+
+<method>
+    <ejb-name>EmployeeService</ejb-name>
+    <method-name>*</method-name>
+</method>
+
+Style 2: The following method element refers to all the create
+methods of the EmployeeService bean's home interface(s).
+
+<method>
+    <ejb-name>EmployeeService</ejb-name>
+    <method-name>create</method-name>
+</method>
+
+
+Style 3: The following method element refers to the
+create(String firstName, String LastName) method of the
+EmployeeService bean's home interface(s).
+
+<method>
+    <ejb-name>EmployeeService</ejb-name>
+    <method-name>create</method-name>
+    <method-params>
+        <method-param>java.lang.String</method-param>
+        <method-param>java.lang.String</method-param>
+    </method-params>
+</method>
+
+
+The following example illustrates a Style 3 element with
+more complex parameter types. The method
+foobar(char s, int i, int[] iar, mypackage.MyClass mycl,
+mypackage.MyClass[][] myclaar) would be specified as:
+
+<method>
+    <ejb-name>EmployeeService</ejb-name>
+    <method-name>foobar</method-name>
+    <method-params>
+        <method-param>char</method-param>
+        <method-param>int</method-param>
+        <method-param>int[]</method-param>
+        <method-param>mypackage.MyClass</method-param>
+        <method-param>mypackage.MyClass[][]</method-param>
+    </method-params>
+</method>
+
+
+The optional method-intf element can be used when it becomes necessary
+to differentiate between a method that is multiply defined across the
+enterprise bean's home and component interfaces with the same name and
+signature.
+
+
+For example, the method element
+
+<method>
+    <ejb-name>EmployeeService</ejb-name>
+    <method-intf>Remote</method-intf>
+    <method-name>create</method-name>
+    <method-params>
+        <method-param>java.lang.String</method-param>
+        <method-param>java.lang.String</method-param>
+    </method-params>
+</method>
+
+
+can be used to differentiate the create(String, String) method defined
+in the remote interface from the create(String, String) method defined
+in the remote home interface, which would be defined as
+
+
+<method>
+    <ejb-name>EmployeeService</ejb-name>
+    <method-intf>Home</method-intf>
+    <method-name>create</method-name>
+    <method-params>
+        <method-param>java.lang.String</method-param>
+        <method-param>java.lang.String</method-param>
+    </method-params>
+</method>
+
+and the create method that is defined in the local home interface
+which would be defined as
+
+<method>
+    <ejb-name>EmployeeService</ejb-name>
+    <method-intf>LocalHome</method-intf>
+    <method-name>create</method-name>
+    <method-params>
+        <method-param>java.lang.String</method-param>
+        <method-param>java.lang.String</method-param>
+    </method-params>
+</method>
+
+
+The method-intf element can be used with all three Styles of the
+method element usage. For example, the following method element
+example could be used to refer to all the methods of the
+EmployeeService bean's remote home interface.
+
+
+<method>
+    <ejb-name>EmployeeService</ejb-name>
+    <method-intf>Home</method-intf>
+    <method-name>*</method-name>
+</method>
+
+**/
+method(myCurrentNode : node)	::= "<method" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? ejb_name(myCurrentNode.ejb_name) [#pushItem(myCurrentNode.method_intf) method_intf(myCurrentNode.method_intf#back)]? method_name(myCurrentNode.method_name) [#pushItem(myCurrentNode.method_params) method_params(myCurrentNode.method_params#back)]? "</method>";
+
+/**
+
+The method-intf element allows a method element to differentiate
+between the methods with the same name and signature that are multiply
+defined across the component and home interfaces (e.g, in both an
+enterprise bean's remote and local interfaces; in both an enterprise bean's
+home and remote interfaces, etc.)
+
+The method-intf element must be one of the following:
+
+	<method-intf>Home</method-intf>
+	<method-intf>Remote</method-intf>
+	<method-intf>LocalHome</method-intf>
+	<method-intf>Local</method-intf>
+
+Used in: method
+**/
+method_intf(myCurrentNode : node)	::= "<method-intf" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</method-intf>";
+
+/**
+The method-name element contains a name of an enterprise bean method
+or the asterisk (*) character. The asterisk is used when the element
+denotes all the methods of an enterprise bean's component and home
+interfaces.
+
+Used in: method, query-method
+**/
+method_name(myCurrentNode : node)	::= "<method-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</method-name>";
+
+/**
+The method-param element contains the fully-qualified Java type name
+of a method parameter.
+
+Used in: method-params
+**/
+method_param(myCurrentNode : node)	::= "<method-param" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</method-param>";
+
+/**
+The method-params element contains a list of the fully-qualified Java
+type names of the method parameters.
+
+Used in: method, query-method
+**/
+method_params(myCurrentNode : node)	::= "<method-params" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.method_param) method_param(myCurrentNode.method_param#back)]* "</method-params>";
+
+/**
+
+The method-permission element specifies that one or more security
+roles are allowed to invoke one or more enterprise bean methods. The
+method-permission element consists of an optional description, a list
+of security role names or an indicator to state that the method is
+unchecked for authorization, and a list of method elements.
+
+The security roles used in the method-permission element must be
+defined in the security-role elements of the deployment descriptor,
+and the methods must be methods defined in the enterprise bean's
+component and/or home interfaces.
+
+
+Used in: assembly-descriptor
+**/
+method_permission(myCurrentNode : node)	::= "<method-permission" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? #continue [[#pushItem(myCurrentNode.role_name) role_name(myCurrentNode.role_name#back)]+ | unchecked(myCurrentNode.unchecked)] [#pushItem(myCurrentNode.method) method(myCurrentNode.method#back)]+ "</method-permission>";
+
+/**
+The multiplicity element describes the multiplicity of the role that
+participates in a relation.
+
+The multiplicity element must be one of the two following:
+
+	<multiplicity>One</multiplicity>
+	<multiplicity>Many</multiplicity>
+
+Used in: ejb-relationship-role
+**/
+multiplicity(myCurrentNode : node)	::= "<multiplicity" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</multiplicity>";
+
+/**
+The persistence-type element specifies an entity bean's persistence
+management type.
+
+The persistence-type element must be one of the two following:
+
+	<persistence-type>Bean</persistence-type>
+	<persistence-type>Container</persistence-type>
+
+Used in: entity
+**/
+persistence_type(myCurrentNode : node)	::= "<persistence-type" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</persistence-type>";
+
+/**
+The prim-key-class element contains the fully-qualified name of an
+entity bean's primary key class.
+
+If the definition of the primary key class is deferred to deployment
+time, the prim-key-class element should specify java.lang.Object.
+
+Used in: entity
+
+Examples:
+
+	<prim-key-class>java.lang.String</prim-key-class>
+
+	<prim-key-class>com.wombat.empl.EmployeeID</prim-key-class>
+
+	<prim-key-class>java.lang.Object</prim-key-class>
+
+**/
+prim_key_class(myCurrentNode : node)	::= "<prim-key-class" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</prim-key-class>";
+
+/**
+The primkey-field element is used to specify the name of the primary
+key field for an entity with container-managed persistence.
+
+The primkey-field must be one of the fields declared in the cmp-field
+element, and the type of the field must be the same as the primary key
+type.
+
+The primkey-field element is not used if the primary key maps to
+multiple container-managed fields (i.e. the key is a compound key). In
+this case, the fields of the primary key class must be public, and
+their names must correspond to the field names of the entity bean
+class that comprise the key.
+
+Used in: entity
+
+Example:
+
+	<primkey-field>EmployeeId</primkey-field>
+
+**/
+primkey_field(myCurrentNode : node)	::= "<primkey-field" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</primkey-field>";
+
+/**
+The query element is used to specify a finder or select query. It
+contains
+	- an optional description of the query
+	- the specification of the finder or select
+	  method it is used by
+        - an optional specification of the result type mapping, if
+          the query is for a select method and entity objects are
+          returned.
+    	- the EJB QL query string that defines the query.
+
+Queries that are expressible in EJB QL must use the ejb-ql element to
+specify the query. If a query is not expressible in EJB QL, the
+description element should be used to describe the semantics of the
+query and the ejb-ql element should be empty.
+
+The result-type-mapping is an optional element. It can only be present
+if the query-method specifies a select method that returns entity
+objects.  The default value for the result-type-mapping element is
+"Local".
+
+
+Used in: entity
+**/
+query(myCurrentNode : node)	::= "<query" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? query_method(myCurrentNode.query_method) [#pushItem(myCurrentNode.result_type_mapping) result_type_mapping(myCurrentNode.result_type_mapping#back)]? ejb_ql(myCurrentNode.ejb_ql) "</query>";
+
+/**
+The query-method element is used to specify the method for a finder or
+select query.
+
+The method-name element specifies the name of a finder or select
+method in the entity bean's implementation class.
+
+Each method-param must be defined for a query-method using the
+method-params element.
+
+Used in: query
+
+Example:
+
+<query>
+    <description>Method finds large orders</description>
+    <query-method>
+        <method-name>findLargeOrders</method-name>
+        <method-params></method-params>
+    </query-method>
+    <ejb-ql>SELECT OBJECT(o) FROM Order o WHERE o.amount &gt; 1000</ejb-ql>
+</query>
+
+**/
+query_method(myCurrentNode : node)	::= "<query-method" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' method_name(myCurrentNode.method_name) method_params(myCurrentNode.method_params) "</query-method>";
+
+/**
+The reentrant element specifies whether an entity bean is reentrant or
+not.
+
+The reentrant element must be one of the two following:
+
+	<reentrant>True</reentrant>
+	<reentrant>False</reentrant>
+
+Used in: entity
+**/
+reentrant(myCurrentNode : node)	::= "<reentrant" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</reentrant>";
+
+/**
+
+The relationship-role-source element designates the source of a role
+that participates in a relationship. A relationship-role-source
+element uniquely identifies an entity bean.
+
+Used in: ejb-relationship-role
+**/
+relationship_role_source(myCurrentNode : node)	::= "<relationship-role-source" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? ejb_name(myCurrentNode.ejb_name) "</relationship-role-source>";
+
+/**
+The relationships element describes the relationships in which
+entity beans with container-managed persistence participate. The
+relationships element contains an optional description; and a list of
+ejb-relation elements, which specify the container managed
+relationships.
+
+
+Used in: ejb-jar
+**/
+relationships(myCurrentNode : node)	::= "<relationships" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? [#pushItem(myCurrentNode.ejb_relation) ejb_relation(myCurrentNode.ejb_relation#back)]+ "</relationships>";
+
+/**
+The remote element contains the fully-qualified name of the enterprise
+bean's remote interface.
+
+Used in: ejb-ref, entity, session
+
+Example:
+
+<remote>com.wombat.empl.EmployeeService</remote>
+**/
+remote(myCurrentNode : node)	::= "<remote" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</remote>";
+
+/**
+The res-auth element specifies whether the enterprise bean code signs
+on programmatically to the resource manager, or whether the Container
+will sign on to the resource manager on behalf of the enterprise bean. In the
+latter case, the Container uses information that is supplied by the
+Deployer.
+
+The value of this element must be one of the two following:
+
+	<res-auth>Application</res-auth>
+	<res-auth>Container</res-auth>
+
+Used in: resource-ref
+**/
+res_auth(myCurrentNode : node)	::= "<res-auth" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</res-auth>";
+
+/**
+The res-ref-name element specifies the name of a resource manager
+connection factory reference.  The name is a JNDI name relative to the
+java:comp/env context.  The name must be unique within an enterprise bean.
+
+Used in: resource-ref
+**/
+res_ref_name(myCurrentNode : node)	::= "<res-ref-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</res-ref-name>";
+
+/**
+The res-sharing-scope element specifies whether connections obtained
+through the given resource manager connection factory reference can be
+shared. The value of this element, if specified, must be one of the
+two following:
+
+	<res-sharing-scope>Shareable</res-sharing-scope>
+	<res-sharing-scope>Unshareable</res-sharing-scope>
+
+The default value is Shareable.
+
+Used in: resource-ref
+**/
+res_sharing_scope(myCurrentNode : node)	::= "<res-sharing-scope" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</res-sharing-scope>";
+
+/**
+The res-type element specifies the type of the data source. The type
+is specified by the fully qualified Java language class or interface
+expected to be implemented by the data source.
+
+Used in: resource-ref
+**/
+res_type(myCurrentNode : node)	::= "<res-type" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</res-type>";
+
+/**
+The resource-env-ref element contains a declaration of an enterprise bean's
+reference to an administered object associated with a resource
+in the enterprise bean's environment.  It consists of an optional
+description, the resource environment reference name, and an
+indication of the resource environment reference type expected by
+the enterprise bean code.
+
+Used in: entity, message-driven, session
+
+Example:
+
+<resource-env-ref>
+    <resource-env-ref-name>jms/StockQueue</resource-env-ref-name>
+    <resource-env-ref-type>javax.jms.Queue</resource-env-ref-type>
+</resource-env-ref>
+**/
+resource_env_ref(myCurrentNode : node)	::= "<resource-env-ref" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? resource_env_ref_name(myCurrentNode.resource_env_ref_name) resource_env_ref_type(myCurrentNode.resource_env_ref_type) "</resource-env-ref>";
+
+/**
+The resource-env-ref-name element specifies the name of a resource
+environment reference; its value is the environment entry name used in
+the enterprise bean code.  The name is a JNDI name relative to the
+java:comp/env context and must be unique within an enterprise bean.
+
+Used in: resource-env-ref
+**/
+resource_env_ref_name(myCurrentNode : node)	::= "<resource-env-ref-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</resource-env-ref-name>";
+
+/**
+The resource-env-ref-type element specifies the type of a resource
+environment reference.  It is the fully qualified name of a Java
+language class or interface.
+
+Used in: resource-env-ref
+**/
+resource_env_ref_type(myCurrentNode : node)	::= "<resource-env-ref-type" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</resource-env-ref-type>";
+
+/**
+The resource-ref element contains a declaration of an enterprise bean's
+reference to an external resource. It consists of an optional
+description, the resource manager connection factory reference name,
+the indication of the resource manager connection factory type
+expected by the enterprise bean code, the type of authentication
+(Application or Container), and an optional specification of the
+shareability of connections obtained from the resource (Shareable or
+Unshareable).
+
+Used in: entity, message-driven, session
+
+Example:
+
+    <resource-ref>
+	<res-ref-name>jdbc/EmployeeAppDB</res-ref-name>
+	<res-type>javax.sql.DataSource</res-type>
+	<res-auth>Container</res-auth>
+	<res-sharing-scope>Shareable</res-sharing-scope>
+    </resource-ref>
+**/
+resource_ref(myCurrentNode : node)	::= "<resource-ref" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? res_ref_name(myCurrentNode.res_ref_name) res_type(myCurrentNode.res_type) res_auth(myCurrentNode.res_auth) [#pushItem(myCurrentNode.res_sharing_scope) res_sharing_scope(myCurrentNode.res_sharing_scope#back)]? "</resource-ref>";
+
+/**
+
+The result-type-mapping element is used in the query element to specify
+whether an abstract schema type returned by a query for a select method
+is to be mapped to an EJBLocalObject or EJBObject type.
+
+The result-type-mapping element must be one of the following:
+
+        <result-type-mapping>Local</result-type-mapping>
+        <result-type-mapping>Remote</result-type-mapping>
+
+Used in: query
+**/
+result_type_mapping(myCurrentNode : node)	::= "<result-type-mapping" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</result-type-mapping>";
+
+/**
+The role-link element is a reference to a defined security role. The
+role-link element must contain the name of one of the security roles
+defined in the security-role elements.
+
+Used in: security-role-ref
+**/
+role_link(myCurrentNode : node)	::= "<role-link" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</role-link>";
+
+/**
+The role-name element contains the name of a security role.
+
+The name must conform to the lexical rules for an NMTOKEN.
+
+Used in: method-permission, run-as, security-role, security-role-ref
+**/
+role_name(myCurrentNode : node)	::= "<role-name" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</role-name>";
+
+/**
+The run-as element specifies the run-as identity to be used for the
+execution of the enterprise bean. It contains an optional description, and
+the name of a security role.
+
+Used in: security-identity
+**/
+run_as(myCurrentNode : node)	::= "<run-as" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? role_name(myCurrentNode.role_name) "</run-as>";
+
+/**
+
+The security-identity element specifies whether the caller's
+security identity is to be used for the execution of the methods of
+the enterprise bean or whether a specific run-as identity is to be
+used. It contains an optional description and a specification of the
+security identity to be used.
+
+Used in: entity, message-driven, session
+**/
+security_identity(myCurrentNode : node)	::= "<security-identity" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? #continue [use_caller_identity(myCurrentNode.use_caller_identity) | run_as(myCurrentNode.run_as)] "</security-identity>";
+
+/**
+The security-role element contains the definition of a security
+role. The definition consists of an optional description of the
+security role, and the security role name.
+
+Used in: assembly-descriptor
+
+Example:
+
+    <security-role>
+	<description>
+	    This role includes all employees who are authorized
+	    to access the employee service application.
+	</description>
+	<role-name>employee</role-name>
+    </security-role>
+**/
+security_role(myCurrentNode : node)	::= "<security-role" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? role_name(myCurrentNode.role_name) "</security-role>";
+
+/**
+The security-role-ref element contains the declaration of a security
+role reference in the enterprise bean's code. The declaration consists
+of an optional description, the security role name used in the code,
+and an optional link to a security role. If the security role is not
+specified, the Deployer must choose an appropriate security role.
+
+The value of the role-name element must be the String used as the
+parameter to the EJBContext.isCallerInRole(String roleName) method
+or the HttpServletRequest.isUserInRole(String role) method.
+
+Used in: entity, session
+
+**/
+security_role_ref(myCurrentNode : node)	::= "<security-role-ref" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? role_name(myCurrentNode.role_name) [#pushItem(myCurrentNode.role_link) role_link(myCurrentNode.role_link#back)]? "</security-role-ref>";
+
+/**
+The session element declares an session bean. The declaration consists
+of:
+	- an optional description
+	- an optional display name
+	- an optional small icon file name
+	- an optional large icon file name
+	- a name assigned to the enterprise bean
+	  in the deployment description
+	- the names of the session bean's remote home and
+	  remote interfaces, if any
+	- the names of the session bean's local home and
+	  local interfaces, if any
+	- the session bean's implementation class
+	- the session bean's state management type
+	- the session bean's transaction management type
+	- an optional declaration of the bean's environment entries
+	- an optional declaration of the bean's EJB references
+	- an optional declaration of the bean's local EJB references
+	- an optional declaration of the security role references
+	- an optional declaration of the security identity to be
+          used for the execution of the bean's methods
+	- an optional declaration of the bean's resource manager
+	  connection factory references
+	- an optional declaration of the bean's resource environment
+	  references.
+
+The elements that are optional are "optional" in the sense that they
+are omitted when if lists represented by them are empty.
+
+Either both the local-home and the local elements or both the
+home and the remote elements must be specified for the session bean.
+
+Used in: enterprise-beans
+**/
+session(myCurrentNode : node)	::= "<session" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' [#pushItem(myCurrentNode.description) description(myCurrentNode.description#back)]? [#pushItem(myCurrentNode.display_name) display_name(myCurrentNode.display_name#back)]? [#pushItem(myCurrentNode.small_icon) small_icon(myCurrentNode.small_icon#back)]? [#pushItem(myCurrentNode.large_icon) large_icon(myCurrentNode.large_icon#back)]? ejb_name(myCurrentNode.ejb_name) [#pushItem(myCurrentNode.home) home(myCurrentNode.home#back)]? [#pushItem(myCurrentNode.remote) remote(myCurrentNode.remote#back)]? [#pushItem(myCurrentNode.local_home) local_home(myCurrentNode.local_home#back)]? [#pushItem(myCurrentNode.local) local(myCurrentNode.local#back)]? ejb_class(myCurrentNode.ejb_class) session_type(myCurrentNode.session_type) transaction_type(myCurrentNode.transaction_type) [#pushItem(myCurrentNode.env_entry) env_entry(myCurrentNode.env_entry#back)]* [#pushItem(myCurrentNode.ejb_ref) ejb_ref(myCurrentNode.ejb_ref#back)]* [#pushItem(myCurrentNode.ejb_local_ref) ejb_local_ref(myCurrentNode.ejb_local_ref#back)]* [#pushItem(myCurrentNode.security_role_ref) security_role_ref(myCurrentNode.security_role_ref#back)]* [#pushItem(myCurrentNode.security_identity) security_identity(myCurrentNode.security_identity#back)]? [#pushItem(myCurrentNode.resource_ref) resource_ref(myCurrentNode.resource_ref#back)]* [#pushItem(myCurrentNode.resource_env_ref) resource_env_ref(myCurrentNode.resource_env_ref#back)]* "</session>";
+
+/**
+The session-type element describes whether the session bean is a
+stateful session or stateless session.
+
+The session-type element must be one of the two following:
+
+	<session-type>Stateful</session-type>
+	<session-type>Stateless</session-type>
+**/
+session_type(myCurrentNode : node)	::= "<session-type" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</session-type>";
+
+/**
+The small-icon element contains the name of a file
+containing a small (16 x 16) icon image. The file
+name is a relative path within the enterprise bean's
+ejb-jar file.
+
+The image may be either in the JPEG or GIF format.
+The icon can be used by tools.
+
+Used in: ejb-jar, entity, message-driven, session
+
+Example:
+
+<small-icon>employee-service-icon16x16.jpg</small-icon>
+**/
+small_icon(myCurrentNode : node)	::= "<small-icon" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</small-icon>";
+
+/**
+The subscription-durability element specifies whether a JMS topic
+subscription is intended to be durable or nondurable.
+
+The subscription-durability element must be one of the two following:
+
+	<subscription-durability>Durable</subscription-durability>
+	<subscription-durability>NonDurable</subscription-durability>
+
+Used in: message-driven-destination
+**/
+subscription_durability(myCurrentNode : node)	::= "<subscription-durability" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</subscription-durability>";
+
+/**
+The trans-attribute element specifies how the container must manage
+the transaction boundaries when delegating a method invocation to an
+enterprise bean's business method.
+
+The value of trans-attribute must be one of the following:
+
+
+	<trans-attribute>NotSupported</trans-attribute>
+	<trans-attribute>Supports</trans-attribute>
+	<trans-attribute>Required</trans-attribute>
+	<trans-attribute>RequiresNew</trans-attribute>
+	<trans-attribute>Mandatory</trans-attribute>
+	<trans-attribute>Never</trans-attribute>
+
+Used in: container-transaction
+**/
+trans_attribute(myCurrentNode : node)	::= "<trans-attribute" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</trans-attribute>";
+
+/**
+The transaction-type element specifies an enterprise bean's
+transaction management type.
+
+The transaction-type element must be one of the two following:
+
+	<transaction-type>Bean</transaction-type>
+	<transaction-type>Container</transaction-type>
+
+Used in: message-driven, session
+**/
+transaction_type(myCurrentNode : node)	::= "<transaction-type" #continue ["id" #continue '=' #readCString:myCurrentNode.id]? '>' PCDATA_LITERAL:myCurrentNode "</transaction-type>";
+
+/**
+The unchecked element specifies that a method is not checked for authorization
+by the container prior to invocation of the method.
+
+Used in: method-permission
+**/
+unchecked(myCurrentNode : node)	::= "<unchecked/>";
+
+/**
+
+The use-caller-identity element specifies that the caller's security
+identity be used as the security identity for the execution of the
+enterprise bean's methods.
+
+Used in: security-identity
+**/
+use_caller_identity(myCurrentNode : node)	::= "<use-caller-identity/>";
+
+
+
+ANY_ATTRIBUTES(myCurrentNode : node)	::=
+		[
+			IDENTIFIER:sAttribute
+			#continue '='
+			#readCString:sValue
+			=> insert #evaluateVariable("myCurrentNode." + normalizeClauseName(sAttribute)) = sValue;
+		]*;
+ANY_ELEMENTS(myCurrentNode : node)	::=
+		[
+			'<'
+			IDENTIFIER:sOpenElement
+			#continue
+			=> local sVariable = "myCurrentNode." + normalizeClauseName(sOpenElement);
+			=> pushItem #evaluateVariable(sVariable);
+			=> localref myElement = #evaluateVariable(sVariable + "#back");
+			ANY_ATTRIBUTES(myElement)
+			[
+					"/>"
+				|
+					'>' ANY_ELEMENTS(myElement) "</" IDENTIFIER:sCloseElement
+					=> if sOpenElement != sCloseElement error("'</" + sCloseElement + ">' found to close '<" + sOpenElement + ">'");
+					'>'
+			]
+		]*;
+
+PCDATA_LITERAL	::=	#!ignore #continue [ESC|~'<']*:PCDATA_LITERAL;
+EXTERNAL_DOCTYPE	::= "PUBLIC" #continue #readCString #readCString | "SYSTEM" #continue #readCString;
+IDENTIFIER : value	::=
+		#!ignore #readIdentifier:IDENTIFIER
+		['-' #readIdentifier]*:sIdentifier
+		=> set IDENTIFIER += sIdentifier;
+		;
+ESC				::=	#!ignore '\\' ['n' | 't' | 'v' | 'b' | 'r' | 'f' | 'a' | '\\' | '?' | '\'' | '"' | HEX | OCTAL];

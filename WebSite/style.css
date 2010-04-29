@@ -1,0 +1,280 @@
+body
+{
+  font: 80% "Lucida Grande", Verdana, Lucida, Helvetica, Arial, sans-serif;
+}
+
+a
+{
+  color: #436976;
+  text-decoration: none;
+}
+
+a:hover
+{
+  color: black;
+  text-decoration: underline;
+}
+
+h1
+{
+  color: #900b09;
+  background-color: transparent;
+  font-family: "Lucida Grande", Verdana, Lucida, Helvetica, Arial, sans-serif;
+  font-size: 180%;
+  font-weight: normal;
+  margin: 0;
+  margin-bottom: 1em;
+  padding: 0;
+  padding-top: 0.5em;
+  border-bottom: 2px solid #900b09;
+  clear: left;
+}
+
+h2
+{
+  color: black;
+  background-color: transparent;
+  font-family: "Lucida Grande", Verdana, Lucida, Helvetica, Arial, sans-serif;
+  font-size: 160%;
+  font-weight: normal;
+  margin: 16px;
+  margin-bottom: 1em;
+  padding: 0;
+  padding-top: 0.5em;
+  clear: left;
+}
+
+h3
+{
+  color: black;
+  background-color: transparent;
+  font-family: "Lucida Grande", Verdana, Lucida, Helvetica, Arial, sans-serif;
+  font-size: 140%;
+  font-weight: normal;
+  margin: 32px;
+  margin-bottom: 1em;
+  padding: 0;
+  padding-top: 0.5em;
+  clear: left;
+}
+
+h4
+{
+  color: black;
+  background-color: transparent;
+  font-family: "Lucida Grande", Verdana, Lucida, Helvetica, Arial, sans-serif;
+  font-size: 120%;
+  font-weight: normal;
+  margin: 48px;
+  padding: 0;
+  padding-top: 0.5em;
+  border-bottom: 1px solid #8cacbb;
+  clear: left;
+}
+
+h5
+{
+  color: black;
+  background-color: transparent;
+  font-family: "Lucida Grande", Verdana, Lucida, Helvetica, Arial, sans-serif;
+  font-size: 110%;
+  font-weight: normal;
+  margin: 64px;
+  margin-bottom: 1em;
+  padding: 0;
+  padding-top: 0.5em;
+  clear: left;
+}
+
+#logobar
+{
+  background: #eeeedd url(images/logo.png) no-repeat bottom left;
+  padding: 0;
+  margin: 0;
+}
+
+#logobar p
+{
+  margin: 0;
+  padding: 0;
+  text-indent: -100em;
+}
+
+#topbar, #bottombar, #subnodes, #tools, #feeds
+{
+  background-color: #eeeedd;
+  border: 1px solid #8cacbb;
+}
+
+#parentnodes
+{
+  background-color: #f5f5f5;
+  border: 1px solid #929292;
+  border-top: 0;
+}
+
+#parentnodes ul li.first:before
+{
+  content: "";
+}
+
+#parentnodes ul li:before
+{
+  content: " > ";
+}
+
+#subnodes ul
+{
+  list-style-image: url(images/list.png);
+}
+
+#comment_link a
+{
+  padding: 0.5em;
+  background-color: #f5f5f5;
+  border: 1px solid #929292;
+}
+
+#linkbar ul li a img
+{
+  height: 15px;
+  width: 80px;
+  border: 0;
+}
+
+ul.flags
+{
+  clear: both;
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+ul.flags li
+{
+  float: left;
+  padding: 0;
+  margin: 0;
+  margin-right: 1em;
+}
+
+ul.flags li img
+{
+  border: 0;
+}
+
+#content pre
+{
+ font-family : Courier;
+ font-size : 12px;
+ background-color: #dee7ec;
+}
+
+div.comment
+{
+  margin-bottom: 1em;
+}
+
+/* Site plan */
+#site_plan_box li
+{
+  list-style-type: none;
+}
+
+#site_plan_box span
+{
+  float: left;
+}
+
+#site_plan_box ul, #site_plan_box li
+{
+  clear: both;
+}
+
+#site_plan_box li
+{
+  padding-top: 1em;
+}
+
+#site_plan_box ul.flag
+{
+  clear: none;
+  float: left;
+  padding: 0;
+}
+
+#site_plan_box ul.flag li
+{
+  clear: none;
+  float: left;
+  margin-left: 1em;
+  padding-top: 0;
+}
+
+a.expanded_node, a.collapsed_node
+{
+  float: left;
+  width: 20px;
+  height: 20px;
+  text-indent: -100em;
+  text-decoration: none;
+}
+
+a.expanded_node
+{
+  background: url(images/minus.png) no-repeat center left;
+}
+
+a.collapsed_node
+{
+  background: url(images/plus.png) no-repeat center left;
+}
+
+/* History */
+tr.first
+{
+  border: 1px solid black;
+  background-color: #dee7ec;
+}
+
+tr.even
+{
+  background-color: #dee7ec;
+}
+
+td
+{
+  padding-left: 2em;
+  padding-right: 2em;
+}
+
+tr.unchanged
+{
+  background-color: #ececf7;
+}
+
+tr.added td, tr.removed td, tr.changed td
+{
+  background-color: red;
+}
+
+/* Comments */
+#comments a.delete
+{
+  clear: both;
+  float: left;
+  width: 5em;
+  padding-top: 0.5em;
+  padding-right: 1em;
+}
+
+div.comment
+{
+  float: left;
+  width: 60%;
+}
+
+#comments div.spacer
+{
+  clear: both;
+}

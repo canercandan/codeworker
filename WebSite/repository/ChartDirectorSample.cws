@@ -1,0 +1,378 @@
+//**************************************************************************
+//               Chart Director 4.0 to CodeWorker: main script
+//
+//
+// Here is the main script for the development process of te porting to
+// CodeWorker, leading the parsing of the C++ API and the translation of C++
+// examples to CodeWorker's scripts and the execution of examples and the
+// translation of the HTML documentation of the C++ API.
+//
+// It illustrates the strength of a generative programming approach on
+// projects where a business heart splits to multiple derivatives.
+//
+// Here, the business heart leading to derivatives is the C++ API. The
+// multiple derivatives are the porting to programming languages and to
+// documentations.
+//
+// Rationale of a generative programming approach in Chart Director:
+// a change of the C++ API should have repercussions on the multiple
+// derivatives automatically. Further: a change of a C++ example
+// should too.
+//
+// Descriptions of scripts called here:
+//    - "ChartDirector.cwp": parses the C++ API,
+//    - "chartDirector.cwt": generates the C++ binding to CodeWorker,
+//    - "ChartDirectorSample.cwp": translates C++ examples to CodeWorker,
+//    - "ChartDirectorHTML.cwp": translates the HTML doc of the C++ API
+//
+// The command line expects only one argument (except this script itself):
+// the complete path leading to "chartdir.h". Example:
+//    codeworker ChartDirectorSample.cws c:/win32App/ChartDirector/include/chartdir.h
+//**************************************************************************
+
+//--------------------------------------------------------------------------
+//               Useful functions, used here and in other scripts
+//--------------------------------------------------------------------------
+
+// Given a *Array type, return the corresponding C++ underlying base type
+function getBaseTypeOfArray(sArrayType : value) {
+	switch(sArrayType) {
+		case "IntArray": return "int";
+		case "DoubleArray": return "double";
+		case "StringArray": return "char";
+	}
+}
+
+// Check whether the class 'sClass1Name' is an instance of 'sClass2Name'.
+// Note that if a class was declared as a typedef of anther class,
+// we consider an inheritance link.
+// Note that a class inherits from itself.
+// Note that the cast operator of a ArrayMath to a DoubleArray gives
+// rise to an implicit inheritance relationship.
+function instanceOf(sClass1Name : value, sClass2Name : value) {
+	if !project.classes.findElement(sClass1Name) return false;
+	localref theClass1 = project.classes[sClass1Name];
+	if theClass1.name = sClass2Name return true;
+	if theClass1.typedef return instanceOf(theClass1.typedef, sClass2Name);
+	if sClass1Name == "ArrayMath" && sClass2Name == "DoubleArray" return true;
+	return instanceOf(theClass1.inheritance, sClass2Name);
+}
+
+// Given a type name (class name or enum type name), returns the complete
+// definition of it:
+//   - attributes + methods for a class,
+//   - enum values for an enum type
+function getType(scope : node, sType : value, definedType : reference) {
+	if scope.classes.findElement(sType) {
+		ref definedType = scope.classes[sType];
+		return true;
+	}
+	if scope.enums.findElement(sType) {
+		ref definedType = scope.enums[sType];
+		return true;
+	}
+	if scope.parent.existVariable() return getType(scope.parent, sType, definedType);
+	return false;
+}
+
+// Given a type definition, returns whether it must be translated to a CodeWorker's
+// tree node or not. If not, it is a value (always a string in CodeWorker, even numbers).
+function isNodeType(theType : node) {
+	if theType == "base" {
+		if theType.is_reference return true;
+		if !theType.pointers return false;
+		if theType.name == "char" && $theType.pointers.length() <= 1$ return false;
+	} else if theType == "enum" {
+		if theType.is_reference return true;
+		if !theType.pointers return false;
+	}
+	return true;
+}
+
+// Given a type definition, return its translation for the HTML documentation
+// of CodeWorker. Example: the C++ types 'int*' or 'IntArray' are translated
+// to 'int[]'. It is purely informational: CodeWorker is an untyped language.
+function getHTMLType(theType : node) {
+	local sType;
+	if theType == "class" {
+		sType = "<a href=\"" + theType.name + ".htm\">" + theType.name + "</a>";
+	} else if theType == "enum" {
+		if theType.name sType = "enum " + theType.name;
+		else sType = "int";
+	} else if theType == "array" || theType == "special" {
+		sType = rsubString(theType.name.toLowerString(), 5) + "[]";
+	} else if theType == "special" {
+		sType = "<a href=\"" + theType.name + ".htm\">" + theType.name + "</a>";
+	} else {
+		if theType.name == "char" {
+			if theType.pointers {
+				if theType.pointers == "*" {
+					sType = "string";
+				} else {
+					sType = "string[]";
+				}
+			} else {
+				sType = "char";
+			}
+		} else if theType.pointers {
+			sType = theType.name + "[]";
+		} else {
+			sType = theType.name;
+		}
+	}
+	return sType;
+}
+
+// Given a type definition, return the corresponding C++ writing for the
+// CodeWorker's plugin, such as one can assign a value to a variable
+// declared of this type.
+// It means that we ignore the 'const' specifier.
+// Note that a class name maps to a C++ wrapper, which embeds the
+// Chart Director's instance.
+// Note that '*Array' classes and 'MemBlock' (called 'array' and 'special'
+// types respectively), are specialized respectively to 'CWPlugin*Array'
+// and 'CWPluginMemBlock', so as to free memory automatically once the
+// container isn't necessary anymore.
+function getCppValueType(theType : node) {
+	local sType;
+	if theType == "class" {
+		sType = "External" + theType.name + "ValueNode*";
+	} else if theType == "enum" {
+		if theType.name sType = "Chart::" + theType.name;
+		else sType = "int";
+	} else if theType == "array" || theType == "special" {
+		sType = "CWPlugin" + theType.name;
+	} else {
+		sType = theType.name + theType.pointers + theType.is_reference;
+	}
+	return sType;
+}
+
+// Given a type definition, return the corresponding C++ writing for the
+// CodeWorker's plugin.
+// Note that 'special' and 'array' types are never given by value, to
+// avoid a useless implicit copy.
+// See 'getCppValueType' for more information.
+function getCppType(theType : node) {
+	local sType;
+	if theType.const sType = "const ";
+	sType += getCppValueType(theType);
+	if (theType == "array" || theType == "special") && !theType.pointers && !theType.is_reference {
+		sType += '&';
+	}
+	return sType;
+}
+
+// Given a type definition, return the corresponding C++ writing for the
+// CodeWorker's plugin, intended to return the result of a function.
+// Here, 'special' and 'array' types have to be returned without managing
+// the memory, to avoid freeing twice the internal array.
+function getCppReturnType(theType : node) {
+	local sType;
+	if theType.const sType = "const ";
+	if theType == "class" {
+		sType += "External" + theType.name + "ValueNode*";
+	} else if theType == "enum" {
+		if theType.name sType += "Chart::" + theType.name;
+		else sType += "int";
+	} else if theType == "array" || theType == "special" {
+		sType += theType.name;
+	} else {
+		sType += theType.name + theType.pointers + theType.is_reference;
+	}
+	return sType;
+}
+
+
+//--------------------------------------------------------------------------
+//                          Parsing of the C++ API
+//--------------------------------------------------------------------------
+
+// Parses "chartdir.h", passed as the first and lonely argument of the
+// command line. The static parse tree 'project' (accessible from anywhere)
+// is populated with the parse data.
+parseAsBNF("chartDirector.cwp", project, _ARGS#front);
+
+// The local variable 'sPath' is worth the root directory for Chart Director.
+// It is assigned to the working path of CodeWorker, avalaible by calling
+// 'getWorkingPath()' anywhere in scripts.
+local sPath = _ARGS#front;
+sPath = sPath.replaceString('\\', '/');
+local iIndex = sPath.findLastString("/include/");
+if $iIndex <= 0$ error("\"chartdir.h\" expected in a \"include/\" directory!");
+sPath = sPath.leftString($iIndex + 1$);
+setWorkingPath(sPath);
+
+// Parses "FinanceChart.h", adding parse data the static tree node 'project'.
+parseAsBNF("chartDirector.cwp", project, sPath + "include/FinanceChart.h");
+
+
+//--------------------------------------------------------------------------
+//                     Generation of the CodeWorker's plugin
+//--------------------------------------------------------------------------
+
+// Generate the binding between the C++ API and CodeWorker: the source code
+// of the plugin.
+generate("chartDirector.cwt", project, sPath + "plugins/CodeWorker/CHARTcw.cpp");
+
+
+//--------------------------------------------------------------------------
+//               Translation of the C++ examples to CodeWorker
+//--------------------------------------------------------------------------
+
+// The generation of the plugin must have been lauched before: the parse tree
+// is decorated during this phase with some information useful for translating
+// the C++ to CodeWorker correctly.
+
+// Load the complete directory of C++ examples recursively.
+traceLine("==============================================================================");
+local theDirectory;
+if !exploreDirectory(theDirectory, sPath + "cppdemo", true) error("unable to find the directory");
+
+// Iterate on all C++ examples, for creating the CodeWorker examples and
+// testing them.
+local badFiles; // will contain CW files, which don't compile under CodeWorker
+local badExecs; // will contain those, which throw an error during the execution
+local iTotalFiles = 0; // number of examples found
+foreach i in theDirectory.directories {
+	// extract the name of the C++ example
+    local sExample = getShortFilename(i.rsubString(1));
+    // compose the directory name of the corresponding CodeWorker example
+	local sCWDemo = sPath + "cwdemo/" + sExample + '/';
+    local bCppExample = false; // true if it is really an example directory
+    foreach j in i.files {
+		if j.endString(".cpp") {
+			// a C++ file found: it is an example directory
+			bCppExample = true;
+		} else if !j.endString(".dsp") {
+			// copy all image files necessary for the correct
+			// execution of the example
+			copyFile(i + j, sCWDemo + j);
+		}
+    }
+    if bCppExample {
+		// this directory was containing a C++ example
+		traceLine("- example '" + sExample + "':");
+		local sError;
+		try {
+			increment(iTotalFiles);
+			// Translate the C++ example to a CodeWorker script
+			translate("ChartDirectorSample.cwp", project, i + sExample + ".cpp", sCWDemo + sExample + ".cws");
+			try {
+				local dontCare;
+				// execute the CodeWorker example into its directory directly
+				changeDirectory(sCWDemo);
+				executeString(dontCare, loadFile(sCWDemo + sExample + ".cws"));
+			} catch(sError) {
+				// error during the execution of the script:
+				// we store the file name and the error encountered
+				insert badExecs[sExample] = sError;
+			}
+		} catch(sError) {
+			// error during the translation to CodeWorker:
+			// we store the file name and the error encountered
+			insert badFiles[sExample] = sError;
+		}
+	}
+}
+
+if !badFiles.empty() {
+	// Some C++ examples were unable to translate:
+	// we display their name and their error message
+	traceLine("**** bad files = " + badFiles.size() + '/' + iTotalFiles + " (" + floor($100 * badFiles.size() / iTotalFiles$) + "%):");
+	foreach i in badFiles {
+		traceLine('\t' + i.key());
+		traceLine(i);
+	}
+}
+
+if !badExecs.empty() {
+	// Some C++ examples were unable to execute correctly:
+	// we display their name and their error message
+	traceLine("**** bad executions = " + badExecs.size() + '/' + iTotalFiles + " (" + floor($100 * badExecs.size() / iTotalFiles$) + "%):");
+	foreach i in badExecs {
+		traceLine('\t' + i.key());
+		traceLine(i);
+	}
+}
+
+
+//--------------------------------------------------------------------------
+//          Generation of an HTML file for manual regression tests,
+//              waiting for a license key before automating it.
+//--------------------------------------------------------------------------
+
+// Generation of an HTML file, which shows all charts, the C++ one on the
+// left-hand side and the CodeWorker one on the right-hand side, for a manual
+// comparison of the results.
+generate({<html><body><table>
+@
+	local theDirectory;
+	if !exploreDirectory(theDirectory, this + "cwdemo", true) error("unable to find the directory");
+
+	foreach i in theDirectory.directories {
+		foreach j in i.files {
+			if j.endString(".png") {
+				@<tr><td>@j@</td><td><img src="@i + j@"></td><td><img src="@this + "doc/cdcppdoc/images/" + j@"></td></tr>
+@
+			}
+		}
+	}
+	@</body></html>
+@	
+}, sPath, sPath + "cwdemo/compare.html");
+
+
+//--------------------------------------------------------------------------
+//                  Generation of the HTML documentation
+//--------------------------------------------------------------------------
+
+traceLine("==============================================================================");
+forfile i in sPath + "doc/cdcppdoc/*.*" {
+	// 26 files cannot be translated to CodeWorker: they don't delong to the
+	// C++ API directly. Their detection was automatic: the translator refused them
+	// because they didn't conform to a template among those found into the API.
+	if i.endString(".htm") && !i.endString("/cdml.htm") && !i.endString("/cdref.htm") &&
+	   !i.endString("/Chart.htm") && !i.endString("/classlib.htm") && !i.endString("/cover.htm") &&
+	   !i.endString("/datatypes.htm") && !i.endString("/dateformat.htm") && !i.endString("/financedemo.htm") &&
+	   !i.endString("/firstmfcproject.htm") && !i.endString("/firstproject.htm") && !i.endString("/fontspec.htm") &&
+	   !i.endString("/gettingstarted.htm") && !i.endString("/index.htm") && !i.endString("/indexleft.htm") &&
+	   !i.endString("/indextop.htm") && !i.endString("/install.htm") && !i.endString("/international.htm") &&
+	   !i.endString("/intro.htm") && !i.endString("/license.htm") && !i.endString("/novalue.htm") &&
+	   !i.endString("/objectmodel.htm") && !i.endString("/paramsub.htm") && !i.endString("/shapespec.htm") &&
+	   !i.endString("/whatsnext.htm") && !i.endString("/xycharts.htm") && !i.endString("/indexindex.htm") {
+	    // Translate the HTML file of the C++ API to an HTML file for CodeWorker:
+	    //   - change the C++ examples to CodeWorker scripts,
+	    //   - change the C++ function prototypes to CodeWorker prototypes,
+	    //   - ...
+		translate("ChartDirectorHTML.cwp", project, i, sPath + "doc/cdcwdoc/" + i.getShortFilename());
+	} else if !existFile(sPath + "doc/cdcwdoc/" + i.getShortFilename()) {
+		// Be careful not to erase an HTML file for CodeWorker, changed by hand!
+		// For memory, files done by hand:
+		//    - cdml.htm
+		//    - cdref.htm
+		//    - Chart.htm
+		//    - classlib.htm
+		//    - cover.htm
+		//    - datatypes.htm
+		//    - dateformat.htm
+		//    - firstproject.htm
+		//    - fontspec.htm
+		//    - gettingstarted.htm
+		//    - index.htm
+		//    - indexindex.htm
+		//    - indexleft.htm
+		//    - indextop.htm
+		//    - install.htm
+		//    - international.htm
+		//    - intro.htm
+		//    - license.htm
+		//    - novalue.htm
+		//    - objectmodel.htm
+		//    - paramsub.htm
+		//    - shapespec.htm
+		//    - whatsnext.htm
+		//    - xycharts.htm
+		copyFile(i, sPath + "doc/cdcwdoc/" + i.getShortFilename());
+	}
+}

@@ -1,0 +1,366 @@
+translation_unit	::= #ignore(C++) #continue [aspect | class | include]* #empty;
+
+#include "CommonLanguage-Scanner.cwp"
+
+class	::= CLASS #continue type_name ';';
+
+include	::=
+	'#' INCLUDE
+	#continue
+	[
+			'<' [~['>' | '\n']]* '>'
+		|
+			'\"' [~['\"' | '\n']]* '\"'
+	];
+
+aspect	::=
+		[PRIVILEGED]?
+		=> local listOfModifiers;
+		modifiers(listOfModifiers)
+		ASPECT #continue #readIdentifier
+		[EXTENDS #continue type_name]?
+		[IMPLEMENTS #continue type_name [',' #continue type_name]*]?
+		[DOMINATES #continue type_name]?
+		'{'
+		aspect_body
+		'}';
+
+aspect_body	::= [pointcut | advice | aspect_declare | aspect_member]*;
+
+pointcut	::=
+		=> local listOfModifiers;
+		modifiers(listOfModifiers)
+		POINTCUT #continue
+		#readIdentifier
+		'(' formals ')'
+		[
+				#check(listOfModifiers.findElement("abstract")) #continue ';'
+			|
+				#continue ':' pointcut_expression ';'
+		]
+		;
+
+advice	::=
+		[STRICTFP]?
+		advice_type #continue
+		[
+			THROWS #continue
+			type_name
+			[',' #continue type_name]*
+		]?
+		':' pointcut_expression
+		'{' body<"advice"> '}';
+
+advice_type	::=
+		BEFORE #continue '(' formals ')'
+	|
+		AFTER #continue '(' formals ')'
+		[
+			#readIdentifier:{"returning", "throwing"}
+			['(' #continue formal ')']?
+		]?
+	|
+		['*' | target_language_type] AROUND #continue '(' formals ')'
+	;
+
+special_forms	::=
+		#readIdentifier:{"thisJoinPoint", "thisJoinPointStaticPart", "thisEnclosingJoinPointStaticPart"}
+	|
+		PROCEED '(' #continue arguments ')' // only in an 'around' advice
+	;
+
+aspect_declare	::=
+		DECLARE
+		#continue
+		[
+				PARENTS
+				#continue
+				':'
+				type_pattern
+				[
+						EXTENDS #continue type_name
+					|
+						IMPLEMENTS #continue
+						type_name [',' #continue type_name]*
+				]
+			|
+				#readIdentifier:{"warning", "error"}
+				#continue
+				':'
+				pointcut_expression
+				':'
+				#readCString
+			|
+				SOFT
+				#continue
+				':'
+				type_pattern
+				':'
+				pointcut_expression
+			|
+				PRECEDENCE
+				#continue
+				':'
+				type_pattern [',' #continue type_pattern]*
+		]
+		';'
+		;
+
+aspect_member	::=
+		=> local listOfModifiers;
+		modifiers(listOfModifiers)
+		[
+				// Abstract method
+				#check(listOfModifiers.findElement("abstract"))
+				target_language_type [type_for_member '.']? #readIdentifier
+				#continue
+				'(' formals ')'
+				[
+					THROWS
+					#continue
+					type_name [',' #continue type_name]*
+				]?
+				';'
+			|
+				// constructor or method
+				[
+						type_for_member
+						'.' #continue NEW
+					|
+						target_language_type
+						[type_for_member '.']? #readIdentifier
+				]
+				'(' #continue formals ')'
+				[
+					THROWS
+					#continue
+					type_name [',' #continue type_name]*
+				]?
+				'{' #continue body<"member"> '}'
+			|
+				// Attribute
+				target_language_type
+				[type_for_member '.']? #readIdentifier
+				#continue
+				[
+					'='
+					#continue
+					target_language_expression
+				]?
+				';'
+		];
+
+pointcut_expression	::= and_pointcut_expression ["||" #continue and_pointcut_expression]*;
+and_pointcut_expression	::= literal_pointcut_expression ["&&" #continue literal_pointcut_expression]*;
+literal_pointcut_expression	::=
+		'(' #continue pointcut_expression ')'
+	|
+		'!' #continue literal_pointcut_expression
+	|
+		primitive_pointcut
+	|
+		user_defined_pointcut;
+
+primitive_pointcut	::=
+		#readIdentifier:{"call", "execution", "withincode"}
+		'('
+		#continue
+		[method_pattern | constructor_pattern]
+		')'
+	|
+		#readIdentifier:{"initialization", "preinitialization"}
+		'('
+		#continue
+		constructor_pattern
+		')'
+	|
+		#readIdentifier:{"staticinitialization", "handler", "within"}
+		'('
+		#continue
+		type_pattern
+		')'
+	|
+		#readIdentifier:{"get", "set"}
+		'('
+		#continue
+		field_pattern
+		')'
+	|
+		#readIdentifier:"adviceexecution"
+		'('
+		#continue
+		')'
+	|
+		#readIdentifier:{"cflow", "cflowbelow"}
+		'('
+		#continue
+		pointcut_expression
+		')'
+	|
+		IF
+		'('
+		#continue
+		target_language_expression
+		')'
+	|
+		#readIdentifier:{"this", "target"}
+		'('
+		#continue
+		[type_name | variable_name]
+		')'
+	|
+		ARGS
+		'('
+		#continue
+		[type_pattern | variable_pattern]
+		[
+			','
+			#continue
+			[type_pattern | variable_pattern]
+		]*
+		')'
+	;
+
+user_defined_pointcut	::= [#readIdentifier '.']? #readIdentifier '(' #continue [#readIdentifier [',' #readIdentifier]*]? ')';
+
+method_pattern	::=
+		[modifier_pattern]*
+		target_language_type_pattern
+		[type_pattern '.']?
+		id_pattern
+		'(' #continue parameters_pattern ')'
+		[THROWS #continue throws_pattern]?
+		;
+
+constructor_pattern	::=
+		[modifier_pattern]*
+		[type_pattern '.']?
+		NEW
+		'(' #continue parameters_pattern ')'
+		[THROWS #continue throws_pattern]?
+		;
+
+field_pattern	::=
+		[modifier_pattern]*
+		target_language_type_pattern
+		[type_pattern '.']?
+		id_pattern
+		!'('
+		;
+
+parameters_pattern	::= [target_language_type_pattern [',' #continue target_language_type_pattern]*]?;
+
+target_language_type_pattern	::=	and_target_language_type_pattern ["||" #continue and_target_language_type_pattern]*;
+and_target_language_type_pattern	::=	literal_target_language_type_pattern ["&&" #continue literal_target_language_type_pattern]*;
+literal_target_language_type_pattern	::=
+		id_pattern ['+']?["[]"]?
+	|
+		'!' #continue target_language_type_pattern
+	|
+		'(' #continue target_language_type_pattern ')'
+	;
+
+type_pattern	::=	and_type_pattern ["||" #continue and_type_pattern]*;
+and_type_pattern	::=	literal_type_pattern ["&&" #continue literal_type_pattern]*;
+literal_type_pattern	::=
+		id_pattern ['+']?["[]"]?
+	|
+		'!' #continue type_pattern
+	|
+		'(' #continue type_pattern ')'
+	;
+id_pattern	::= '*' | ".." | #readIdentifier #!ignore ['*']?;
+variable_pattern	::= type_pattern;
+modifier_pattern	::= modifier;
+
+
+modifiers(listOfModifiers : node)	::= [modifier:sModifier => insert listOfModifiers[sModifier];]*;
+
+modifier : value	::= #readIdentifier:modifier modifier<modifier>;
+
+modifier<sNoModifier> : value	::= #check(false);
+modifier<"public"> : value	::= #check(true);
+modifier<"protected"> : value	::= #check(true);
+modifier<"private"> : value	::= #check(true);
+modifier<"static"> : value	::= #check(true);
+modifier<"final"> : value	::= #check(true);
+modifier<"abstract"> : value	::= #check(true);
+
+type_name	::= #readIdentifier [['.'| "::"] #continue #readIdentifier]*;
+
+type_for_member	::=
+		[
+			#readIdentifier:sType
+			['.'| "::"]
+			=> pushItem myMemberType = sType;
+		]+;
+
+formals	::= [formal [',' #continue formal]*]?;
+formal	::= target_language_type #readIdentifier;
+
+
+target_language_expression	::= body<"expression">;
+
+body<sType>	::=
+	!ignore
+	[
+			['@' | "<%"]
+			[
+					#readCString
+				|
+					^['@' | "%>"]
+			]*
+			['@' | "%>"]
+			
+		|
+			'{' #continue body<sType> '}'
+		|
+			^'}'
+	]*;
+
+keyword<sAny>	::= #check(false);
+keyword<"class">	::= #check(true);
+keyword<"privileged">	::= #check(true);
+keyword<"aspect">	::= #check(true);
+keyword<"extends">	::= #check(true);
+keyword<"implements">	::= #check(true);
+keyword<"dominates">	::= #check(true);
+keyword<"abstract">	::= #check(true);
+keyword<"pointcut">	::= #check(true);
+keyword<"strictfp">	::= #check(true);
+keyword<"before">	::= #check(true);
+keyword<"after">	::= #check(true);
+keyword<"around">	::= #check(true);
+keyword<"throws">	::= #check(true);
+keyword<"proceed">	::=	#check(true);
+keyword<"declare">	::= #check(true);
+keyword<"parents">	::= #check(true);
+keyword<"soft">	::= #check(true);
+keyword<"precedence">	::= #check(true);
+keyword<"if">	::= #check(true);
+keyword<"args">	::=	#check(true);
+keyword<"new">	::= #check(true);
+
+CLASS	::= #readIdentifier:"class";
+INCLUDE	::= #readIdentifier:"include";
+PRIVILEGED	::= #readIdentifier:"privileged";
+ASPECT	::= #readIdentifier:"aspect";
+EXTENDS	::= #readIdentifier:"extends";
+IMPLEMENTS	::= #readIdentifier:"implements";
+DOMINATES	::= #readIdentifier:"dominates";
+ABSTRACT	::= #readIdentifier:"abstract";
+POINTCUT	::= #readIdentifier:"pointcut";
+STRICTFP	::= #readIdentifier:"strictfp";
+BEFORE	::= #readIdentifier:"before";
+AFTER	::= #readIdentifier:"after";
+AROUND	::= #readIdentifier:"around";
+THROWS	::= #readIdentifier:"throws";
+PROCEED	::=	#readIdentifier:"proceed";
+DECLARE	::= #readIdentifier:"declare";
+PARENTS	::= #readIdentifier:"parents";
+SOFT	::= #readIdentifier:"soft";
+PRECEDENCE	::= #readIdentifier:"precedence";
+IF	::= #readIdentifier:"if";
+ARGS	::=	#readIdentifier:"args";
+NEW	::= #readIdentifier:"new";
+

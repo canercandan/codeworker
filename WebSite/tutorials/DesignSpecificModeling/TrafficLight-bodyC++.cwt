@@ -1,0 +1,37 @@
+#include "@this.name@.h"
+
+@this.name@::~@this.name@() {}
+
+bool @this.name@::start() const {
+	return @this.start@;
+}
+
+int @this.name@::executeRules() {
+	int iTriggeredRules = 0;
+	if (bActive_) {
+@
+foreach i in this.rules {
+	@		if (executeRule@i.key()@()) ++iTriggeredRules;
+@
+}
+setProtectedArea("Post Processing, to handle by hand!");
+@	}
+	return iTriggeredRules;
+}
+
+@
+
+#include "TrafficLight-sharedFunctions.cws"
+
+foreach i in this.rules {
+	@bool @this.name@::executeRule@i.key()@() {
+	if (!bActive_ || (@convertAntecedent2Cpp(i.condition)@ == false)) return false;
+@
+	foreach j in i.actions {
+		writeAction<j>(j, "C++");
+	}
+	@	return true;
+}
+
+@
+}

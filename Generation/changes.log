@@ -1,0 +1,1688 @@
+///////////////////////////////////////////////////////////////////////////////////////
+//                   Historizes all changes made since version 1.40                  //
+///////////////////////////////////////////////////////////////////////////////////////
+// Parsed by 'ChangesLogParsing.cwp'
+//
+/*	types of change:
+		- 'behaviour' '"' <LaTeX-in-strings> '"'
+		- 'bug_fix' '"' <LaTeX-in-strings> '"'
+		- 'deprecated' '"' <LaTeX-in-strings> '"'
+		- 'feature' '"' <LaTeX-in-strings> '"'
+		- 'function' <function-name> [',' <function-name>] ';'
+		- 'improvement' '"' <LaTeX-in-strings> '"'
+		- 'note' '"' <LaTeX-in-strings> '"'
+		- 'option' <command-line-option> [',' <command-line-option>] ';'
+
+	change	::= <date> ['"' <caller> '"']? <type-of-change>
+	remark	::= "remark" <LaTeX-in-strings>
+*/
+
+/* TODO
++ > A l'usage l'utilisations des crochets pour les * + ? etc est fastidieuse
+  > est-il possible de les enlever ?
+*/
+
+version "4.5.3"
+	abstract
+		"Bug fixes and improvement of the generation headers."
+
+	17apr2010	"Lionel Auroux"	bug_fix
+		"Compliance of some C++ source files with GCC 4.3 and more."
+	17apr2010	"Lionel Auroux"	bug_fix
+		"Prevent against multiple inclusions of the same script file."
+	17apr2010	improvement
+		"The generation headers now show a reference to the template-based script that caused the generation of a file (feature initiated by the function \\textbf{setGenerationHeader()})."
+
+version "4.5.2"
+	abstract
+		"Bug fix and extension of the CodeWorker's Java API."
+
+	02aug2008	"Franck Watteau"	feature
+		"Java API: add of an item into the array of a parse tree."
+	31jul2008	"Franck Watteau"	bug_fix
+		"Java API: the execution of a parse/template-based/translation script before compiling"
+		"the corresponding script now raises an exception rather than provoking a crash."
+
+version "4.5.1"
+	abstract
+		"New syntax to describe a tree (assignment of a constant tree + saveProject()) and some other improvements."
+	27jul2008	"Lionel Auroux"	improvement
+		"The syntax of a constant tree declaration has changed. It better describes arrays and subnodes."
+	27jul2008	"Lionel Auroux"	improvement
+		"The procedure \\textbf{saveProject()} now saves a parse tree to a specific text format when the"
+		"file name ends with the extension \".txt\". This format is the same as for a constant tree declaration."
+	27jul2008	"Lionel Auroux"	function loadProject;
+	27jul2008	"Thor"	bug_fix
+		"\\textbf{\\#continue} throwing their own syntax error messages now properly raise the error:"
+		"the call stack displays the most relevant syntax error message instead of the most general."
+	27jul2008	"Thierry WILMOT"	improvement
+		"During a debug session that executes a parse script, the current location in the parsed file (line/column)"
+		"is displayed after each progression (step in/out) in the controlling sequence."
+
+version "4.5"
+	abstract
+		"Some new features in relation with extended-BNF parsing, some bug fixes, a new built-in function and a syntax extension."
+	14jul2008	bug_fix
+		"A segmentation fault was appearing when default values were assigned to some parameters of instantiated"
+		"template functions."
+	13jul2008	function existDirectory;
+	05may2008	"Hugo Beauzee-Luyssen"	feature
+		"\\textbf{\\#foreach} is a new BNF directive directive in charge of iterating on a BNF sequence."
+	04may2008	"Hugo Beauzee-Luyssen"	feature
+		"\\textbf{\\#applyBNFRule} is a directive to put into a piece of common script."
+		"Its purpose consists of calling a BNF non-terminal from inside common script embedded into a BNF script."
+	03may2008	"David GIRON"	feature
+		"Syntax extension to express variable increment (\\textbf{\\$i++\\$;} and decrement (\\textbf{\\$i--\\$;}"
+	03may2008	feature
+		"New family of insignificant characters (extended BNF script): \\textbf{spaces}. \\textbf{\\#ignore(spaces)}"
+		"consumes all space (ASCII 0x20) and tabulation characters encountered."
+	15dec2007	"Thierry WILMOT"	bug_fix
+		"In some cases under Window platform, the interpreter is unable to start, due to an unitialized memory read."
+
+version "4.4"
+	abstract
+		"Behaviour enhancement of two existing BNF directives and add-in of a new built-in function. Two Bugs were fixed."
+	18nov2007	"David GIRON"	improvement
+		"\\textbf{\\#break} is now able to leave a BNF repeating sequence conditionally. The condition follows the"
+		"directive name between parenthesis, exactly like a \\textbf{\\#check}."
+	18nov2007	"David GIRON"	improvement
+		"\\textbf{\\#continue} can describe a custom error message. This message will be thrown instead of the default"
+		"one ordinarly raised by the BNF engine as soon as a failure occurs in the rest of the BNF sequence."
+	18nov2007	"Benjamin GUESNEAU"	function extendExecutedScript;
+	13oct2007	"Pierre Mitzrahi"	bug_fix
+		"The call of \\textbf{equalTrees} without declaring each tree parameter before caused a segmentation fault."
+	13oct2007	"Sergey Sikorskiy"	bug_fix
+		"CodeWorker won't compile NetSocket.cpp wiht gcc 4.1.2 on x86_64 platform."
+
+version "4.3"
+	abstract
+		"A new BNF directive and a new built-in function were added. Some Bugs were fixed."
+	28jul2007	"Pierre Mitzrahi"	feature
+		"New BNF directive: \\textbf{\\#EOL}. It consumes an end of line."
+	31jul2007	function equalLastWrittenChars;
+	25jul2007	"Benoit Barraud"	option stdout;
+	15jul2007	"Markus Marb"	bug_fix
+		"A bug was fixed in hexadecimal conversion."
+	25jun2007	"Lionel Auroux"	bug_fix
+		"GCC 4.0 was refusing to compile a source file of CodeWorker: \"GrfForeach.h\"."
+	10jun2007	"Nicolas Marin"	bug_fix
+		"CodeWorker didn't take into account UNC paths in MS-Windows properly."
+
+version "4.2"
+	abstract
+		"Concepts of Aspect-Oriented Programming added to code generation: joint points,"
+		"advices and point cuts. It allows a better separation of concerns inside a"
+		"code generation process, leading to improve the reading and maintenance of"
+		"big and complex template-based scripts."
+		"Addition of a new BNF directive: \\textbf{\\#readPythonString}."
+		"Some bug fixes and updates made in the CodeWorker's Eclipse Plugin."
+	30apr2006	feature
+		"Concepts of Aspect-Oriented Programming added to code generation: joint points,"
+		"advices and point cuts. It allows a better separation of concerns inside a"
+		"code generation process, leading to improve the reading and maintenance of"
+		"big and complex template-based scripts."
+	29apr2006	feature
+		"Addition of a new BNF directive: \\textbf{\\#readPythonString}. A Python string is surrounded by"
+		"simple quotes or double quotes. Moreover, it accepts triple-quoted strings."
+
+version "4.1.2"
+	abstract
+		"Bugs were fixed on HTTP POST/GET requests and on the loading policy of a"
+		"dynamically-linked plugin under Windows."
+	31mar2006	bug_fix
+		"The loading policy of a dynamically-linked plugin was extremely restricted under"
+		"Windows NT4, 2000 and more recent versions. The DLL was necessarily at the"
+		"same place as CodeWorker's executable. Now, the interpreter also looks into"
+		"include path and current working directory."
+	17mar2006	"Mohamed Selim BEN ALI"	feature
+		"\\textit{treeNode}\\textbf{\\#root} navigates directly to the root node"
+		"of the parse tree that contains \\textit{treeNode}."
+	16mar2006	bug_fix
+		"POST and GET HTTP requests (using \\textit{cURL} library) weren't working"
+		"properly."
+
+version "4.1.1"
+	abstract
+		"Minor bug fixes. Eclipse plugin updated (version 1.1.1)."
+	11mar2006	"Mohamed Selim BEN ALI"	bug_fix
+		"During the execution of a BNF-extended script through the C++/Java/C# API"
+		"of CodeWorker, the use of BNF directives \\textbf{\\#insert} and"
+		"\\textbf{\\#pushItem} was causing a crash."
+	31jan2006	"Justin CINJELJ"	bug_fix
+		"Compile fix for Red Hat 9."
+	03jan2006	bug_fix
+		"A bug was fixed in creating a new parse file from Eclipse."
+
+version "4.1"
+	abstract
+		"The Eclipse plugin has been enhanced (version 1.1.0)."
+		"Some new switches have been added on the command line."
+		"the -debug switch now admits an optional parameter to ask for a remote"
+		"socket control of the debugging session."
+		"The coverage recording of output files wasn't working perfectly, and"
+		"a minor bug fixed for Windows platform."
+	07dec2005	improvement
+		"New Eclipse plugin for CodeWorker (version 1.1.0). It can work with CodeWorker 4.0.4"
+		"or higher. User's manual about the plugin is accessible from the menu item"
+		"\\textbf{\"Help/Help Contents\"}."
+	07dec2005	improvement
+		"the \textbf{-debug} switch now admits an optional parameter to ask for a remote"
+		"socket control of the debugging session."
+	04dec2005	improvement
+		"The coverage recording of output files wasn't working perfectly."
+		"This process consists of keeping a trace of the generation: what piece of"
+		"the output file was generated by what instruction of the template-based script."
+	03dec2005	bug_fix
+		"On Windows, if may have arrived that a generated file was locked for writing."
+	27nov2005	option report, nowarn;
+
+version "4.0.3"
+	abstract
+		"Some minor bugs were fixed."
+		"An Eclipse plugin now exists for CodeWorker's script. Its first version is limited to"
+		"syntax highlighting, text hover over built-in functions, and integrated documentation."
+		"The reference manual and a tutorial are accessible from the \"Help Contents\" menu topic."
+	20nov2005	feature
+		"An Eclipse plugin now exists for CodeWorker's script. This first version is limited to"
+		"syntax highlighting, text hover over built-in functions, and integrated documentation."
+		"The reference manual and a tutorial are accessible from the \"Help Contents\" menu topic."
+	19nov2005	bug_fix
+		"The UNIX/Linux makefile hadn't been updated: reference to 3 source files was lacking."
+	19nov2005 bug_fix
+		"\"GrfExecutionContext.cpp\" was unable to compile under UNIX."
+	04nov2005 bug_fix
+		"Trouble on \\samp{\\#readNumeric}, when the first character to parse starts with a \\textit{plus} symbol."
+
+version "4.0.2"
+	13sep2005	"Guillermo M. Zambrino"	feature
+		"Now, CodeWorker has a logo! Many thanks to its author: \\textit{Guillermo M. Zambrino}."
+	28oct2005	"DSM workshop/OOPSLA 2005"	feature
+		"A functionality has been added to code generation, to know where the output comes from."
+		"In CodeWorker, an output file is generated by a template-based script. The directive \\samp{\\#coverage}"
+		"asks for the recording of every script position giving rise to a piece of the output file."
+		""
+		"This directive is located anywhere in the script to study, and requires a variable the code"
+		"generation engine will populate with coverage data."
+		"The variable will be a list of sorted segments, entirely determined by their starting position"
+		"in the output and by the position of the corresponding script \\textit{instruction}."
+		"These positions are respectively stored in attributes \\textbf{output} and \\textbf{script}."
+		""
+		"An added information is assigned to the node representing the segment. It specifies the type of"
+		"script \\textit{instruction}, belonging to one of the following values:"
+		"\\begin{itemize}"
+		"\t\\item \\textbf{R}: rough text,"
+		"\t\\item \\textbf{W}: expression, variable or call to a \\samp{writeText()}-family procedure,"
+		"\t\\item \\textbf{I}: call to a \\samp{insertText()}-family procedure,"
+		"\t\\item \\textbf{O}: call to \\samp{overwritePortion()} procedure,"
+		"\\end{itemize}"
+		""
+		"\\textbf{Example:}\\\\"
+		"\\texttt{\\textbf{rough text @}this.name\\textbf{@ EOL\\\\"
+		"@}\\\\"
+		"\\#coverage(project.coverage)}"
+		""
+		"Let say that \\textit{this.name} is worth \"VARIABLE_CONTENT\"."
+		"The script generates the following output file:\\\\"
+		"\\texttt{rough text VARIABLE_CONTENT EOL}"
+		""
+		"The variable \\samp{project.coverage} is then worth the following list:\\\\"
+		"\\texttt{\\makebox[0.4cm][r]{\\textrm{\\tiny     }} [\"0\"] = \"R\"\\\\"
+		"\\makebox[0.8cm][r]{\\textrm{\\tiny     }} |--+\\\\"
+		"\\makebox[1.2cm][r]{\\textrm{\\tiny     }} script = 12\\\\"
+		"\\makebox[1.2cm][r]{\\textrm{\\tiny     }} output = 0\\\\"
+		"\\makebox[0.4cm][r]{\\textrm{\\tiny     }} [\"1\"] = \"W\"\\\\"
+		"\\makebox[0.8cm][r]{\\textrm{\\tiny     }} |--+\\\\"
+		"\\makebox[1.2cm][r]{\\textrm{\\tiny     }} script = 21\\\\"
+		"\\makebox[1.2cm][r]{\\textrm{\\tiny     }} output = 11\\\\"
+		"\\makebox[0.4cm][r]{\\textrm{\\tiny     }} [\"2\"] = \"R\"\\\\"
+		"\\makebox[0.8cm][r]{\\textrm{\\tiny     }} |--+\\\\"
+		"\\makebox[1.2cm][r]{\\textrm{\\tiny     }} script = 29\\\\"
+		"\\makebox[1.2cm][r]{\\textrm{\\tiny     }} output = 27}"
+
+version "4.0.1"
+	abstract
+		"Some minor bugs were fixed and some small features were added."
+		"The native translation of CodeWorker scripts to C++ has been improved."
+	18aug2005	bug_fix
+		"The compilation of the scripting language failed on functions where the first argument"
+		"was optional and when the function was called without parameter."
+	18aug2005	improvement
+		"Now, the procedure \\samp{incrementIndentLevel()} and the function \\samp{decrementIndentLevel()}"
+		"accept both an optional argument, giving the indentation depth to add or remove."
+	15aug2005	improvement
+		"The native translation of CodeWorker scripts to C++ has been improved, to get ready for"
+		"the version 4.1, which will be the first release where scripts can substitute the CodeWorker"
+		"scripting language for Java (C++ intervenes here!)."
+	15aug2005	bug_fix
+		"In extended-BNF scripts, the directive \\samp{\\#matching} wasn't recording properly the coverage"
+		"of parsed files by production rules."
+	31jul2005	feature
+		"New BNF statement modifier \\samp{\\#debug}: it opens a debug session, applied on the rest"
+		"of the BNF sequence."
+
+version "4.0"
+	remark
+		"Major evolution of CodeWorker. It is now possible to integrate the CodeWorker's features"
+		"about parsing and code generation into C++, Java and .NET applications."
+	abstract
+		"Major evolution of CodeWorker. It is now possible to integrate the CodeWorker's features"
+		"about parsing and code generation into C++, Java and .NET applications."
+		""
+		"The native translation of CodeWorker scripts to C++ produces a C++ source code, which can be"
+		"optimized. Moreover, developers can replace the scripting language of CodeWorker by C++, using the"
+		"switch -c++2target."
+		""
+		"Some new features were added for improving the debugging."
+	27jul2005	"Alan CYMENT"	feature
+		"Implementation of a .NET assembly for CodeWorker."
+	24jul2005	feature
+		"The native translation of CodeWorker scripts to C++ produces a C++ source code, which can be"
+		"optimized. The C++ optimizer is an external program-transformation script that the developer"
+		"can reuse to implement his own transformations."
+	24jul2005	option "c++2target", home, verbose;
+	23jul2005	feature
+		"Implementation of Java interface for CodeWorker (JNI library and org.codeworker.jni package)."
+	17jul2005	feature
+		"Add of the new BNF directive \\samp{\\textbf{\\#}matching(\\textit{variable})}:\\\\"
+		"this directive is put outside the production rules. It informs the BNF engine to record the coverage of"
+		"the input text by the production rules. Concretely, the BNF engine stores into a variable the list of all"
+		"production rules of the grammar and all areas they match in the input text, once the execution has finished."
+		"The BNF engine populates the variable specified by the directive.\\\\"
+		"\\texttt{"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} Tree structure of the variable populated by the BNF engine\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} for \\#matching(variable):\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} * variable\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.4cm][l]{}|\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.4cm][l]{}+- rules[]: list of production rules (signatures only),\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.4cm][l]{}|\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.4cm][l]{}+- areas[]: table of positions in the input text, the\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.8cm][l]{}|         key is worth the position P; no item value\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.8cm][l]{}+- begin[]: (optional) table for every rule starting\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.8cm][l]{}|  |       at the position P, the key being worth the\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.8cm][l]{}|  |       ending position Pf (decreasing order)\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.8cm][l]{}|  +- []: list of all rules matching [P, Pf] exactly,\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.8cm][l]{}|\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.8cm][l]{}+- end[]: (facultative) table for every rule ending at\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[1.2cm][l]{}|       the position P, the key being worth the\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[1.2cm][l]{}|       starting position Pi (increasing order)\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[1.2cm][l]{}+- []: list of all rules matching [Pi, P] exactly,}"
+	28jun2005	"Jon SCOBIE"	improvement
+		"During a debugging session, break/watch points are numbered for an easy deletion."
+	23jun2005	"Brian WELCH"	improvement
+		"Now, the function \\samp{traceObject()} can display a tree up to a given depth (second optional parameter)."
+
+version "3.12"
+	abstract
+		"A debugger session now accepts conditional breakpoints and handles watchpoints"
+		"on variables, conditional or not. These new features are very efficient to"
+		"accelerate the debugging."
+	23jun2005	"Jon SCOBIE"	feature
+		"A debugger session now accepts conditional breakpoints and handles watchpoints"
+		"on variables, conditional or not. These new features are very efficient to"
+		"accelerate the debugging."
+		""
+		"Conditions conform to the syntax of usual CodeWorker expressions."
+		"When a break/watchpoint is activated, a block of instructions can be executed."
+		"The block is a piece of CodeWorker script."
+
+version "3.11.0.1"
+	abstract
+		"The C++ source file ExprScriptFunction.cpp wasn't capable to compile correctly; fixed."
+		"Two C++ source files had to be removed from the Makefile: GrfCreateIterator.cpp and GrfCreateReverseIterator.cpp; fixed."
+	07jun2005	bug_fix
+		"The C++ source file \\samp{ExprScriptFunction.cpp} wasn't capable to compile correctly; fixed."
+		"Two C++ source files had to be removed from the Makefile: \\samp{GrfCreateIterator.cpp} and \\samp{GrfCreateReverseIterator.cpp}; fixed."
+version "3.11"
+	abstract
+		"Now, the scripting language handles the notion of iterator."
+		"Some functions turning around iterators were added."
+	03jun2005	deprecated
+		"In precedent versions, a function prototype may accept the parameter type \\textbf{index}"
+		"(rarely used). It is now obsolete and changed to \\textbf{iterator}."
+	03jun2005	"Jon SCOBIE"	function duplicateIterator, createIterator, createReverseIterator, index, prec, next;
+
+version "3.10.4"
+	abstract
+		"Two minor bugs were fixed, one impacting the code generation in automatic indent mode."
+		"The function saveProject() and loadBinaryFile() and loadFile() accept a second"
+		"parameter, facultative. Some inopportune warnings were removed."
+	26may2005	improvement
+		"The function \\samp{saveProject()} accepts a facultative parameter \\textit{nodeToSave},"
+		"which is a subtree you wish to save to XML; by default, the saved node is the global tree"
+		"\\samp{project}."
+	26may2005	improvement
+		"The functions \\samp{loadFile()} and \\samp{loadBinaryFile()} accept a facultative parameter"
+		"\\textit{length} indicating the number of bytes to read."
+	26may2005	bug_fix
+		"A template-based script using the automatic indent mode (function \\samp{incrementIndentLevel})"
+		"for generating text, may badly copy rough text after a new line starting with more tabulations"
+		"than the current indent level."
+	18may2005	bug_fix
+		"A translation script, passed as a relative path in the function \\samp{translateString},"
+		"may haven't been found."
+version "3.10.3"
+	abstract
+		"Some bugs were fixed, notably concerning the debug sessions in CodeWorker."
+		"Under Linux/UNIX, you can now take advantage of GNU Readline in the interpreter"
+		"and debug sessions."
+		"Any function prototype now accepts default values for their parameters;"
+		"indentFile() and inputLine() prototypes have changed to admit a second"
+		"and facultative argument."
+	11may2005	bug_fix
+		"A bug was fixed in the parsing of an unary minus operator applied on a literal"
+		"of the scripting language."
+	10may2005	bug_fix
+		"A ellipsis exception had appeared while applying the function \\samp{slideNodeContent()}"
+		"on a non-existent node."
+	04may2005	"Jon SCOBIE"	improvement
+		"During a debugging session, type \\textbf{c all} instead of \\textbf{c} to clear"
+		"all breakpoints. At the same time, it fixes a bug."
+	28apr2005	"Jon SCOBIE"	improvement
+		"Jon Scobie has contributed on adding \\textit{\\textbf{GNU ReadLine}} into CodeWorker,"
+		"making the use of the internal debugger more comfortable."
+		""
+		"Set the preprocessor definition \\textbf{CODEWORKER_GNU_READLINE} to take"
+		"advantage of this improvement, after you have installed the \\textit{GNU ReadLine} utility."
+	28apr2005	"Jon SCOBIE"	feature
+		"During a debugging session, type \\textbf{b list} to display the complete list"
+		"of all current breakpoints."
+	28apr2005	improvement
+		"Now, one may specify default values on parameters of a user function prototype:"
+		""
+		"\\texttt{function f(p1 : value, p2 : node = project, p3 : value = 3.14) \\{\\\\"
+		"\\makebox[0.8cm][l]{}...\\\\"
+		"\\}}"
+	28apr2005	"Jon SCOBIE"	improvement
+		"Now, a facultative argument can be specified to the function \\samp{indentFile()}, used"
+		"to force the indentation mode to apply on the file. Another facultative argument"
+		"has appeared on the function \\samp{inputLine()}, to specify a prompt sequence."
+	27apr2005	"Jon SCOBIE"	bug_fix
+		"A crash had appeared while scrutating an object in a debugging session,"
+		"with command \\textbf{o}."
+	27apr2005	"Jon SCOBIE"	improvement
+		"In a debugging session, it isn't necessary to specify the script file"
+		"anymore, if the breakpoint must be set in the script the interrupted"
+		"control sequence belongs to."
+
+version "3.10"
+	remark
+		"Until the version 3.9.1, the scripting language didn't oblige to declare the"
+		"variables before their use. From now, it is recommended and a warning message"
+		"appears otherwise, but the beheviour doesn't change yet. This warning is going"
+		"to mutate to an error message in future versions of the interpreter."
+		""
+		"In front of a variable name never declared, the behaviour remains the same:"
+		"the variable is inserted to the \\samp{this} context automatically as a new"
+		"attribute."
+		""
+		"The rationale is firstly for improving the reliability of scripts, detecting"
+		"bad variable names like spelling or foolish mistake in the name, and secondly"
+		"to prepare the introduction of Object-Oriented Programming into CodeWorker."
+	abstract
+		"Until the version 3.9.1, the scripting language didn't oblige to declare the"
+		"variables before their use. From now, it is recommended and a warning message"
+		"appears otherwise, but the beheviour doesn't change yet. This warning is going"
+		"to mutate to an error message in future versions of the interpreter."
+		"For the rest, correction of a bug introduced in the version 3.9, and another"
+		"about the \\#nextStep BNF operator. The functions allFloatingLocations() and"
+		"addToDate() were added."
+	20apr2005	improvement
+		"As stipulated in the remarks heading, a warning occurs if a variable is used"
+		"whitout having been declared before. These warnings are going to become an"
+		"error message in the future, so it is strongly recommended to hunt them now,"
+		"by declaring these variables as local or global or as attributes belonging"
+		"to the \\samp{this} context tree (default behaviour)."
+	19apr2005	function addToDate;
+	14apr2005	bug_fix
+		"About the parsing: \\samp{\\#nextStep} had no effect on the jump operator"
+		"when put in a \\textit{repeat} regular expression."
+	13apr2005	function allFloatingLocations;
+	12apr2005	bug_fix
+		"Correction of a bug introduced in the version 3.9: the BNF predefined non-terminal"
+		"\\samp{\\#readNumeric} wasn't returning the correct floating-point value after the reading"
+		"of a signed exponent."
+
+version "3.9"
+	abstract
+		"Some bugs were fixed on the native C++ translation of CW's scripts."
+		"Five new functions were added. Some minor bugs were corrected."
+		"The plugins (external packages as dynamic libraries) must be recompiled."
+	07apr2005	function removeFloatingLocation;
+	06apr2005	behaviour
+		"The predefined tree node \\textbf{null} was added, and means a null pointer."
+		"Used for writing plugins, for instance, passing a tree node as a null pointer to C++."
+	10mar2005	bug_fix
+		"The directive \\samp{\\#nextStep} should have been available in"
+		"a repeating regular expression ([...]*), but wasn't."
+	17feb2005	function sqrt;
+	16feb2005	"Laurent DOMINGOS"	function sleep;
+	10feb2005	bug_fix
+		"Correction on the C++ native translation of BNF template non-terminals."
+	10feb2005	bug_fix
+		"In functions \\samp{parseAsBNF()} and \\samp{translate()} and \\samp{expand()} and \\samp{generate()},"
+		" looking for the BNF-parsing script filename starts at the current directory of the callee."
+	10feb2005	bug_fix
+		"During the native translation of scripts to C++, the leader script might have"
+		"an empty C++ short file name in a rare use-case."
+	27jan2005	function incrementIndentLevel, decrementIndentLevel;
+	21jan2005	"Markus MARB"	bug_fix
+		"The native C++ translation of a constant tree wasn't implemented yet."
+		"A constant tree is, for instance: "
+		"\\texttt{\\{\"a\", \\{\"yellow\", \"red\"\\}, \"submarine\"\\}}"
+	20jan2005	function isNumeric;
+
+version "3.8.4"
+	19jan2005	"Lionel AUROUX"	bug_fix
+		"The predefined BNF terminal \\samp{\\#readCChar} had the same behaviour as \\samp{\\#readCString},"
+		"instead of consuming a C-like constant character."
+	18jan2005	bug_fix
+		"the assignment operator \\samp{setall} was causing a memory leak or a crash on attributes pointing to a reference, while freeing the memory."
+	11jan2005	bug_fix
+		"The BNF directive \\samp{\\#skipIgnore} wasn't applying correctly the implicit copy:"
+		"the scanned text was repeated twice."
+	10jan2005	bug_fix
+		"An ellipsis exception may have occured when a dynamic library module was compiled"
+		"with a too ancient version of CodeWorker (\"CW4dl.h\" or \"CppParsingTree.h\" or \"CGRuntime.h\" has changed)."
+	17dec2004	bug_fix
+		"The \\textit{and-or junction} BNF operator (symbol \\textbf{&|} was returning a failure when the"
+		"right-hand side member was unable to match the input."
+	15dec2004	bug_fix
+		"The interpreter crashed when an argument had the same name as the BNF rule."
+		"Now, an explicit error message occurs."
+	08dec2004	improvement
+		"During the parsing of a floating-point number, the dot is consumed only if it doesn't exist a second dot just behind the first one:"
+		"\\begin{itemize}"
+		"\t\\item if you parse a double at the beginning of \\samp{\"2. is a floating point\"}, \\textbf{2.} is consumed."
+		"\t\\item if you parse a double at the beginning of \\samp{\"2..n\"}, \\textbf{2} only is consumed."
+		"\\end{itemize}"
+	03dec2004	"Eric NICOLAS" improvement
+		"Now, the compiler detects an attempt to declare the reserved variables \\samp{this} or  \\samp{project} as \\textit{local} or \\textit{global}."
+	02dec2004	function insertElementAt;
+	29nov2004	feature
+		"Add of \\samp{\\#ignore(Ada)} for eliminating Ada comments and whitespaces in a \\textit{extended-BNF} script."
+
+version "3.8.3"
+	abstract
+		"Some bugs were fixed in the native C++ translation of scripts for building a standalone executable."
+		"Some other little bugs were corrected."
+	19nov2004	"Laurent RIESTERER"	bug_fix
+		"A temporary file, used during the code generation of a source file, was badly formed:"
+		"the path was containing anti-slashes, which may have caused some troubles on non-Windows platforms."
+	14nov2004	bug_fix
+		"About expressions embedded between tags \\samp{@@} in a template-based script:"
+		"starting with a constant string was causing an unrelevant syntax error."
+	04nov2004	bug_fix
+		"the assignment operator \\samp{setall} wasn't copying attributes pointing to a reference correctly."
+	26oct2004	improvement
+		"Now, the binding to the dynamic library \\textit{libcurl} is resolved while using the \\textit{cURL} API."
+		"So, the dynamic library doesn't need to be present if you don't use the \\textit{cURL} API."
+	29oct2004	bug_fix
+		"An imperative parse script (\\samp{parseFree()}) wasn't reentrant completely:"
+		"an ellipsis exceptions might have appeared in some cases."
+	26oct2004	bug_fix
+		"In the native C++ translation of scripts for building a standalone executable:"
+		"\\begin{itemize}"
+		"\t\\item \\textit{aVariable}\\textbf{\\#front} ignored during the C++ translation in some cases,"
+		"\t\\item the keyword \\textbf{cascading} wasn't taken into account while translating \\samp{foreach} and \\samp{forfile},"
+		"\t\\item the return value of a BNF symbol (piece of text matched) wasn't concatenated correctly when needed"
+		"(functionality rarely required)."
+		"\\end{itemize}"
+
+version "3.8.2"
+	abstract
+		"The syntax of the scripting language was extended on variable declarations."
+		"The C++ header \"CW4dl.h\" for building dynamic library plugins, was enriched."
+		"Some bugs were fixed (in functions saveProject() and composeHTMLLikeString(), and in the precompilation of a BNF script)."
+		"The BNF script engine was improved on some little details."
+	03oct2004	improvement
+		"Now, the \\samp{local} and \\samp{localref} and \\samp{global} statements accept more than one variable declaration, separated by commas."
+		""
+		"Example:\\\\"
+		"\\texttt{// declaration of 3 local variables in one shot\\\\"
+		"local a = \"1\", b, c= 2;}"
+	03oct2004	feature
+		"Now, the path of dynamic library plugins can end with a \\textbf{\\samp{\"_d\"}} suffix for debug version."
+		""
+		"Examples for a plugin named \\textit{MyModule}:\\\\"
+		"\\texttt{MyModule\\textbf{cw_d}.dll\\\\"
+		"MyModule\\textbf{cw_d}.so}"
+	03oct2004	feature
+		"Add of \\samp{setIntValue()} and \\samp{setDoubleValue()} in the interpreter interface, as declared"
+		"in \\textit{\"CW4dl.h\"}, used for building C++ dynamic library plugins intended to extend \\textit{CodeWorker}."
+	26sep2004	bug_fix
+		"Infinite loop in \\samp{saveProject()}, when the root graph \\samp{project} has a child referring to a node."
+	19sep2004	bug_fix
+		"Sometimes, the interpreted was detecting a syntax error on the extended-BNF directive \\samp{\\#catch},"
+		"while the writing was correct."
+	18sep2004	"Thierry WILMOT"	bug_fix
+		"Now, the declaration of a local variable \\textit{my-local-variable} must be explicit, before calling"
+		"the BNF directives \\samp{\\#insert(my-local-variable)} or \\samp{\\#pushItem(my-local-variable)}."
+	07sep2004	bug_fix
+		"the function \\samp{composeHTMLLikeString()} recognizes the apostrophe correctly, and doesn't invert this"
+		"character anymore."
+	07sep2004	improvement
+		"An error message raises if the BNF directive \\samp{\\#nextStep} is used outside of a \\textit{jump} or \\textit{repeat} regular expression."
+
+version "3.8"
+	abstract
+		"The native C++ translation of CodeWorker's scripts was corrected on some points."
+		"The exit statement and a new BNF directive (#readUptoIgnore) were added."
+		"The functions completeDate() and scanFiles() have been improved."
+		"A bug was fixed in the function formatDate(): to convert from a 2-digits year to a 4-digits one."
+		"The functions get/setLocation() are deprecated and renamed get/setInputLocation()."
+	22aug2004	improvement
+		"Now, the function \\samp{scanFiles()} accepts a path in the short filename pattern."
+		""
+		"\\textbf{Example:}\\\\"
+		"\\texttt{scanFiles(dir, \"project/examples\", \"src/*.cpp\", true)}\\\\"
+		"will filter:\\\\"
+		"\\texttt{\"project/examples/airplanes/src/*.cpp\"\\\\"
+		"\"project/examples/boats/yacht/src/*.cpp\"\\\\"
+		"\"project/examples/bicycles/src/*.cpp\"}"
+	15aug2004	bug_fix
+		"The native C++ translation of CodeWorker's scripts has been corrected on some features:"
+		"\\begin{itemize}"
+		"\t\\item the BNF directive \\samp{\\#skipIgnore},"
+		"\t\\item the BNF binary operator \\samp{\\textbf{'|>'}},"
+		"\\end{itemize}"
+	14aug2004	improvement
+		"A new format type was added to the function \\samp{completeDate}: \\textbf{\\samp{'\\%|'}}."
+		"Once the date has been iterated up to the end, if the format wasn't applied on it completely,"
+		"an error occurs, except if \\textbf{\\samp{'\\%|'}} stands at the current position in the format."
+	14aug2004	feature
+		"The statement \\samp{exit} was added, for exiting \\CodeWorker\\ with an error code."
+		"It expects an integer expression, for determining the value of the error code that"
+		"the interpreter will have to return to the system."
+	14aug2004	feature
+		"The new predefined BNF directive \\samp{\\#readUptoIgnore} was added. It reads all characters up to"
+		"encountering the first insignificant one. Insignificant characters are those to ignore between BNF"
+		"terminal matchings, and specified thanks to the directive \\samp{\\#ignore}."
+	10aug2004	improvement
+		"Now, the native C++ translation of CodeWorker's scripts generates a GNU makefile of the project."
+	08aug2004	deprecated
+		"The functions \\samp{getInputLocation()} and \\samp{setInputLocation()} replace the respective obsolete"
+		"\\samp{getLocation()} and \\samp{setLocation()} writings."
+	07aug2004	bug_fix
+		"The native C++ translation of CodeWorker's scripts has been corrected on some features:"
+		"\\begin{itemize}"
+		"\t\\item initialization of predefined global variables (\\samp{\\_ARGS} and \\samp{\\_REQUEST}),"
+		"\t\\item C++ writing of variable expressions in general,"
+		"\t\\item \\textit{implicit copy} in a translation script,"
+		"\\end{itemize}"
+	07aug2004	bug_fix
+		"The date conversion of a two-digits year to a four-digit one was erroneous in the function \\samp{formatDate()}."
+version "3.7"
+	abstract
+		"The native C++ translation of CodeWorker's scripts had left some mistakes."
+		"Some functions were added and a new predefined non-terminal BNF symbol has appeared: '#readCChar'."
+		"Some bugs were fixed. The format of error messages has changed."
+	01aug2004	"Thierry WILMOT"	behaviour
+		"The format of error messages has changed:\\\\"
+		"\\makebox[0.8cm][l]{}\\texttt{\\textit{<filename>}\\textbf{(}\\textit{line-number}\\textbf{): }\\textit{<error-message>}}\\\\"
+		"replaces:\\\\"
+		"\\makebox[0.8cm][l]{}\\texttt{\\textbf{\"}\\textit{<filename>}\\textbf{\" line }\\textit{line-number}\\textbf{): }\\textit{<error-message>}}"
+	01aug2004	feature
+		"The new predefined non-terminal BNF symbol \\samp{\\#readCChar} reads a C-like constant character."
+		"A C-like character stands between single quotes and admits the escape character \\textbf{$\\backslash$}."
+	01aug2004	improvement
+		"The interpreter executes a BNF parsing if the first argument on the command line"
+		"has file extension being worth \\samp{\".cwp\"}."
+	29jul2004	behaviour
+		"The procedure \\textbf{\\samp{copySmartFile()}} has become a function, returning \\samp{true}"
+		"when it executes the copy."
+	25jul2004	bug_fix
+		"When a variable was declared twice local to the same scope (not recommended), a bug was appearing:"
+		"once the second local declaration was reached, if the local variable was previously referring to another,"
+		"the referenced variable was cleaned."
+	24jul2004	bug_fix
+		"Some regressions were corrected on the native C++ translation of CodeWorker's scripts."
+	19jul2004	function countInputCols, countOutputCols;
+
+version "3.6"
+	06jul2004	feature
+		"A new BNF directive was added: \\samp{\\#moveAhead}."
+		"Located into a BNF sequence, it means that after a valid matching of the rest"
+		"of the sequence, the cursor has necessary moved."
+		""
+		"Example:\\\\"
+		"\\texttt{\\#moveAhead [A]? [B]?}"
+		""
+		"If \\samp{A} doesn't match, then \\samp{B} must match so that the scan has read at least one character."
+	06jul2004	"Stephane PELTIER"	function getShortFilename;
+	06jul2004	improvement
+		"Floating-point numbers representation: a better removal of superfluous digits after the dot."
+	23jun2004	"Eric NICOLAS" feature
+		"Add of a new switch to pass on the command line: \\textbf{\\samp{-nologo}}"
+		"reclaims that the interpreter doesn't write the copyright about \\textit{CodeWorker}"
+		"in the shell while starting."
+	15jun2004	improvement
+		"A new way to pass parameters to the command line:\\\\"
+		"\\texttt{codeworker \\textit{<script-file>} \\textit{<arg1>} ... \\textit{<argN>} [\\textit{<switch>}]*}"
+		""
+		"It is more natural than the equivalent writing:\\\\"
+		"\\texttt{codeworker -script \\textit{<script-file>} -args \\textit{<arg1>} ... \\textit{<argN>} [\\textit{<switch>}]*}}"
+	06jun2004	bug_fix
+		"Some regressions were corrected on the native C++ translation of CodeWorker's scripts."
+	23may2004	improvement
+		"Now, the \\samp{foreach} statement can iterate a list sorted by its values instead of its keys."
+		""
+		"\\textbf{Example:}\\\\"
+		"\\texttt{"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} local list;\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} insert list[\"silverware\"] = \"tea spoon\";\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} insert list[\"Mountain\"] = \"Everest\";\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} insert list[\"SilverWare\"] = \"Tea Spoon\";\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} insert list[\"Boat\"] = \"Titanic\";\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} insert list[\"acrobat\"] = \"Circus\";\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} traceLine(\"Sorted list in a classical order:\");\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} foreach i in \\textbf{sorted by\\_value} list \\{\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.8cm][l]{}traceLine(\"$\\backslash$t\" + i + \" -> \" + key(i));\\\\"
+		"\\makebox[1cm][r]{\\textrm{\\tiny     }} \\}"
+		"}"
+		""
+		"\\textbf{Output:}\\\\"
+		"\\textbf{"
+		"\\makebox[0.8cm][l]{}Titanic -> Boat\\\\"
+		"\\makebox[0.8cm][l]{}Everest -> Mountain\\\\"
+		"\\makebox[0.8cm][l]{}Tea Spoon -> SilverWare\\\\"
+		"\\makebox[0.8cm][l]{}Circus -> acrobat\\\\"
+		"\\makebox[0.8cm][l]{}tea spoon -> silverware"
+		"}"
+
+version "3.5"
+	remark
+		"Under Windows platforms, the binaries are compiled with VC++ 7.1 for now."
+		"If you don't have the DLLs \\samp{msvcp71.dll} and \\samp{msvcr71.dll}"
+		"on your computer, please download them from the header of the download page."
+	abstract
+		"A serious improvement was brought to the code generation by expanding files."
+		"Up to now, to expand files (means injecting characters at a location, often marked up"
+		"by a comment) could only apply on formats accepting a determined sequence of"
+		"characters for indicating a beginning/end of comment (\"/*\" and \"*/\""
+		" in C, \"--\" and EOL in Ada)."
+		""
+		"But an 'Open Office' document, for instance, has a undetermined sequence of"
+		"characters for indicating a beginning of comment, which conforms to a given grammar."
+		"To allow a complete flexibility on detecting the comments and, more accurately, the"
+		"markups, some functions were added."
+		""
+		"Some other improvements were done: a better floating-point precision, less memory"
+		"space occupied by a graph node, graph nodes pointing to external C++ data if needed."
+		""
+		"For the rest, some bugs were fixed and some functions were added and CodeWorker"
+		"should compile on more platforms."
+
+	06may2004	improvement
+		"Now, the function \\samp{getLastDelay()} works even during the measurement of"
+		"the time consuming (controlling sequence under a \\samp{delay} statement modifier):"
+		"it returns the time elapsed since the beginning of the time-keeping."
+	28apr2004	improvement
+		"A better precision for floating point numbers (up to 24 digits, instead of 6 before)."
+	25apr2004	feature
+		"A new preprocessor instruction called \\samp{\\#line}. It forces the compiler to"
+		"change the current value of the script line counter."
+	25apr2004	bug_fix
+		"Calling the function \\samp{translateString()} with the first parameter being the"
+		"\\textit{translation} script directly (and not the file name of the \\textit{translation}"
+		"script) was raising the error: \\samp{\"cannot ask for the value of a piece of script\"}."
+	24apr2004	feature
+		"A tree node can point to an external data, holding the value of the node."
+		"This external data might be any kind of data structure, inheriting from the class \\samp{ExternalValueNode}"
+		"declared in the header file \\samp{\"ExternalValueNode.h\"}."
+		"The scripting language has accepted external functions. Now, it also accepts external data."
+		""
+		"An example is encapsulating a \\textit{Trolltech-Qt} widget for building GUI,"
+		"implemented in a plugin or in an application linking with the \\textit{CodeWorker}'s library,"
+		"and handled from a \\textit{CodeWorker}'s script."
+	24apr2004	improvement
+		"Have reduced the memory space allocation of a tree node."
+	16apr2004	bug_fix
+		"The function 'putEnv()' now works on pure Unix platforms."
+	15apr2004	function computeMD5;
+	30mar2004	bug_fix
+		"CodeWorker now compiles under Sun Solaris with CC."
+		"Please follow the instructions in the makefile to configure it manually."
+	28mar2004	behaviour
+		"In function '\\samp{setOutputLocation(}\\textit{location}\\samp{)}',"
+		"if \\textit{location} is worth \\textbf{\\samp{-1}}, the cursor moves to the end of the output stream."
+	28mar2004	function getWriteMode, setWriteMode;
+	27mar2004	function addGenerationTagsHandler, removeGenerationTagsHandler, selectGenerationTagsHandler;
+
+version "3.4"
+	abstract
+		"CodeWorker should compile on 64 bits processors properly now, notably on Mac OS X 10.3."
+		"A freeze of the console in the interaction mode under Linux/Unix has been resolved."
+		"Some new functions were added. Some bugs where fixed."
+
+	14mar2004	bug_fix
+		"Under Linux/Unix, the keyboard wasn't initialized properly:"
+		"running the interpreter in the interaction mode was freezing the console."
+	07mar2004	improvement
+		"While sending an HTTP request (\\textit{send}/\\textit{get}/\\textit{post}\\samp{HTTPRequest(...)} functions),"
+		"the header is extracted and made available in the session, and cookies are propagated."
+	29feb2004	"David JOBET"	feature
+		"A new command line swith has appeared: '-args' allows to pass arguments to"
+		"the leader script without having to put them in properties."
+		"The arguments are stored in the global array '_ARGS'."
+	28feb2004	"David JOBET"	function sortArray;
+	08feb2004	"Patrick BRANNAN"	function listAllGeneratedFiles;
+	07feb2004	bug_fix
+		"CodeWorker should compile on 64 bits processors properly now.\\\\"
+		"A side effect on memory allocation under Windows was corrected.\\\\"
+		"Correction of minor bugs."
+	12jan2004	"Eric NICOLAS" function createDirectory;
+
+version "3.3"
+	remark
+		"It exists three families of scripts here. To facilitate their syntax highlighting in editors,"
+		"or to indicate briefly the type of the script, we suggest to employ some file extensions,"
+		"depending on the nature of the script. The next table exposes the different extensions used"
+		"commonly in CodeWorker."
+		""
+		"\\begin{tableii}{l|l}{.6}{Extension}{Description}"
+		"\t\\lineii{\\textbf{\\samp{\".cwt\"}}}{a \\textit{template-based} script, for text generation}"
+		"\t\\lineii{\\textbf{\\samp{\".cwp\"}}}{a \\textit{extended-BNF} parse script, for parsing text}"
+		"\t\\lineii{\\textbf{\\samp{\".cws\"}}}{a \\textit{common} script, none of the precedent}"
+		"\\end{tableii}"
+		""
+		"The structure of the grammar is so rich that it is a challenge to find a text editor, which"
+		"offers a syntax highlighting engine powerful enough. \\JEdit\\ proposes the writing of"
+		"production rules to describe it, so it is possible to express the syntax highlighting of"
+		"the scripting language."
+		""
+		"You'll find a package dedicated to \\JEdit\\ on the Web site, for the inclusion of these new"
+		"highlighting modes. Many thanks to Patrick Brannan for this contribution."
+
+	abstract
+		"Some new BNF directives and some functions were added. Some bugs where fixed."
+		"Now, a syntax highlighting mode is available for editing scripts in JEdit."
+
+	07dec2003	feature
+		"Add of a new BNF directive: \\samp{\\textbf{\\#ratchet}}."
+		"When encountered in a production rule, the BNF engine memorizes what is the current position"
+		"in the input stream, and then controls that the scan will never come back before this position."
+	07dec2003	feature
+		"Two new hooks were added, intended to trace and debug calls of BNF"
+		"\\textit{non-terminals}: \\samp{stepintoHook()} and \\samp{stepoutHook()}."
+	06dec2003	function translateString;
+	06dec2003	feature
+		"Add of the new BNF statement \\samp{\\textbf{\\#transformRules}}, which provides a convenient way to reuse a BNF script."
+		""
+		"It defines a rule that describes how to transform the header (left member) and the production"
+		"rule (right member) of a non-terminal declaration."
+		""
+		"Example:\\\\"
+		"\\texttt{"
+		"	INTEGER ::= \\#ignore ['0'..'9']*;"
+		"}"
+		""
+		"\\textit{INTEGER} is the header and \\textit{\\#ignore ['0'..'9']*} is the production rule."
+		""
+		"During the compilation of a BNF parse script, before processing the declaration of a non-terminal,"
+		"the compiler checks whether a transforming rule validates the name of the non-terminal. If so,"
+		"both the header of the declaration and the production rule are translated, following the"
+		"directives of the rule."
+		""
+		"The \\textit{\\#transformRules} statement must be put in the BNF script, before the production"
+		"rules to transform."
+	04dec2003	behaviour
+		"In the function \\samp{composeHTMLLikeString()}, the minus symbol isn't changed"
+		"to the entity \\samp{\\#150;} anymore."
+	03dec2003	feature
+		"A new BNF binary operator \\samp{\\textbf{&|}} was added. \\samp{\\textit{A} \\textbf{&|} \\textit{B}}"
+		"is equivalent to \\samp{\\textit{A B} | \\textit{A} | \\textit{B}} (the order of resolution is important)."
+		""
+		"It means that \\textit{A} and/or \\textit{B} match(es), which justifies the syntax of the operator."
+	03dec2003	function countOutputLines;
+	30nov2003	bug_fix
+		"In a \\textit{dynamic-library} module, calling a CodeWorker function with a node parameter"
+		"crashes the application."
+	30nov2003	feature
+		"The method \\samp{'CW4dl::Interpreter::\\textbf{createTree()}'} was added in the"
+		"C++ header \\samp{\"CW4dl.h\"}. Now, local trees can be build in \\textit{dynamic-library} modules."
+	29nov2003	feature
+		"Syntax extension for the BNF directive \\samp{\\textbf{\\#skipIgnore}}:\\\\"
+		"you can choose an ignore mode different of the current one, set by \\samp{\\#ignore}."
+	27nov2003	"Maxime BOURGET"	bug_fix
+		"Under Windows, while scanning directory with filter files like \\samp{\"*.bar\"}, the system"
+		" accepts also files terminating by a tilde. Now, a validation ensures that each accepted"
+		"file matches the filter correctly."
+	26nov2003	feature
+		"A new BNF directive \\samp{\\textbf{\\#parsedString(}\\textit{expression}\\textbf{)}}"
+		"was added. It changes temporarily the input stream of a parse script by the text"
+		"resulting of the evaluation of \\textit{expression}."
+	26nov2003	feature
+		"The new BNF directive \\samp{\\textbf{\\#nextStep}} is put into BNF sequences inlayed in a BNF jump operator (\\samp{\\textbf{->}}) or in a"
+		"BNF complementary operator (\\textbf{$\\hat$} or \\textbf{\\~{}}). Normally, these operators move the cursor of"
+		"the input stream one position further, in case of failure while applying the BNF sequence."
+		""
+		"Using \\samp{\\textbf{\\#nextStep}} allows changing the shift of the cursor to more than one character."
+		"It is very useful when you encounter quoted strings or identifiers. For instance, if you are looking"
+		"for constant strings and then number or identifiers, the following code is incorrect:\\\\"
+		"\\texttt{\\textbf{->[}\\#readCString \\#readInteger \\textbf{|} \\#readIdentifier\\textbf{]}}"
+		""
+		"Why is it incorrect? If the constant string matches but not the integer, the next iteration will put the"
+		"cursor just after the quote and will perhaps point to an identifier, embedded into the constant string."
+		"Then, the operator will match during the second iteration."
+		""
+		"In fact, if the constant string matches but not the rest of the BNF sequence, we want to"
+		"force the next jump just after the constant string:\\\\"
+		"\\texttt{\\textbf{->[}\\#readCString \\textbf{\\#nextStep} \\#readInteger \\textbf{|} \\#readIdentifier\\textbf{]}}"
+
+version "3.2"
+	22nov2003	feature
+		"The BNF directive \\samp{\\textbf{\\#trace}} traces the resolution steps of an"
+		"\\textit{extended-BNF} script."
+		""
+		"Hit a key to interrupt the display of trace information and to pause the controlling"
+		"sequence."
+	22nov2003	function inputKey;
+	20nov2003	"Gwenael CHAZAL"	bug_fix
+		"CodeWorker crashed when an expression was passed to a node parameter of any"
+		"\\textit{non-terminal} BNF symbol, instead of passing a tree node. Now, it raises an error."
+	20nov2003	"Maxime BOURGET"	feature
+		"A BNF symbol resolved with success, has accepted the assignment of its scanned portion of"
+		"sentence to a variable for a long time: \\samp{\\textit{B}\\textbf{:}\\textit{v}} means"
+		"that the text covered by \\textit{B} is assigned to \\textit{v}."
+		""
+		"Now, you can specify to concatenate the covered text to the ancient value of the variable:"
+		"\\samp{\\textit{B}\\textbf{:+}\\textit{v}}."
+		""
+		"\\textbf{Example:}\\\\"
+		"If \\textit{v} is worth \\samp{\"nebula:\"} and if the sentence starts with \\textit{\"Orion.\"},"
+		"then \\textit{v} becomes \\samp{\"nebula:Orion\"} after the resolution of"
+		"\\samp{\\#readIdentifier\\textbf{:+}\\textit{v}}."
+	20nov2003	improvement
+		"The template functions accept a \\textit{template-based} script to define their body."
+		"The specialization of a function for a given template instantiation key is resolved at runtime."
+		""
+		"\\textbf{Example:}\\\\"
+		"\\texttt{function f(x : node) \\{/*is a synonym of \\textit{f<\"\">(x : node)}*/\\}"
+		"\\\\"
+		"function f<T>(x : node) \\{\\{\\\\"
+		"\\makebox[1cm][r]{} // \\textbf{'\\{\\{'} announces a \\textit{template-based} script, which"
+		"\\makebox[1cm][r]{} // will generate the correct implementation during the instantiation"
+		"\\makebox[1cm][r]{} \\textbf{insert x.@}\\textit{T}\\textbf{@ = \"@}\\textit{T}\\textbf{@\";}\\\\"
+		"\\makebox[1cm][r]{} \\textbf{f<\"@}\\textit{T.rsubString(1)}\\textbf{@\">(x);}\\\\"
+		"\\textbf{@}\\\\"
+		"\\makebox[1cm][r]{} // \\textbf{'\\}\\}'} announces the end of the \\textit{template-based} script"
+		"\\}\\}"
+		"\\\\"
+		"f<\"field\">(project);\\\\"
+		"traceObject(project);"
+		"}"
+		""
+		"\\textbf{Output:}\\\\"
+		"\\texttt{Tracing variable 'project':\\\\"
+        "\\makebox[1cm][r]{} field = \"field\"\\\\"
+        "\\makebox[1cm][r]{} fiel = \"fiel\"\\\\"
+        "\\makebox[1cm][r]{} fie = \"fie\"\\\\"
+        "\\makebox[1cm][r]{} fi = \"fi\"\\\\"
+        "\\makebox[1cm][r]{} f = \"f\"\\\\"
+		"End of variable's trace 'project'.}"
+	19nov2003	improvement
+		"The engine has improved the compilation's speed of scripts."
+	17nov2003	"Maxime BOURGET"	feature
+		"A new BNF binary operator \\samp{\\textbf{'|>'}} was added."
+		""
+		"The sequence \\samp{\\textit{A} \\textbf{|>} \\textit{B}} is understood as considering"
+		"the \\textit{sub sentence} scanned by \\samp{\\textit{A}}, which delimits the portion of text left"
+		"visible to \\samp{\\textit{B}}. \\samp{\\textit{B}} starts scanning at the beginning of"
+		"the \\textit{sub sentence} covered by \\samp{\\textit{A}} and cannot go beyond."
+		""
+		"When the operator has achieved with success, the cursor points to the end of the"
+		"\\textit{sub sentence} covered by \\samp{\\textit{A}}."
+		""
+		"You'll find below the different steps processed by the operator:"
+		"\\begin{itemize}"
+		"\t\\item the BNF literal \\samp{\\textit{A}} is executed,"
+		"\t\\item if success, the cursor comes back to the beginning of the sub sentence covered by \\samp{\\textit{A}}"
+		"\t\\item then, \\samp{\\textit{B}} is executed, knowing that the operator forces the"
+		"\t\tend of the \\textit{sub sentence} where \\samp{\\textit{A}} had finished,"
+		"\t\\item if success, the cursor points to the end of \\samp{\\textit{A}}, even if"
+		"\t\t\\samp{\\textit{B}} hadn't scan up to the end of the sentence."
+		"\\end{itemize}"
+		""
+		"\\textbf{Example:}"
+		""
+		"We want to recognize all colons present on a line. The \\textit{sub sentence} we would like"
+		"to scan is a line: \\samp{\\textbf{->}'$\\backslash$n'}. Recognizing colons is like: \\samp{\\textbf{[->}':'\\textbf{]*}},"
+		"which asks for jumping from a colon to another, without considering the end of line.\\\\"
+		"\\samp{\\textbf{->}'$\\backslash$n'\\textbf{ |> [->}':'\\textbf{]*}} restricts the colon recognition"
+		"to the line."
+	17nov2003	"Maxime BOURGET"	improvement
+		"The BNF operator \\samp{\\textbf{'->'}} admits a syntax extension, for the adjustment of its internal"
+		"mechanism."
+		""
+		"\\samp{\\textbf{->}\\textit{A}} jumps just after the the first matching of \\textit{A} in the sentence."
+		"It processes the equivalent piece of \\textit{extended-BNF} script:\\\\"
+		"\\texttt{"
+		"=> local iLocation;\\\\"
+		"\\textbf{\\~[}\\textit{A} => iLocation = getInputLocation();\\textbf{]*}\\\\"
+		"=> setInputLocation(iLocation);\\\\"
+		"}"
+		""
+		"To intervene on the boundaries of the repeated sequence \\samp{\\textbf{[}\\textit{A} ...\\textbf{]*}},"
+		"an extension was added to the syntax: \\samp{\\textbf{->}\\textit{boundaries} A}, where"
+		"\\textit{boundaries} gives the multiplicity of the bracketed sequence (\\samp{'?'}, \\samp{'+'},"
+		" \\samp{'2..*'}, \\samp{\\#repeat(iBegin, iEnd)} ...).\\\\"
+		"Note: the boundaries must be declared just after the arrow."
+		""
+		"The text covered by \\samp{\\textbf{->}\\textit{A}} includes the unmatched characters plus the sub sentence"
+		"scanned by \\textit{A}, so \\samp{\\textbf{->}\\textit{A}\\textbf{:}\\textit{v}} assigns the complete"
+		"covered text to the variable \\textit{v}. This is sometimes a drawback: perhaps do you want to take"
+		"the unmatched character or the sub sentence scanned by \\textit{A}.\\\\"
+		"So now, you can specify the variables intended to receive these intermediate values:\\\\"
+		"\\samp{\\textbf{->(:}\\textit{varBefore} \\textbf{-:}\\textit{varAfter}\\textbf{)}\\textit{A}\\textbf{:}\\textit{varTotal}}\\\\"
+		"Note: the intermediate variables are declared just before the BNF symbol \\textit{A}, after the boundaries if any."
+		""
+		"\\textbf{Example:}\\\\"
+		"We will apply \\samp{\\textbf{[->(:}\\textit{varBefore} \\textbf{-:}\\textit{varAfter}\\textbf{)} \\#readNumeric\\textbf{]:}\\textit{varTotal}}"
+		"on the sentence \\samp{\"Garfield.laziness 99.99 percent\"}:"
+		"\\begin{itemize}"
+		"\t\\item \\textit{varBefore} = \"Garfield.laziness \""
+		"\t\\item \\textit{varAfter} = \"99.99\""
+		"\t\\item \\textit{varTotal} = \"Garfield.laziness 99.99\""
+		"\\end{itemize}"
+		""
+		"The last extension brought to the jump operator \\samp{\\textbf{->}\\textit{A}}"
+		"is to allow the execution of a BNF sequence at the beginning of the sub sequence"
+		" matched by \\textit{A}. This BNF sequence is declared into the parenthesis used"
+		"for the intermediate variables, behind these variables, if any:\\\\"
+		"\\samp{\\textbf{->(:}\\textit{varBefore} \\textbf{-:}\\textit{varAfter}\\textbf{ \\textit{B})}\\textit{A}}\\\\"
+		"The advantage of infiltrating the BNF sequence \\textit{B} is that the intermediate variables"
+		"are populated, and that the cursor doesn't point after the matching of \\textit{A} yet,"
+		"but at the beginning of the sub sentence matched by \\textit{A}."
+	15nov2003	"Maxime BOURGET"	function getVariableAttributes;
+
+version "3.1"
+	abstract
+		"More features offered for building plug-in modules (dynamic libraries extending"
+		"the language) and some other improvements."
+	11nov2003	"Maxime BOURGET" feature
+		"More than one customized \\textit{ignore-clause} is accepted now."
+		"Before, the customized ignore clause was written: \\samp{\\#ignore ::= /*production rule*/;}."
+		""
+		"Now, customized ignore clauses are declared with a key between brackets :\\\\"
+		"\\samp{\\textbf{\\#ignore[}\\textit{\"designate this ignore clause\"}\\textbf{]} ::= /*production rule*/;}."
+		""
+		"Into production rules, you specify the change with \\samp{\\textbf{\\#ignore(}textit{\"designate this ignore clause\"}\\textbf{)}}."
+	11nov2003	"Maxime BOURGET" feature
+		"A new BNF directive is added: \\textbf{\\samp{\\#break}}. It leaves successfully"
+		"the closer \\textit{repeat token} into which the directive was put."
+		""
+		"\\textbf{Example:}\\\\"
+		"\\texttt{"
+		"\\textbf{[}\"---\" \\textbf{\\#break} | attribute\\textbf{]+}"
+		"}"
+		""
+		"Here, the engine reads at least one attribute, and leaves with success when it"
+		"encounters the string \\samp{\"---\"}."
+	09nov2003	bug_fix
+		"Now, the procedure \\samp{executeString()} sees the scope of functions"
+		"declared in the script that calls the procedure."
+	09nov2003	improvement
+		"The procedure \\samp{expand()} allows the \\textit{pattern script} passed as a"
+		"block of instructions, instead of a script file name (behaviour already existing"
+		"for \\samp{generate()})."
+	08nov2003	improvement
+		"A function name cannot be a reserved keyword anymore (should have been done a"
+		"long time ago)."
+	04nov2003	"Maxime BOURGET" function joinStrings;
+	31oct2003	improvement
+		"The \\samp{foreach} statement allows the reverse iteration of unsorted items too."
+	30oct2003	function equalsIgnoreCase;
+	20oct2003	improvement
+		"The building of plug-in packages (dynamic libraries written in C++) accepts"
+		"some new features:\\\\"
+		"\\begin{itemize}"
+		"\t\\item more functions to handle parse trees,"
+		"\t\\item call of CodeWorker's functions from the plug-in"
+		"\\end{itemize}"
+
+version "3.0"
+	abstract
+		"A new fundamental feature: extension of the language via packages implemented in"
+		"executable modules (dynamic libraries), like in Tcl or other scripting languages."
+		"Functions appendFile() and composeSQLLikeString() were added."
+		"A new date/time format specifier was added: '%Q' represents a SQL timestamp."
+	05oct2003	feature
+		"A new fundamental feature: extension of the language via packages implemented in"
+		"executable modules (dynamic libraries), like in Tcl or other scripting languages."
+		""
+		"You can integrate your own functions or interface layers to work with databases"
+		"or any other gluing requirements."
+	01oct2003	function appendFile, composeSQLLikeString;
+	30sep2003	improvement
+		"Improvement that concerns formatDate()/completeDate(): \\samp{'\\%Q'} is a new"
+		"date/time format specifier that represents a SQL timestamp (equivalent to \\samp{'\\%Y-\\%m-\\%d \\%H:\\%M:\\%S.\\%L'})."
+
+version "2.19.2"
+	abstract
+		"A bug fix was corrected on recursive calls into a foreach/select statement,"
+		"which may have impacted the behavior of first()/last() iterator functions."
+		"Function getOutputFilename() was added, which returns the path of the file being"
+		"generated via generate()/translate()..."
+	28sep2003	function getOutputFilename;
+	25sep2003	bug_fix
+		"Very important: some troubles may have appeared on the use of \\samp{first()}"
+		"and \\samp{last()} iterator functions in a recursive call to a \\samp{foreach} loop."
+
+version "2.19.1"
+	18sep2003	function ceil, exp, log;
+	18sep2003	bug_fix
+		"Functions put into an arithmetic expression (between \\textbf{'\\$'} symbols)"
+		"didn't accept to pass string expressions to parameters."
+	14sep2003	bug_fix
+		"An embedded script now ignores insignificant characters following the trailing bracket:\\\\"
+		"\\samp{generate(\\textbf{\\{}...the embedded script...\\textbf{\\}} /* insignificant characters */, project, \"bubblegum.txt\");}"
+	13sep2003	bug_fix
+		"Now, the engine doesn't allow the user to choose a non-terminal amongst reserved keywords"
+		"\\samp{function}, \\samp{declare} or \\samp{external}."
+
+version "2.19"
+	10sep2003	feature
+		"Now, procedures running a script (for parsing / generating / translating / interpreting) accept"
+		"the script to be embedded between \\samp{\\textbf{\\{}} and \\samp{\\textbf{\\}}},"
+		"instead of to give the path of the script necessary."
+		""
+		"It avoids the writing of a specific script file each time the developer requires a task of"
+		"parsing or code generation."
+		""
+		"\\textbf{Example:} \\\\"
+		"\\texttt{\\textit{//generation of an HTML file, which shows the title and the content\\\\"
+		"//of some financial market news previously extracted}\\\\"
+		"\\textbf{generate(\\\\"
+		"\\{}<html>\\\\"
+		"\\makebox[0.4cm][r]{} <body>\\\\"
+		"@\\\\"
+		"foreach i in this.news \\{\\\\"
+		"\t\\makebox[0.8cm][r]{} @@composeHTMLLikeString(i.title)@<br>@endl()@@\\\\"
+		"\t\\makebox[0.8cm][r]{} @<table><tr><td>@endl()@@\\\\"
+		"\t\\makebox[1.2cm][r]{} @@composeHTMLLikeString(i.body) + endl()@@\\\\"
+		"\t\\makebox[0.8cm][r]{} @</td></tr></table>@endl()@@\\\\"
+		"\\}\\\\"
+		"@\\makebox[0.4cm][r]{} </body>\\\\"
+		"</html>\\\\"
+		"@\\textbf{\\}, project, \"news.html\");}}"
+		""
+		"\\begin{itemize}"
+		"\t\\item It avoids the writing of 2 files, as it was unavoidable before:\\\\"
+		"\\texttt{generate(\"news2HTML.gen\", project, \"news.html\");}"
+		"\t\\item such as \\samp{\"news2HTML.gen\"}, which contains:\\\\"
+		"\\texttt{<html>\\\\"
+		"\\makebox[0.4cm][r]{} <body>\\\\"
+		"@\\\\"
+		"foreach i in this.news \\{\\\\"
+		"\t\\makebox[0.8cm][r]{} @@composeHTMLLikeString(i.title)@<br>@endl()@@\\\\"
+		"\t\\makebox[0.8cm][r]{} @<table><tr><td>@endl()@@\\\\"
+		"\t\\makebox[1.2cm][r]{} @@composeHTMLLikeString(i.body) + endl()@@\\\\"
+		"\t\\makebox[0.8cm][r]{} @</td></tr></table>@endl()@@\\\\"
+		"\\}\\\\"
+		"@\\makebox[0.4cm][r]{} </body>\\\\"
+		"</html>}"
+		"\\end{itemize}"
+	10sep2003	feature
+		"Add of a new boolean operator that checks whether the result of an expression belongs"
+		"to a set or not:\\\\"
+		"\\samp{\\textit{sHTMLTag} \\textbf{in \\{} 'i'\\textbf{,} \"kbd\" \\textbf{\\}}}\\\\"
+		"returns \\samp{true} if \\textit{sHTMLTag} is worth \\samp{'i'} or \\samp{\"kbd\"} and"
+		"\\samp{false} in all other cases."
+	09sep2003	"Gilles GHATTAS"	bug_fix
+		"Now, the engine checks whether a function is allowed for a type of script."
+		""
+		"\\textbf{Example:} \\samp{getInputFilename()} isn't allowed in a common script, because it"
+		"should be present in parse scripts only (it gives the name of the file being currently"
+		"parsed). Now, if you try to use this function in a common script, a syntax error occurs."
+	08sep2003	function resolveFilePath;
+
+version "2.18"
+	04sep2003	improvement
+		"Add of the unary negation operator in arithmetic expressions."
+	04sep2003	"Eric NICOLAS"	improvement
+		"An arithmetic expression between \\textbf{'\\$'} or an expression between parenthesis"
+		"wasn't admitted by the parser as an expression to flush in the output file of a"
+		"\\textit{template-based} script (expression embedded between \\textbf{'@'})."
+	03sep2003	"Gwenael CHAZAL"	bug_fix
+		"Removal of superfluous '0' that may have appeared in some cases on floating-point numbers."
+	02sep2003	"Eric NICOLAS"	bug_fix
+		"The indentation of C++ files was incorrect when the algorithm was confronted"
+		"to \\textbf{\\samp{\"::\"}} in functions \\samp{indentFile()} or \\samp{indentText()}."
+	01sep2003	function countInputLines, getInputFilename;
+	31aug2003	feature
+		"Add of a new BNF directive called \\textbf{\\samp{\\#skipIgnore}}, which forces the skipping"
+		"of insignificant characters (set by the \\samp{\\#ignore(...)} directive) at"
+		"the current position of the parse cursor."
+		""
+		"The directive is always true, even if the parsing has already reached the end of file"
+		"or if there are no insignificant characters."
+
+version "2.17.4"
+	20aug2003	function skipEmptyCppExceptDoxygen;
+
+version "2.17.3"	private
+	19aug2003	bug_fix
+		"While parsing C++ comments, Ada-like comments were detected too."
+
+version "2.17.2"
+	13aug2003	"Gwenael CHAZAL"	bug_fix
+		"A bug has appeared in the last version \\textbf{2.17.1}: sometimes, assignment instructions not prefixed"
+		"by a \\samp{set} statement may raise a syntax error (\\samp{';' expected})."
+	04aug2003	improvement
+		"Before, template functions had a specific body for each function instantiation:\\\\"
+		"\t\\samp{function f<\"a\">() \\{ /*body of f<\"a\">()*/ \\}}\\\\"
+		"\t\\samp{function f<\"b\">() \\{ /*body of f<\"b\">()*/ \\}}\\\\"
+		"but no generic template body, such as generic programming with C++ templates."
+		"Now, it exists:\\\\"
+		"\t\\samp{function f<T>() \\{\\\\"
+		"\t/*generic template body when no specific\\\\"
+		"function instantiation is found*/\\\\"
+		"\\}}"
+		""
+		"\\textbf{Classical example:}\\\\"
+		"\\texttt{function f<1>() \\{ return 1; \\}\\\\"
+		"\t\tfunction f<N>() \\{ return \\$N*f<\\$N - 1\\$>()\\$; \\}\\\\"
+		"\t\ttraceLine(\"10! = \" + f<10>());}"
+
+version "2.17.1"
+	31jul2003	bug_fix
+		"The method-like syntax for calling a procedure wasn't parsed correctly:\\\\"
+		"now, \\samp{myHTMLContext.clearVariable()} is well-recognized and is worth \\samp{clearVariable(myHTMLContext)}."
+	17jul2003	bug_fix
+		"Parsing error when an arithmetic shift operator was following an identifier:\\\\"
+		"writing \\samp{\\$iValue << 1\\$} was raising the unrelevant error \\samp{literal expected}."
+
+version "2.17"
+	08jul2003	feature
+		"Now, a BNF sequence may be repeated a variable number of times:\\\\"
+		"\\texttt{\\textbf{[}\\textit{BNF-sequence}\\textbf{]}\\textbf{\\#repeat(}\\textit{begin-expression}[\\textbf{, }\\textit{end-expression}]\\textbf{)}}\\\\"
+		"where \\samp{\\#repeat} specifies how many times the sequence must be repeated, after"
+		"resolving the boundary values given by the arithmetic expressions."
+	07jul2003	function hostToNetworkLong, networkLongToHost, hostToNetworkShort, networkShortToHost;
+	07jul2003	function longToBytes, shortToBytes, bytesToShort, bytesToLong;
+	06jul2003	feature
+		"Two new BNF directives have appeared:\\\\"
+		"\\begin{itemize}"
+		"\t\\item \\textbf{\\samp{\\#readBytes(}\\textit{length-expr}\\textbf{)}}: to read a sequence of bytes,"
+		"\t\twhere the arithmetic expression \\textit{length-expr} determines how many bytes to read,"
+		"\t\\item \\textbf{\\samp{\\#readChars(}\\textit{length-expr}\\textbf{)}}: to read a sequence of characters,"
+		"\t\twhere the arithmetic expression \\textit{length-expr} determines the length of the text,"
+		"\\end{itemize}"
+	05jul2003	function	createINETClientSocket, createINETServerSocket, acceptSocket,
+							attachInputToSocket, detachInputFromSocket, attachOutputToSocket,
+							detachOutputFromSocket, flushOutputToSocket, receiveBinaryFromSocket, receiveFromSocket,
+							receiveTextFromSocket, sendTextToSocket, sendBinaryToSocket,
+							closeSocket;
+	01jul2003	behaviour
+		"Now, the function \\samp{getFloatingLocation()} raises an error if the floating"
+		"location doesn't exist."
+	29jun2003	function insertTextToFloatingLocation, insertTextOnceToFloatingLocation, existFloatingLocation;
+	29jun2003	"Gwenael CHAZAL"	bug_fix
+		"The function \\samp{completeDate()} didn't work correctly on the Excel-like date format"
+		"\\samp{\\textbf{\\%t}} (fractionable number of days since \\textit{december 30th, 1899})."
+	28jun2003	bug_fix
+		"Now, the functions \\samp{send/get/postHTTPRequest()} extract binary data correctly."
+
+version "2.16"
+	remark
+		"If you wish to recompile sources, please note that from now on,"
+		"\\CodeWorker\\ doesn't need \\SWORD\\ and \\ACE\\ libraries anymore."
+		"Nevertheless, it requires \\libCURL\\ as a dynamic library from now."
+		""
+		"The tool uses \\libCURL\\ for sending HTTP requests only. If you don't"
+		"need this functionality, you might recompile sources after having disabled"
+		"the preprocessor definition \\samp{CODEWORKER\\_CURL\\_LIB}."
+	13jun2003	"Gwenael CHAZAL"	feature
+		"Now, \\samp{foreach} statement may iterate in reverse order:\\\\"
+		"\\texttt{foreach \\textit{i} in \\textbf{reverse} sorted \\textit{list} ...}"
+
+version "2.15"
+	10jun2003	option autoexpand, commentBegin, commentEnd;
+	10jun2003	function autoexpand;
+	09jun2003	feature
+		"Add of a BNF general directive called \\samp{\\#parameters}."
+	08jun2003	improvement
+		"When looking for an included script (\\samp{\\#include \"\\textit{included-script.gen}\"})"
+		"in the filesystem, if the included script is known as a relative path, the preprocessor"
+		"starts searching from the directory of the caller script.\\\\"
+		"Before, the preprocessor was starting from the current directory."
+	06jun2003	bug_fix
+		"In expansion mode only, the interpreter was forgotting to keep for checking the protected"
+		"areas that weren't interesting anymore the \\textit{template-based} script."
+	05jun2003	feature
+		"Add of the extended-BNF directive '#super' to call an overloaded non-terminal."
+
+version "2.14"
+	04jun2003	function traceEngine;
+	04jun2003	option insert;
+	03jun2003	feature
+		"A translation script might require to transform scanned characters before copying"
+		"them implicitely in the output:\\\\"
+		"\\samp{\\#implicitCopy(composeHTMLLikeString)}\\\\"
+		"means that each scanned character is transformed to HTML before writing it by"
+		"implicit copy."
+	03jun2003	feature
+		"BNF production rules are overloadable thanks to the directive \\samp{\\#overload}:\\\\"
+		"\\samp{\\textbf{\\#overload} \\textit{nonterminal} ::= ...;}\\\\"
+		"replaces the ancient \\textit{nonterminal} clause by a new production rule."
+	01jun2003	note
+		"Function \\samp{getMarkerKey()} is deprecated and replaced by \\samp{get\\textbf{Markup}Key()}."
+	01jun2003	function getMarkupValue;
+	01jun2003	improvement
+		"Add of a data section, attached to expansion markups (put between \\samp{\\#\\#data\\#\\#} tags just after the \\samp{\\#\\#markup\\#\\#} tag)."
+	01jun2003	note
+		"For expansion mode, \\samp{\\#\\#markup\\#\\#} replaces the tag \\samp{\\#\\#marker\\#\\#}."
+	28may2003	function changeFileTime;
+
+version "2.13"
+	27may2003	bug_fix
+		"When called via a C++ binding, bad context variable passed to \\samp{CGRuntime::expand()},"
+		"\\samp{CGRuntime::parseAsBNF()} and \\samp{CGRuntime::generate()}."
+	26may2003	feature
+		"Add of template BNF clauses (non-terminal symbols) where the instantiation isn't resolved."
+		""
+		"\\textbf{Example:}\\\\"
+		"\\samp{nonterminal<\"Case 1\"> ::= ...;\\\\"
+		"nonterminal<\"Case 2\"> ::= ...;}\\\\"
+		"are instantiations of \\samp{nonterminal} resolved for \\samp{\"Case 1\"} and \\samp{\"Case 2\"}.\\\\"
+		"\\samp{nonterminal<T> ::= ...;}\\\\"
+		"is a template BNF clause where the instantiation isn't resolved and that describes the"
+		"generic implementation of the production rule. It will be called for \\samp{\"Case 3\"} or"
+		"any constant different of \\samp{\"Case 1\"} and \\samp{\"Case 2\"}."
+
+version "2.12"
+	19may2003	"Gwenael CHAZAL"	function randomSeed, randomInteger;
+	19may2003	function copyGenerableFile;
+	15may2003	feature
+		"Add of the ternary operator:\\\\"
+		"\\samp{\\textit{ternary-expr} ::= \\textit{boolean-expr} \\textbf{'?'} \\textit{expression1} \\textbf{':'} \\textit{expression2}}\\\\"
+		"where \\textit{expression1} is executed if the condition is verified, and \\textit{expression2} otherwise."
+	12may2003	"Eric NICOLAS"	function UUID;
+
+version "2.11"
+	24apr2003	function environTable;
+	24apr2003	bug_fix
+		"The BNF operator \\samp{\\textbf{->}} had a strange behaviour when the matched input was"
+		"assigned to a variable (\\samp{->\\textit{BNF-expression}:\\textit{variable}}).\\\\"
+		"While translating a file in \\samp{\\#implicitCopy} mode, the content of the variable"
+		"was written in the destination file, whereas the matched input of \\textit{BNF-expression}"
+		"had already been copied.\\\\"
+		"Consequence: the matched input of \\textit{BNF-expression} was appearing twice in the"
+		"destination file."
+	24apr2003	function setFloatingLocation;
+	22apr2003	function openLogFile;
+	22apr2003	"Gwenael CHAZAL"	function completeDate;
+	22apr2003	"Gwenael CHAZAL"	improvement
+		"Add of two new formats in \\samp{formatDate()}:"
+		"\\begin{itemize}"
+		"\t\\item \\textbf{'\\%w'} means that the weekday must be written as an integer"
+		"\t\t(\\samp{0-6}; \\samp{0} is \\textit{sunday}),"
+		"\t\\item \\textbf{'\\%W'} means that the weekday must be written as the complete english name,"
+		"\\end{itemize}"
+
+version "2.10"
+	remark
+		"From now, \\CodeWorker\\ is able to run as a CGI program. It may be attached to the"
+		"\\samp{\".gen\"} file extension. See the script repository for discovering some "
+		"use-cases."
+	18apr2003	feature
+		"\\CodeWorker\\ can run as a CGI program."
+	17apr2003	function encodeURL, decodeURL;
+
+version "2.09" private
+	remark
+		"This version runs under \\textit{CygWin} correctly. One should be able to make a"
+		"\\textit{Linux} version from source files (not checked yet, next step)."
+	16apr2003	"Laurent RIESTERER"	bug_fix
+		"The function \\samp{saveProject()} didn't write node references. Now, a node reference"
+		"is announced with the keyword \\samp{__REFERENCE} in the XML output of the project."
+	14apr2003	function getNow, setNow;
+	07apr2003	feature
+		"The scripting language offers to declare \\textit{global} variables. Up to now, the"
+		"only way to declare \\textit{global} variables was to put them somewhere in the"
+		"\\textit{project} main tree."
+		""
+		"The \\samp{global} statement was added to provide the feature:\\\\"
+		"\\samp{\\textit{global-statement} ::= \\textbf{\"global\"} \\textit{variable} [\\textbf{'='} \\textbf{expression-to-assign}]?}"
+	04apr2003	function existEnv;
+
+version "2.08"
+	01apr2003	function setWorkingPath;
+	31mar2003	function getIncludePath, setIncludePath;
+	26mar2003	function overwritePortion;
+	26mar2003	improvement
+		"\\textit{translation} scripts admit calls to both parsing and code generation functions"
+		" in the procedural statement blocks (e.g. announced by the symbol \\samp{\\textbf{=>}})."
+	26mar2003	improvement
+		"\\textit{BNF-parsing} scripts admit calls to parsing functions in the procedural"
+		"statement blocks (e.g. announced by the symbol \\samp{\\textbf{=>}} in the production"
+		"rules)."
+	24mar2003	function findNextString;
+	10mar2003	feature
+		"Add of motif expressions that enable to operate on the logical structure of a tree."
+		"It allows filtering and selecting the nodes of a tree, which match a motif. This is"
+		"something like \\textit{XPath}, but working on a parse tree of \\CodeWorker\\ instead of"
+		"an XML tree."
+	10mar2003	feature
+		"Add of a new statement called \\samp{select}, which operates a little like the \\samp{foreach}"
+		"statement, but iterating a list of nodes that match a motif expression. It is similar to"
+		"the \\samp{\\textbf{<xsl:foreach select=}\\textit{motif} \\textbf{>}} \\textit{XSL} statement."
+
+version "2.07"
+	06mar2003	bug_fix
+		"The function \\samp{readIdentifier()} didn't match the rule \\samp{['a'..'z' | 'A'..'Z' | '_']['a'..'z' | 'A'..'Z' | '_' | '0'..'9']*} correctly."
+	06mar2003	feature
+		"Now, the scripting language accepts char literals, written as in C/JAVA and converted"
+		"to a string literal."
+
+version "2.06"	private
+	remark
+		"If you wish to recompile sources, please note that from now on,"
+		"\\CodeWorker\\ requires both \\SWORD\\ and \\ACE\\ libraries as static."
+	05mar2003	feature
+		"Add of a new BNF directive: \\samp{\\#insert(\\textit{variable}) \\textit{sequence-of-BNF-instructions}}."
+		"The directive creates a new node \\textit{variable} (if it doesn't exist yet) and executes"
+		"the sequence of BNF instructions that follow. If the sequence fails and if the node"
+		"was created by the directive, \\textit{variable} is removed."
+	05mar2003	bug_fix
+		"When \\#pushItem had created the variable to which push a new item, it wasn't removed"
+		"in case of failure in the sequence of tokens."
+	05mar2003	function removeVariable;
+	04mar2003	function getHTTPRequest, postHTTPRequest, sendHTTPRequest;
+
+version "2.05"	private
+	28feb2003	feature
+		"Add of the arithmetic bit shift operators \\textbf{<<} and \\textbf{>>}, available"
+		"in arithmetic expressions only."
+	28feb2003	feature
+		"Add of the arithmetic bitwise not operator \\textbf{\\~{}}, available in."
+		"arithmetic expressions only."
+	27feb2003	bug_fix
+		"File handles weren't closed after calling any function like \\samp{file*(...)}"
+		"(\\samp{fileSize(...)}, \\samp{fileLastModification(...)}, ...)."
+
+version "2.04"
+	26feb2003	feature
+		"Add of directive \\samp{\\#evaluateVariable(\\textit{expression})} to resolve a branch at runtime:\\\\"
+		"\\texttt{pushItem \\#evaluateVariable(\"variable.list\");}\\\\"
+		"is equivalent to:\\\\"
+		"\\texttt{pushItem variable.list;}\\\\"
+		"and is useful when the branch is known at runtime exclusively. Below, a new item is"
+		"added to an attribute of a variable \\textit{v}, and the name of the attribute is"
+		"held by the variable \\textit{a}:\\\\"
+		"\\texttt{function f(v : variable, a : value) {\\\\"
+		"\t\\makebox[0.8cm][r]{}pushItem \\#evaluateVariable(\"v.\" + a);\\\\"
+		"}"
+		""
+		"It allows building the structure of the parse tree dynamically. It is the case when"
+		"parsing an XML file with no information about its DTD."
+	26feb2003	feature
+		"Add of a new BNF directive: \\samp{\\#pushItem(\\textit{variable}) \\textit{sequence-of-BNF-instructions}}."
+		"The directive pushes a new item into the array of the node \\textit{variable} and executes"
+		"the sequence of BNF instructions that follow. If the sequence fails, the last element"
+		"of the array \\textit{variable} is removed."
+	21feb2003	"Gwenael CHAZAL"	improvement
+		"The memory space of parse trees has been reduced, and will be more later."
+	17feb2003	function removeFirstElement, removeLastElement;
+	17feb2003	bug_fix
+		"Use of free memory might have occurred on function \\samp{removeElement()}."
+	12feb2003	function octalToDecimal, hexaToDecimal;
+	06feb2003	improvement
+		"Now, the option '-c++' admits a second optional parameter, which is the root path of \\CodeWorker\\ either"
+		"in development or distributed state (subfolders aren't the same)."
+	06feb2003	improvement
+		"Better way to ignore insignificant characters between tokens. May have corrected"
+		"strange behaviors in some use cases."
+	06feb2003	feature
+		"Add of a new predefined BNF clause: \\samp{\\#readCompleteIdentifier} is valid if and"
+		"only if the current position of the input stream coincides with the beginning of an identifier."
+		""
+		"\\textbf{Examples:} \\textit{if the current position points to the fifth character...}"
+		"\\begin{itemize}"
+		"\t\\item \\samp{\\#readCompleteIdentifier} scans \\textit{\"room\"} from the input stream \\textit{\"1234room\"},"
+		"\t\\item \\samp{\\#readCompleteIdentifier} fails to scan the input stream \\textit{\"mushroom\"},"
+		"\t\tbecause \\textit{\"room\"} doesn't coincide with the beginning of an identifier,"
+		"\t\tbut is a part of \\textit{\"mushroom\"}."
+		"\\end{itemize}"
+	06feb2003	bug_fix
+		"The implicit copy of \\textit{source-to-source translation} (running the \\textit{BNF-translation}"
+		"script in \\samp{\\#implicitCopy} mode) wasn't working correctly while copying ignored"
+		"characters (specified by \\samp{\\#ignore(...)}) to the output stream."
+	06feb2003	bug_fix
+		"The implicit copy of \\textit{source-to-source translation} (running the \\textit{BNF-translation}"
+		"script in \\samp{\\#implicitCopy} mode) wasn't working correctly on token operator \\samp{\\textbf{->}}."
+	05feb2003	feature
+		"Add of two new predefined BNF clauses:"
+		"\\begin{itemize}"
+		"\t\\item \\samp{\\#readInteger} to scan an integer ; equivalent to \\samp{\\#!ignore ['0'..'9']+},"
+		"\t\\item \\samp{\\#readNumeric} to scan a floating-point number ; equivalent to"
+		"\t\t\\samp{\\#!ignore [\\#readInteger ['.' ['0'..'9']*]? | '.' ['0'..'9']*] [['e' | 'E'] ['+' | '-']? ['0'..'9']+]?},"
+		"\\end{itemize}"
+	05feb2003	function readByte, writeBytes;
+	05feb2003	feature
+		"Add of a new predefined BNF clause: \\samp{\\#readByte} to scan a byte (converted to a)"
+		"2-hexadecimal digit in the parse tree)."
+	05feb2003	bug_fix
+		"When a BNF token with a set of constant to check didn't match the input stream, the"
+		"error message was writing the token expression badly."
+	03feb2003	"Gwenael CHAZAL"	bug_fix
+		"While compiling the C++ translation of scripts:"
+		"\\begin{itemize}"
+		"\t\\item 3 parameters expected to initialize the runtime environment of a"
+		"\t\t\\textit{BNF-parsing} script since version 2.03,"
+		"\t\\item conversion to string expected for the name of files to generate"
+		"\t\t(C++ translation of functions \\samp{generate()}, \\samp{expand()}, \\samp{translate()}),"
+		"\\end{itemize}"
+	31jan2003	function byteToChar, charToByte;
+	31jan2003	function loadBinaryFile, saveBinaryToFile, saveToFile;
+	31jan2003	feature
+		"Add of the statement modifier \\samp{\\textbf{parsed_file(}\\textit{filename}\\textbf{)} \\textit{statement}}"
+		"and of a new BNF-script directive \\samp{\\textbf{\\#parsedFile(}\\textit{filename}\\textbf{)}\\textit{BNF-sequence}}"
+	31jan2003	option	parseBNF;
+
+version "2.03"
+	30jan2003	"Laurent RIESTERER"	feature
+		"\\CodeWorker\\ enables to come back up the parent of a node into the parse tree. the"
+		"syntax is \\samp{\\textit{myVariable}\\textbf{\\#parent}} to take back the parent of \\textit{myVariable}."
+	30jan2003	bug_fix
+		"Bad translation in C++ of \\samp{myVariable\\textbf{\\#back}}, which was generated as"
+		"\\samp{myVariable\\textbf{\\#front}} with the option \\samp{'-c++'} on the command line!"
+	30jan2003	option	translate;
+	28jan2003	"apm35"	feature
+		"Add of two directives in the Extended BNF grammar: \\samp{\\#implicitCopy} and"
+		"\\samp{\\#explicitCopy}, used into a \\textit{translation} script:"
+		"\\begin{itemize}"
+		"\t\\item \\samp{\\#implicitCopy} means that the scanned text is copied to the output stream"
+		"during the pattern matching. If a rule fails, the scanned text is removed from"
+		"the output stream, up to the last valid token,"
+		"\t\\item \\samp{\\#explicitCopy} means that the translation doesn't take in charge"
+		"of populating the output stream. You have to specify it (the classical mode)."
+		"\\end{itemize}"
+		"It simplifies scripts for source transformations in \\textit{source-to-source translations}"
+		"(function \\samp{translate()}), where both the input and the output are written in"
+		"the same language and that only some little transformation may occur on the output."
+		"Example: to scan all variable identifiers and to rename them after applying a coding"
+		"rule."
+	28jan2003	function getOutputLocation, resizeOutputStream, setOutputLocation;
+	24jan2003	feature
+		"Add of a new kind of regular expression for the BNF parsing scripts: \\samp{->} followed"
+		"by a token means that the parser has to find the next occurrence of the token into the"
+		"imput stream. In case of success, the position moves just after the matched token."
+		""
+		"\\samp{\\textbf{->}\\textit{expression}}\\\\"
+		"is equivalent to\\\\"
+		"\\samp{\\textbf{[\\~}\\textit{expression}\\textbf{]*} \\textit{expression}}"
+	24jan2003	"Gwenael CHAZAL"	bug_fix
+		"Normally, the option \\samp{-stack} prevents infinite loops of functions calling, but a"
+		"bug has hidden another:"
+		"\\begin{itemize}"
+		"\t\\item When the internal function-call stack had reached a depth of more than 128 entries,"
+		"\t\traising an error had caused to crash the interpreter,"
+		"\t\\item The stack allocated by the VC++ linker wasn't sufficient,"
+		"\\end{itemize}"
+
+version "2.02.1"
+	23jan2003	improvement
+		"Correction of some spelling mistakes into the documentation and the source code."
+
+version "2.02"
+	22jan2003	"Laurent RIESTERER"	bug_fix
+		"The function \\samp{coreString(\\textit{text}, \\textit{pos}, \\textit{last})} didn't"
+		"work correctly when \\textit{pos} was equal to \\samp{0} (an empty string was returned"
+		"systematically)."
+
+version "2.01"
+	20jan2003	feature
+		"A \\textit{BNF clause} may precise a different \\samp{\\#ignore} mode, which will be applied"
+		"just before running it by the caller. For example:\\\\"
+		"\\texttt{myClause \\textbf{\\#ignore(blanks)} ::= ... ;}"
+		""
+		"and\\\\"
+		"\\texttt{myCallerClause ::= \\#ignore(C++) ... myClause}"
+		""
+		"means that when \\textit{myCallerClause} will arrive on the \\textit{myClause} expression,"
+		"it won't ignore all what match the C++ empty characters (\\samp{\\#ignore(C++)} was"
+		"put at the beginning), but it will ignore blanks only (as specified into the declaration"
+		"of the clause \\samp{myClause})."
+
+version "2.0"
+	19jan2003	note
+		"First valid publication of the tool on Internet."
+
+version "1.43"
+	16jan2003	"Gwenael CHAZAL" bug_fix
+		"The function \\samp{today()} was returning the rank of the month instead of the minutes."
+	16jan2003	"Gwenael CHAZAL" bug_fix
+		"The \\textit{generation header}, a piece of facultative comment that may be put at"
+		"the beginning of the file to the convenience of the user, wasn't updated when its"
+		"user's comment had been specified as changed via the procedure \\samp{setGenerationHeader()}."
+	15jan2003	feature
+		"The new \\textit{forfile} statement iterates the name of all files that verify the filter \\textit{file-pattern}."
+		"The \\textit{iterator} refers to the current item of the list composed of retained file names, and the body statement is executed"
+		"on it. Note that the file pattern may begin with a path, which cannot contain jocker characters (\\samp{'*'} and \\samp{'?'})."
+		""
+		"The BNF representation of this statement is:\\\\"
+		"\\samp{"
+		"    \\textit{forfile_statement} ::= \\textbf{\"forfile\"} \\textit{iterator} \\textbf{\"in\"} [\\textit{sorted_declaration}]? [\\textit{cascading_declaration}]? \\textit{file-pattern} \\textit{body_statement}\\\\"
+		"	\\textit{sorted_declaration} ::= \\textbf{\"sorted\"} [\\textbf{\"no_case\"}]?\\\\"
+		"	\\textit{cascading_declaration} ::= \\textbf{\"cascading\"} [\\textbf{\"first\"} | \\textbf{\"last\"}]?"
+		"}"
+		""
+		"Like for the \\samp{foreach} statement, items are iterated either in the order of entrance, or in alphabetical order of keys if"
+		"option \\samp{sorted} is set. To ignore the case, the option must be followed by \\samp{no_case}."
+		"If not, uppercase letters are considered as smaller than any lowercase letter."
+		""
+		"Control may not be sequential into the body statement. \\samp{break} and \\samp{return} enable"
+		"exiting definitely the loop, and \\samp{continue} transfers the control to the head of the"
+		"\\samp{forfile} statement for the next iteration."
+		""
+		"The option \\samp{cascading} allows propagating \\samp{forfile} on directories recursively."
+		"The way it works is illustrated by an example:"
+		""
+		"\\texttt{"
+		"\t\\makebox[1cm][r]{\\textrm{\\tiny     }} \\textbf{forfile i in cascading \"*.html\"}\\\\"
+		"\t\\makebox[1cm][r]{\\textrm{\\tiny     }} \\makebox[0.800000cm][l]{}if isNegative(findString(i, \"manual_\")) traceLine(i);}"
+		""
+		"At the beginning, \\samp{i} points to the first HTML file of the current directory and"
+		"the body is executed. Before iterating i to the next item, the \\samp{forfile} checks whether"
+		"the directory of the current file owns subfolders or not. If yes, it applies recursively"
+		"\\samp{forfile} on subfolders."
+		""
+		"Option \\samp{cascading} offers two behaviours:"
+		"\\begin{itemize}"
+		"\t\\item \\samp{first} means that the subfolders are visited before running the body,"
+		"\t\\item \\samp{last} is the default behaviour, as seen in previous examples, and"
+		"\t\tpropagates the \\samp{forfile} on the subfolder after executing the body."
+		"\\end{itemize}"
+	15jan2003	function scanDirectories;
+	13jan2003	feature
+		"Add of the new BNF clause \\samp{\\#check(\\textit{boolean-expression})} that"
+		"continues the sequence only if \\textit{boolean-expression} is valid (not an"
+		"empty string). It never moves the pointer of the input stream, even in case of"
+		"success. This clause is useful to have like a conditional statement:\\\\"
+		"\\texttt{"
+		"\\makebox[0.8cm][r]{}\\#check(sID == \"struct\")\\\\"
+		"\\makebox[0.8cm][r]{}'\\{' [attribute]* '\\}'\\\\"
+		"\\makebox[1.6cm][r]{}|\\\\"
+		"\\makebox[0.8cm][r]{}attribute}"
+		""
+		"It is equivalent to the free parsing script:\\\\"
+		"\\texttt{"
+		"\\makebox[0.8cm][r]{}if sID == \"struct\" \\{\\\\"
+		"\\makebox[1.6cm][r]{}set bSuccess = readIfEqualTo(\"\\{\");\\\\"
+		"\\makebox[1.6cm][r]{}if bSuccess \\{\\\\"
+		"\\makebox[2.4cm][r]{}while attribute() ;\\\\"
+		"\\makebox[2.4cm][r]{}set bSuccess = readIfEqualTo(\"\\}\");\\\\"
+		"\\makebox[1.6cm][r]{}\\}\\\\"
+		"\\makebox[0.8cm][r]{}\\} else \\{\\\\"
+		"\\makebox[1.6cm][r]{}set bSuccess = attribute();\\\\"
+		"\\makebox[0.8cm][r]{}\\}}"
+
+version "1.42"
+	10jan2003	"Eric NICOLAS"	bug_fix
+		"The \\samp{merge} statement wasn't merging nodes correctly. Some attributes and"
+		"items were duplicated."
+	10jan2003	"Eric NICOLAS"	bug_fix
+		"The profiling mode \\textit{quantify} wasn't parsing correctly local variables into"
+		"an included file: a compound statement was build for putting the included script inside."
+	07jan2003	improvement
+		"The source code has been modified lightly to compile on \\textit{Cygwin}."
+	03jan2003	feature
+		"Add of 2 new directives, \\samp{\\#reference} and \\samp{\\#attach}, which allow"
+		"maintaining 2 scripts that provide the same kind of generation (for example), but"
+		"in different target languages (the first one for \\textit{JAVA} and the second one"
+		"for \\textit{C++} for instance)."
+	31dec2002	feature
+		"Add of the new directive \\samp{\\#syntax}, which allows changing the syntax of a"
+		"script file, using a \\textit{shell-like} or a \\textit{makefile-like} or any kind"
+		"of other format, more appropriate than the scripting language for a given implementation."
+
+version "1.41"
+	30dec2002	"Eric NICOLAS"	function canonizePath, relativePath;
+	30dec2002	function getCurrentDirectory;
+	23dec2002	function compareDate;
+	23dec2002	function changeDirectory;
+	23dec2002	function createVirtualFile, deleteVirtualFile, existVirtualFile, loadVirtualFile;
+	23dec2002	behaviour
+		"The function \\samp{setProperty()} doesn't accept an empty name of property anymore."
+		"Now, it throws an error."
+	20dec2002	bug_fix
+		"The parsing of a BNF token \\textit{T} didn't recognized the allowed syntax"
+		"\\samp{\\textit{T} \\textbf{':'} \\textit{constant-or-set} \\textbf{':'} \\textit{variable}}"
+		"as \\texttt{\\textit{IDENT} : \"current\" : sVersion} or"
+		"\\texttt{\\textit{IDENT} : \{\"int\", \"double\", \"string\"\} : sType} for instance."
+	20dec2002	feature
+		"Add of a new BNF token called \\samp{\\#readIdentifier}, which is equivalent to the"
+		"parsing function \\samp{readIdentifier()} or to the BNF sequence:\\\\"
+		"\\samp{\\#!ignore ['a'..'z'|'A'..'Z'|'_'] ['a'..'z'|'A'..'Z'|'_'|'0'..'9']*}"
+	20dec2002	feature
+		"Add of a new BNF token called \\samp{\\#readCString}, which is equivalent to the"
+		"parsing function \\samp{readString()} or to the BNF sequence:\\\\"
+		"\\samp{\\#!ignore \\textbf{'\"'} [\\textbf{'$backslash$'} \\textit{ESCAPE} | ~\\textbf{'\"'}]* \\textbf{'\"'}} where\\\\"
+		"\\samp{\\textit{ESCAPE} ::= \\textbf{'$backslash$'} | \\textbf{'\"'} | \\textbf{'a'} | \\textbf{'b'} | \\textbf{'f'} | \\textbf{'n'} | \\textbf{'r'} | \\textbf{'t'} | \\textbf{'v'}}"
+	20dec2002	feature
+		"Add of a new kind of local declaration called \\samp{localref}, which declares a"
+		"local variable as the \\samp{local} statement and that assigns a reference to another node.\\\\"
+		"The syntax is \\samp{\\textbf{\"localref\"} \\textit{myVar} \\textbf{'='} \\textit{myNode} \\textbf{';'}}"
+		"and the statement is equivalent to:\\\\"
+		"texttt{local myVar;\\\\"
+		"ref myVar = myNode;}"
+	20dec2002	"Gwenael CHAZAL"	feature
+		"Add of a new boolean operator, the \\textit{exclusive OR}, written \\textbf{$\\triangle$}"
+		"or \\textbf{$\\triangle\\triangle$} (the \\textit{hat} character)."
+	20dec2002	function getProtectedAreaKeys, removeProtectedArea;
+
+version "1.40"
+	19dec2002	"Laurent RIESTERER"	bug_fix
+		"A regression has been corrected into \\samp{slideNodeContent()} and \\samp{clearVariable()}"
+		"and \\samp{exploreDirectory()} and \\samp{scanFiles()} due to a bad management of the"
+		"timelife of references to another variable."
+	18dec2002	function compileToCpp, invertArray, remainingProtectedAreas;
+	17dec2002	deprecated
+		"The functional syntax for including a script file into another has changed to take"
+		"a look of preprocessing directive: \\samp{\\textbf{\\#include \"} \\textit{script-file} \\textbf{\"}}."
+	16dec2002	"Eric NICOLAS"	feature
+		"The arithmetic expressions can be written between \\textbf{'\\$'} symbols, as formulae"
+		"under \\textit{LaTeX}."

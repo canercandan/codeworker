@@ -1,0 +1,32 @@
+@
+setProtectedArea("USER INCLUDES");
+newFloatingLocation("INCLUDE FILES");
+@
+#include "@this.name@.h"
+
+@this.name@::@this.name@() {
+@
+setProtectedArea("CONSTRUCTOR");
+@}
+
+@this.name@::~@this.name@() {
+@
+setProtectedArea("DESTRUCTOR");
+foreach i in this.attributes {
+	if i.aggregate {
+		insertTextOnce(getFloatingLocation("INCLUDE FILES"), "#include \"" + i.type.name + ".h\"" + endl());
+		if i.type.isArray {
+			@	for (@getCppType(i.type)@::iterator iterate_@i.name@ = @i.name@_.begin(); iterate_@i.name@ != @i.name@_.end(); ++iterate_@i.name@) {
+		delete *iterate_@i.name@;
+	}
+@
+		} else {
+			@	delete @i.name@_;
+@
+		}
+	}
+}
+@}
+
+@
+setProtectedArea("USER METHODS");

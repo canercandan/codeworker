@@ -1,0 +1,12 @@
+/*description:
+{
+	Parses the DTD of the \samp{ejb_jar} descriptor as provided by \samp{Sun Microsystems, Inc} and generates a
+	\textit{BNF-parsing} script for parsing and validating any kind of XML \samp{ejb_jar} files.
+}
+
+input "examples/ejb-jar_2_0.dtd";
+output "examples/ejb-jar_2_0-parser.cwp";
+*/
+local theDTD;
+parseAsBNF("repository/DTDparser.cwp", theDTD, "examples/ejb-jar_2_0.dtd");
+generate("repository/DTDtoBNF.cwt", theDTD, getWorkingPath() + "examples/ejb-jar_2_0-parser.cwp");

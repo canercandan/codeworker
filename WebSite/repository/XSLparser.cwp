@@ -1,0 +1,447 @@
+/*description:
+{
+	Parses an XSL file, building a parse tree that conforms to the following logic structure:
+	\begin{itemize}
+		\item \TODO\ 
+	\end{itemize}
+
+	It recognizes some XSL elements (not all yet), such as:
+	\begin{itemize}
+		\item \samp{xsl:template}
+		\item \samp{xsl:foreach}
+		\item \samp{xsl:value-of}
+		\item \samp{xsl:sort}
+		\item \samp{xsl:when}
+		\item \samp{xsl:choose}
+		\item \samp{xsl:otherwise}
+	\end{itemize}
+
+	XPath is parsed completely according to the specifications for \samp{XSLT 1.0}.
+
+	If you encounter bugs or limitations, please send a mail to \email{\WebSite\ }.
+}
+*/
+
+XSLparser	::=
+		#ignore(XML)
+		[
+			"<?" IDENTIFIER:"xml"
+			#continue
+			XMLAttribute("", "version")
+			XMLAttribute("", "encoding")
+			"?>"
+		]?
+		#continue
+		'<' IDENTIFIER:"xsl" ':' IDENTIFIER:{"stylesheet", "transform"}:sTag
+		XMLAttribute("", "version")
+		XMLAttribute("xmlns", "xsl")
+		'>'
+		=> insert this.type = "stylesheet";
+		[XMLContent(this)]*
+		"</" IDENTIFIER:"xsl" ':' #readText(sTag) '>'
+		#empty
+		;
+
+XMLAttribute(sExtension : value, sName : value)	: value	::=
+		[
+			#check(sExtension)
+			IDENTIFIER:sID
+			#check(sExtension == sID)
+			':'
+		]?
+		IDENTIFIER:sID
+		#check(sName == sID)
+		'='
+		#continue
+		#readCString:XMLAttribute
+		;
+
+XMLContent(myXSLNode : node)	::=
+		!['<' '/' IDENTIFIER:"xsl"]
+		#!ignore
+		[
+			![#ignore(XML) '<' '/' IDENTIFIER:"xsl"]
+			[
+				~[
+					'<'
+					#ignore(XML)
+					['/']?
+					IDENTIFIER:"xsl"
+				]
+			]*:sText
+			=> if sText {
+				local iIndex = findLastString(sText, "\n");
+				if $iIndex >= 0$ {
+					increment(iIndex);
+					local sRemains = subString(sText, iIndex);
+					trim(sRemains);
+					if !sRemains set sText = leftString(sText, iIndex);
+				}
+				pushItem myXSLNode.content = sText;
+			}
+			=> local sExtension;
+			[
+					'<'
+					#ignore(XML)
+					IDENTIFIER:"xsl"
+					#continue
+					':'
+					IDENTIFIER:sName
+					XMLElement<"xsl:" + sName>(myXSLNode)
+			]?
+		]+
+		;
+
+XMLElement<"xsl:template">(myXSLNode : node)	::=
+		#continue
+		=> pushItem myXSLNode.content;
+		=> localref myTemplate = myXSLNode.content#back;
+		=> insert myTemplate.type = "template";
+		[#insert(myTemplate.match) XPath("match", myTemplate.match)]?
+		'>'
+		[XMLContent(myTemplate)]?
+		'<' '/' "xsl" ':' "template" '>'
+		;
+
+XMLElement<"xsl:for-each">(myXSLNode : node)	::=
+		#continue
+		=> pushItem myXSLNode.content;
+		=> localref myForeach = myXSLNode.content#back;
+		=> insert myForeach.type = "for-each";
+		XPath("select", myForeach.select)
+		'>'
+		[XMLContent(myForeach)]?
+		'<' '/' "xsl" ':' "for-each" '>'
+		;
+
+XMLElement<"xsl:value-of">(myXSLNode : node)	::=
+		#continue
+		=> pushItem myXSLNode.content;
+		=> localref myValueOf = myXSLNode.content#back;
+		=> insert myValueOf.type = "value-of";
+		XPath("select", myValueOf.select)
+		'/' '>'
+		;
+
+XMLElement<"xsl:sort">(myXSLNode : node)	::=
+		=> if myXSLNode.type != "for-each" && myXSLNode.type != "apply-templates"
+			error("'xsl:sort' is valid under 'for-each' or 'apply-templates' only");
+		#continue
+		XPath("select", myXSLNode.sort)
+		'/' '>'
+		;
+
+XMLElement<"xsl:choose">(myXSLNode : node)	::=
+		#continue
+		'>'
+		=> pushItem myXSLNode.content;
+		=> localref myChooseNode = myXSLNode.content#back;
+		=> insert myChooseNode.type = "choose";
+		XMLContent(myChooseNode)
+		=> if !existVariable(myChooseNode.when)
+			error("'xsl:when' expected in 'xsl:choose'");
+		=> if !existVariable(myChooseNode.otherwise)
+			error("'xsl:otherwise' expected in 'xsl:choose'");
+		'<' '/' "xsl" ':' "choose" '>'
+		;
+
+XMLElement<"xsl:when">(myXSLNode : node)	::=
+		=> if myXSLNode.type != "choose" || existVariable(myXSLNode.when)
+			error("unexpected tag 'xsl:when'");
+		#continue
+		XBooleanExpr("test", myXSLNode.test)
+		'>'
+		[XMLContent(myXSLNode.when)]?
+		'<' '/' "xsl" ':' "when" '>'
+		;
+
+XMLElement<"xsl:otherwise">(myXSLNode : node)	::=
+		=> if myXSLNode.type != "choose" || existVariable(myXSLNode.otherwise)
+			error("unexpected tag 'xsl:otherwise'");
+		#continue
+		'>'
+		[XMLContent(myXSLNode.otherwise)]?
+		'<' '/' "xsl" ':' "otherwise" '>'
+		;
+
+
+//---------------
+// lexical tokens
+//---------------
+
+IDENTIFIER	::= #!ignore #readIdentifier [['-' | '.'] #readIdentifier]*;
+
+
+/////////////////////////////////////////////////////////////////////////////////
+//                                       XPath
+/////////////////////////////////////////////////////////////////////////////////
+
+XBooleanExpr(sAttribute : value, expr : node)	::= XPath(sAttribute, expr);
+
+XPath(sAttribute : value, expr : node)	::=
+		#readIdentifier:sAttribute
+		'='
+		#continue
+		=> local cEnd;
+		["\"":cEnd | "'":cEnd]
+		XPathExpr(expr, cEnd)
+		#readText(cEnd)
+		;
+
+XPathExpr(expr : node, env : node)	::= expression(expr, env);
+
+
+//--------------
+// Location path
+//--------------
+
+locationPath(expr : node, env : node)	::=
+			absoluteLocationPath(expr, env)
+		|
+			#insert(expr.right)
+			relativeLocationPath(expr.right, env)
+			=> insert expr.type = "/";
+			=> insert expr.left.type = "current";
+			;
+
+absoluteLocationPath(expr : node, env : node)	::=
+			'/'
+			[
+					#insert(expr.right)
+					relativeLocationPath(expr.right, env)
+					=> insert expr.type = "/";
+					=> insert expr.left.type = "root";
+				|
+					=> insert expr.type = "root";
+			]
+		|
+			"//" #continue
+			=> insert expr.type = "//";
+			=> insert expr.left.type = "root";
+			relativeLocationPath(expr.right, env);
+
+relativeLocationPath(expr : node, env : node)	::=
+		step(expr, env)
+		[
+			['/' | "//"]:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.type = sOperator;
+			step(expr.right, env)
+		]*
+		;
+
+step(expr : node, env : node)	::=
+			=>local bAttribute;
+			[
+					axisName:sAxis
+					"::"
+					=> insert expr.type = "axis";
+					=> insert expr.axis = sAxis;
+				|
+					'@' => set bAttribute = true;
+			]?
+			nodeTest(expr, env)
+			=> if bAttribute insert expr.is_attribute = true;
+			[#pushItem(expr.predicates) predicate(expr.predicates#back, env)]*
+		|
+			".." => insert expr.type = "..";
+		|
+			'.' => insert expr.type = ".";
+		;
+
+nodeTest(expr : node, env : node)	::=
+			nameTest(expr, env)
+		|
+			nodeType:sNodeType '(' ')'
+			=> insert expr.type = "nodeType";
+			=> insert expr.nodeType = sNodeType;
+		|
+			"processing-instruction" '(' #continue
+			=> insert expr.type = "test-p-i";
+			literal ')'
+		;
+
+nameTest(expr : node, env : node)	::=
+			'*' => insert expr.type = "*";
+		|
+			NCName:sName ':' '*'
+			=> insert expr.type = ":*";
+			=> insert expr.namespace = sName;
+		|
+			QName:sName
+			=> insert expr.type = "name";
+			=> insert expr.name = sName;
+		;
+
+
+//------------
+// Expressions
+//------------
+
+predicate(expr : node, env : node)	::=
+		'['
+		#continue #ignore(blanks)
+		=> insert expr.type = "[]";
+		expression(expr.predicate, env)
+		']';
+
+expression(expr : node, env : node)	::= orExpr(expr, env);
+
+orExpr(expr : node, env : node)	::=
+		andExpr(expr, env)
+		[
+			#readIdentifier:"or" #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.type = "or";
+			andExpr(expr.right, env)
+		]*;
+
+andExpr(expr : node, env : node)	::=
+		equalityExpr(expr, env)
+		[
+			#readIdentifier:"and" #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.type = "and";
+			equalityExpr(expr.right, env)
+		]*;
+
+equalityExpr(expr : node, env : node)	::=
+		relationalExpr(expr, env)
+		[
+			['=' | "!="]:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.type = sOperator;
+			relationalExpr(expr.right, env)
+		]*;
+
+relationalExpr(expr : node, env : node)	::=
+		additiveExpr(expr, env)
+		[
+			multiplyOperator:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.type = sOperator;
+			additiveExpr(expr.right, env)
+		]*;
+
+additiveExpr(expr : node, env : node)	::=
+		multiplicativeExpr(expr, env)
+		[
+			['+' | '-']:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.type = sOperator;
+			multiplicativeExpr(expr.right, env)
+		]*;
+
+multiplicativeExpr(expr : node, env : node)	::=
+		unaryExpr(expr, env)
+		[
+			['*' | #readIdentifier:{"div", "mod"}]:sOperator
+			#continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.type = sOperator;
+			unaryExpr(expr.right, env)
+		]*;
+
+unaryExpr(expr : node, env : node)	::=
+			unionExpr(expr, env)
+		|
+			'-' #insert(expr.expression) unaryExpr(expr.expression, env)
+			=> insert expr.type = "opposite";
+		;
+
+unionExpr(expr : node, env : node)	::=
+		pathExpr(expr, env)
+		[
+			'|' #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.type = "|";
+			pathExpr(expr.right, env)
+		]*;
+
+pathExpr(expr : node, env : node)	::=
+			locationPath(expr, env)
+		|
+			filterExpr(expr, env)
+			[
+				["//" | '/']:sOperator #continue
+				=> slideNodeContent(expr, left);
+				=> insert expr.type = sOperator;
+				relativeLocationPath(expr.right, env)
+			]?;
+
+filterExpr(expr : node, env : node)	::=
+		primaryExpr(expr, env)
+		[#pushItem(expr.predicates) predicate(expr.predicates#back, env)]*;
+
+primaryExpr(expr : node, env : node)	::=
+			variableReference:expr.variable
+			=> insert expr.type = "$";
+		|
+			'(' #continue expression(expr, env) ')'
+		|
+			literal:sLiteral
+			=> insert expr.type = "''";
+			=> insert expr.literal = coreString(sLiteral, 1, 1);
+		|
+			number:sNumber
+			=> insert expr.type = "0";
+			=> insert expr.number = sNumber;
+		|
+			functionCall(expr, env)
+		;
+
+functionCall(expr : node, env : node)	::=
+		=> local minParams;
+		=> local paramTypes;
+		functionName(minParams, paramTypes):sFunction '('
+		#continue
+		=> insert expr.type = "()";
+		=> insert expr.function = sFunction;
+		[
+			#pushItem(expr.arguments)
+			expression(expr.arguments#back, env)
+			[
+				',' #continue
+				=> pushItem expr.arguments;
+				expression(expr.arguments#back, env)
+			]*
+		]?
+		')'
+		=> if $getArraySize(expr.arguments) > getArraySize(paramTypes)$
+			error("too much arguments passed to the function '" + sFunction + "'");
+		=> if $getArraySize(expr.arguments) < minParams$
+			error("not enough arguments passed to the function '" + sFunction + "'");
+		;
+
+//---------------
+// lexical tokens
+//---------------
+
+variableReference : value	::= '$' QName:variableReference;
+literal	::=
+		"'" #continue ->"'"
+	|
+		"\"" #continue ->"\"";
+number	::= #readNumeric;
+
+axisName	::=
+		IDENTIFIER:	{	"ancestor", "ancestor-or-self", "attribute", "child",
+						"descendant", "descendant-or-self", "following",
+						"following-sibling", "namespace", "parent",
+						"preceding", "preceding-sibling", "self" };
+
+nodeType	::= IDENTIFIER:{"comment", "text", "processing-instruction", "node"};
+
+multiplyOperator : value	::=
+			["<=" | ">=" | '<' | '>']:multiplyOperator
+		|
+			"&lt;" => set multiplyOperator = '<';
+		|
+			"&gt;" => set multiplyOperator = '>';
+		;
+
+QName	::= [prefix ':']? localPart;
+prefix	::= NCName;
+localPart	::= NCName;
+NCName	::= IDENTIFIER;
+

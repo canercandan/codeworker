@@ -1,0 +1,295 @@
+//Source file: Y:/documents/productdocuments/interfacespecifications/hosa/idl/hosa/hosa_gms_interfaces.idl
+
+#ifndef __HOSA_GMS_INTERFACES_DEFINED
+#define __HOSA_GMS_INTERFACES_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+#include "hosa_gms_data.idl"
+#include "gms.idl"
+#include "osa.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			module hms {
+
+                                interface IpHosaMailbox; // forward reference
+				
+				/* Define the data elements that unambigously specify a mailbox. */
+				
+				struct TpHosaMailboxIdentifier {
+					/* Specifies the session ID attached to the opened mailbox. */
+					org::csapi::TpSessionID MailboxSessionID;
+					/* Specifies the interface reference for the mailbox object. */
+					IpHosaMailbox IpHosaMailboxRef;
+				};
+
+				/* The client application developer implements the H-OSA generic messaging manager application interface to handle mailbox termination, mailbox fault and messaging event notifications. */
+				
+				interface IpAppHosaMessagingManager : org::csapi::gms::IpAppMessagingManager {
+					/* This method notifies the application of a messaging related event.
+					@roseuid 3D9DC0FF000E */
+					void hosaReportNotification (
+						in org::csapi::TpAssignmentID assignmentID,	//Specifies the assignment ID that was returned on a notification creation request. The assignment ID uniquely identifies a notification subscription.
+						in TpHosaMessagingEventInfoSet eventInfo	//Contains an event or a list of events. Multiple events can be reported in one notification message if they where collected within the systems collection interval.
+						);
+						
+					/* This method reports to the application that a notification subscription can not be serviced due to a persistent error condition related to the subscription. The subscription identified by assignmentID is terminated.
+					@roseuid 3E550A740285 */
+					void hosaReportNotificationError (
+						in org::csapi::TpAssignmentID assignmentID,	//Specifies the assignment ID that was returned on a notification creation request. The assignment ID uniquely identifies a notification subscription.
+						in TpHosaGMSError error,	//Indicates the error that occurred.
+						in org::csapi::TpString errorReason	//Provide additional information that helps locating the source of the error.
+						);
+						
+				};
+				
+				/* The client application developer implements the H-OSA mailbox application interface to receive asynchronous results of earlier issued requests. */
+				
+				interface IpAppHosaMailbox : org::csapi::IpInterface {
+					/* This method delivers the result of a completed list messages request. Whether there are still more messages that can be listed yet will be indicated with the final parameter.
+					@roseuid 3D8845A6011D */
+					void hosaListMessagesRes (
+						in org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+						in TpHosaMessageDescriptionList messageList,	//A list with each entry giving a short description of the message.
+						in TpHosaMailboxFolderStatusInformation mailboxStatusInfo,	//Gives some information about the status of the mailbox regarding the number of messages it holds, how many new messages etc.
+						in org::csapi::TpBoolean final	//Indication whether the returned list is the final part of the complete list (TRUE) or if there are still parts of the list to retrieve (FALSE).
+						);
+						
+					/* This method indicates that the message deletion request was succesfully executed.
+					@roseuid 3E2D4F440370 */
+					void hosaDeleteMessageRes (
+						in org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in org::csapi::TpAssignmentID requestID	//Identifies the request for which this result is send.
+						);
+						
+					/* This method delivers the result of a completed list message body parts request.
+					@roseuid 3E1C291703B9 */
+					void hosaListMessageBodyPartsRes (
+						in org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+						in TpHosaBodyPartDescriptionList partsList	//Specifies the structure of the message up to the requested nesting level.
+						);
+						
+					/* This method delivers the result of a completed get message body part request.
+					@roseuid 3E1C29180035 */
+					void hosaGetMessageBodyPartRes (
+						in org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+						in TpHosaBodyPartDescription bodyPartHeaders,	//Specifies details about the body part that are needed in order to interpret the content correctly. For example content type, encoding, size etc. Contains the headers of a MIME body part, see RFC 2046.
+						in org::csapi::TpOctetSet bodyPartContent	//Contains the content of a MIME body part, see RFC 2046.
+						);
+						
+					/* This method delivers the result of a completed get message content request.
+					@roseuid 3E1C29180071 */
+					void hosaGetMessageContentRes (
+						in org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+						in org::csapi::TpString contentType,	//Specifies the content type value according to the RFC2045 format.
+						in org::csapi::TpString contentTransferEncoding,	//Specifies the content transfer encoding value according to the RFC2045 format.
+						in org::csapi::TpOctetSet content	//Contains the body of the RFC (2)822 message.
+						);
+						
+					/* This method delivers the result of a completed get message headers request.
+					@roseuid 3E1C291800CB */
+					void hosaGetMessageHeadersRes (
+						in org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+						in TpHosaMessageHeaderFieldSet headers	//Carries the headers of the message.
+						);
+						
+					/* This method delivers the result of a completed get full message request.
+					@roseuid 3E1C29180107 */
+					void hosaGetFullMessageRes (
+						in org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+						in org::csapi::TpOctetSet message	//Contains a raw RFC (2)822 message.
+						);
+						
+					/* This method indicates that the list messages request was unsuccesful.
+					@roseuid 3E2D1464029B */
+					void hosaListMessagesErr (
+						in org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this error is send.
+						in TpHosaGMSError error,	//Indicates the error that occurred.
+						in org::csapi::TpString errorReason	//Provide additional information that helps locating the source of the error.
+						);
+						
+					/* This method indicates that the delete message  request was unsuccesful.
+					@roseuid 3E2D4FC4019D */
+					void hosaDeleteMessageErr (
+						in org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this error is send.
+						in TpHosaGMSError error,	//Indicates the error that occurred.
+						in org::csapi::TpString errorReason	//Provide additional information that helps locating the source of the error.
+						);
+						
+					/* This method indicates that the list message body  parts request was unsuccesful.
+					@roseuid 3E2D4BAB02D5 */
+					void hosaListMessageBodyPartsErr (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpAssignmentID requestID,	//Identifies the request for which this error is send.
+						in TpHosaGMSError error,	//Indicates the error that occurred.
+						in  org::csapi::TpString errorReason	//Provide additional information that helps locating the source of the error.
+						);
+						
+					/* This method indicates that the get message body  part request was unsuccesful.
+					@roseuid 3E2D4BAC01BE */
+					void hosaGetMessageBodyPartErr (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpAssignmentID requestID,	//Identifies the request for which this error is send.
+						in TpHosaGMSError error,	//Indicates the error that occurred.
+						in  org::csapi::TpString errorReason	//Provide additional information that helps locating the source of the error.
+						);
+						
+					/* This method indicates that the get message content request was unsuccesful.
+					@roseuid 3E2D4BEF032D */
+					void hosaGetMessageContentErr (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpAssignmentID requestID,	//Identifies the request for which this error is send.
+						in TpHosaGMSError error,	//Indicates the error that occurred.
+						in  org::csapi::TpString errorReason	//Provide additional information that helps locating the source of the error.
+						);
+						
+					/* This method indicates that the get message headers request was unsuccesful.
+					@roseuid 3E2D4BF0002B */
+					void hosaGetMessageHeadersErr (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpAssignmentID requestID,	//Identifies the request for which this error is send.
+						in TpHosaGMSError error,	//Indicates the error that occurred.
+						in  org::csapi::TpString errorReason	//Provide additional information that helps locating the source of the error.
+						);
+						
+					/* This method indicates that the get full message  request was unsuccesful.
+					@roseuid 3E2D4C260390 */
+					void hosaGetFullMessageErr (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpAssignmentID requestID,	//Identifies the request for which this error is send.
+						in TpHosaGMSError error,	//Indicates the error that occurred.
+						in  org::csapi::TpString errorReason	//Provide additional information that helps locating the source of the error.
+						);
+						
+				};
+				
+				/* This interface is the 'service manager' interface for the H-OSA Generic Messaging Service. The generic messaging manager interface provides the management functions to the generic messaging service. The application programmer can use this interface to open mailbox objects and also to enable or disable event notifications. */
+				
+				interface IpHosaMessagingManager : org::csapi::gms::IpMessagingManager {
+					/* This method opens a mailbox for the application. The session ID and the reference of the opened Mailbox object is returned. Authentication information may be needed to open the mailbox.
+The application can open more than one mailbox at the same time.
+					@roseuid 3D9D80BC00B2 */
+					TpHosaMailboxIdentifier hosaOpenMailbox (
+						in  org::csapi::TpString mailboxID,	//Specifies the identity of the mailbox.
+						in  org::csapi::TpString authenticationInfo,	//Authentication information needed for the application to open a mailbox in the messaging system, such as a key or password. If the authentication process is considered strong enough for the application to gain access to the mailbox, then the authentication information can be an empty string.
+						in IpAppHosaMailbox appMailbox	//The reference to the callback interface on which the Application receives mailbox result callbacks.
+						)						
+						raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE, org::csapi::gms::P_GMS_INVALID_MAILBOX,org::csapi::gms::P_GMS_INVALID_AUTHENTICATION_INFORMATION);
+						
+					/* This method is used to subscribe to new-message notifications.
+					@roseuid 3D9DBEE80339 */
+					org::csapi::TpAssignmentID hosaCreateMessagingNotification (
+						in IpAppHosaMessagingManager appInterface,	//The reference to the callback interface on which the Application receives manager callbacks. If the same application requests two notifications with exactly the same criteria but different callback references, the second callback will be treated as an additional callback. Both notifications will share the same assignmentID. The gateway will always use the most recent callback. In case this most recent callback fails the second most recent is used. In case the enableCallNotification contains no callback, at the moment the application needs to be informed the gateway will use as callback the callback that has been registered by setCallback().
+						in TpHosaMessagingEventCriteria eventCriteria	//Specifies the criteria that an event must comply with in order to be reported  to the Application.
+						)						
+						raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_CRITERIA, P_HOSA_INVALID_PARAMETER_VALUE);
+						
+					/* This method is used by the application to remove notification subscriptions.
+					@roseuid 3E22D1F602ED */
+					void hosaDestroyMessagingNotification (
+						in  org::csapi::TpAssignmentID assignmentID	//Specifies the assignment ID given by the generic messaging manager interface when the previous enableNotification() was called. If the assignment ID does not correspond to one of the valid assignment IDs, the framework will return the error code P_INVALID_ASSIGNMENTID.
+						)						
+						raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_ASSIGNMENT_ID,  P_HOSA_INVALID_PARAMETER_VALUE);
+						
+				};
+				
+				/* This interface allows for retrieving information from the mailbox that it represents. It allows for listing messages retrieving and deleting messages etc. */
+				
+				interface IpHosaMailbox : org::csapi::gms::IpMailbox {
+					/* Request  a list of messages in a mailbox folder, the list can be narrowed down by providing listing criteria. The maximum size of the list returned for a request is depending on the System configuration. In that case subsequent requests can be used to obtain the complete list, see also the description of the reset parameter.
+					@roseuid 3D9ABA130300 */
+					org::csapi::TpAssignmentID hosaListMessagesReq (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpString folderID,	//Specifies the identity of the folder for which a list of messages is requested. The folderID parameter is only relevant if the reset parameter is set to TRUE. If the reset parameter is set to FALSE it is ignored.
+						in TpHosaListMessagesCriteria criteria,	//Specifies the criteria that items to be listed need to conform to. The criteria parameter is only relevant if the reset parameter is set to TRUE. If the  reset parameter is FALSE it is ignored.
+						in  org::csapi::TpBoolean reset	//TRUE: Indicates that the application is intended to obtain the list of messages starting from the beginning.   FALSE: Indicates that the application requests the next part of the list that have not (yet) been obtained since the last call to this method with this parameter set to TRUE.   The first time this method is invoked, reset shall be set to TRUE. Following the receipt of a final indication in the hosaListMessagesRes(), for the next call to this method reset shall be set to TRUE. P_TASK_REFUSED may be thrown if these conditions are not met.
+						)						
+						raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_SESSION_ID, org::csapi::gms::P_GMS_INVALID_FOLDER_ID, org::csapi::gms::P_GMS_MAILBOX_LOCKED, P_HOSA_INVALID_PARAMETER_VALUE);
+						
+					/* Instruct the System to delete the indicated message.
+					@roseuid 3D9DBC880209 */
+					org::csapi::TpAssignmentID hosaDeleteMessageReq (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpString folderID,	//Specifies the identity of the folder in which the targeted message is contained.
+						in  org::csapi::TpString messageID	//Pinpoints the exact message on whhich to perform this operation.
+						)						
+						raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_SESSION_ID, org::csapi::gms::P_GMS_INVALID_FOLDER_ID, org::csapi::gms::P_GMS_INVALID_MESSAGE_ID, P_HOSA_INVALID_PARAMETER_VALUE);
+						
+					/* Request a list of a specified message's MIME structure. This is especially useful with MIME multipart messages. The Application shall indicate up to what nesting level it wants the MIME structure presented. When an Application wants to download only a specific attachment with the hosaGetBodyPartReq() method this method needs to invoked first in order to find out the partID of the attachment to be retrieved.
+					@roseuid 3E1C285E0236 */
+					 org::csapi::TpAssignmentID hosaListMessageBodyPartsReq (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpString folderID,	//Specifies the identity of the folder in which the targeted message is contained.
+						in  org::csapi::TpString messageID,	//Identifies the exact message on which to perform this operation.
+						in  org::csapi::TpInt32 maxNestingLevel	//Parts of a MIME multipart message can be multipart structures themselves. The Application can indicate what is the maximum nesting level it wants the structure to be reported. A nesting level of 0 means that only the message content itself will be reported. A nesting level of 1 means that the parts of a multipart MIME type on level 0 will be reported as well. In general a maxNestingLevel of nl=n means that the parts of a multipart MIME type on level nl-1 will be reported, for every nl in the range 0..n.
+						)						
+						raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_SESSION_ID, org::csapi::gms::P_GMS_INVALID_FOLDER_ID, org::csapi::gms::P_GMS_INVALID_MESSAGE_ID, P_HOSA_INVALID_PARAMETER_VALUE);
+						
+					/* Request the content of a message. The content of a message is typically the body of an RFC822 message. The targeted message is identified by its messageID and the folderID  to know where in the mailbox the message is stored. The messageID is obtained either by having recieved a notification of new message arrival or from the result of a list-message request.
+					@roseuid 3E1C285F0061 */
+					 org::csapi::TpAssignmentID hosaGetMessageContentReq (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpString folderID,	//Specifies the identity of the folder in which the targeted message is contained.
+						in  org::csapi::TpString messageID	//Identifies the exact message on which to perform this operation.
+						)						
+						raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_SESSION_ID, org::csapi::gms::P_GMS_INVALID_FOLDER_ID, org::csapi::gms::P_GMS_INVALID_MESSAGE_ID, P_HOSA_INVALID_PARAMETER_VALUE);
+						
+					/* Request for retrieval of only a part of a MIME multipart message. The targeted message is identified by its messageID and the folderID  to know where in the mailbox the message is stored. The messageID is typically obtained either by having received a notification of new message arrival or from the result of a list-message request. The partID that identifies which part of the message shall be retrieved is obtained by listing the messages body parts first.
+					@roseuid 3E1C285F00E3 */
+					 org::csapi::TpAssignmentID hosaGetMessageBodyPartReq (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpString folderID,	//Specifies the identity of the folder in which the targeted message is contained.
+						in  org::csapi::TpString messageID,	//Identifies the exact message on which to perform this operation.
+						in  org::csapi::TpString partID	//Identifies the exact part of the message to retrieve.
+						)						
+						raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_SESSION_ID, org::csapi::gms::P_GMS_INVALID_FOLDER_ID, org::csapi::gms::P_GMS_INVALID_MESSAGE_ID, P_HOSA_INVALID_PARAMETER_VALUE);
+						
+					/* Request the headers of a message. The header of a message is typically the header of an RFC822 message. The targeted message is identified by its messageID and the folderID  to know where in the mailbox the message is stored. The messageID is typically obtained either by having recieved a notification of new message arrival or from the result of a list-message request.
+					@roseuid 3E1C285F0179 */
+					org::csapi::TpAssignmentID hosaGetMessageHeadersReq (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpString folderID,	//Specifies the identity of the folder in which the targeted message is contained.
+						in  org::csapi::TpString messageID	//Identifies the exact message on which to perform this operation.
+						)						
+						raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_SESSION_ID, org::csapi::gms::P_GMS_INVALID_FOLDER_ID, org::csapi::gms::P_GMS_INVALID_MESSAGE_ID, P_HOSA_INVALID_PARAMETER_VALUE);
+						
+					/* Request the raw RFC(2)822 message. The targeted message is identified by its messageID and the folderID  to know where in the mailbox the message is stored. The messageID is typically obtained either by having recieved a notification of new message arrival or from the result of a list-message request.
+					@roseuid 3E1C285F0224 */
+					org::csapi::TpAssignmentID hosaGetFullMessageReq (
+						in  org::csapi::TpSessionID mailboxSessionID,	//This is the session ID of the open mailbox.
+						in  org::csapi::TpString folderID,	//Specifies the identity of the folder in which the targeted message is contained.
+						in  org::csapi::TpString messageID	//Identifies the exact message on which to perform this operation.
+						)						
+						raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_SESSION_ID, org::csapi::gms::P_GMS_INVALID_FOLDER_ID, org::csapi::gms::P_GMS_INVALID_MESSAGE_ID, P_HOSA_INVALID_PARAMETER_VALUE);
+						
+				};
+				
+				
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif
+
+
+
+
+

@@ -1,0 +1,19 @@
+
+<?xml version="1.0"?>
+<!DOCTYPE MODES SYSTEM "catalog.dtd">
+
+<MODES>
+
+<!-- Add lines like the following, one for each edit mode you add: -->
+<!-- <MODE NAME="foo" FILE="foo.xml" FILE_NAME_GLOB="*.foo" /> -->
+
+<MODE NAME="CodeWorkerScript" FILE="codeWorkerScript.xml"
+        FILE_NAME_GLOB="*.{gen,cws}"/>
+		
+<MODE NAME="CodeWorkerParse" FILE="codeWorkerParse.xml"
+        FILE_NAME_GLOB="*.cwp"/>
+		
+<MODE NAME="CodeWorkerTemplate" FILE="codeWorkerTemplate.xml"
+        FILE_NAME_GLOB="*.cwt"/>
+
+</MODES>

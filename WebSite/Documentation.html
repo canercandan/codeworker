@@ -1,0 +1,1790 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<HTML>
+<HEAD>
+	<TITLE>Documentation of CodeWorker</title>
+	<META http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+	<META name="Description" content="Documentation of CodeWorker, a parsing tool and a source code generator that interprets a scripting language to drive the processing of parsing and source code generation. It insists on offering powerful functionalities to do intensive code generation.">
+	<META http-equiv="pragma" content="no-cache" />
+	<META http-equiv="cache-control" content="no-cache" />
+
+<LINK rel="stylesheet" type="text/css" href="CodeWorker.css" />
+
+</HEAD>
+<body>
+	<table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr><td width="200"><a href="index.html"><img border=0 src="CodeWorker199x77.jpg"/></a></td><td>
+	<H1>Documentation</H1>
+	</td></tr>
+	</table>
+	<BR />
+	<BR />
+	<TABLE border="1" cellpadding="7" cellspacing="0">
+		<TR>
+			<TD width="220" class="links" valign="top">
+				<H3>CONTENT</H3>
+				<UL>
+					<LI><A class="left" href="index.html">Overview</A></LI>
+					<LI><A class="left" href="ProjectManagement.html">Why use this tool?</A></LI>
+					<LI><A class="left" href="GettingStarted.html">Getting Started<!--##markup##"size:manual_Getting_started.html"--><!--##begin##"size:manual_Getting_started.html"--> (47kb)<!--##end##"size:manual_Getting_started.html"--></A></LI>
+					<LI>
+						<B>Documentation</B>
+						<UL>
+							<LI><A class="left" href="manual.html">All <I class="CodeWorker">CodeWorker</I><!--##markup##"size:manual_.html"--><!--##begin##"size:manual_.html"--> (1286kb)<!--##end##"size:manual_.html"--></A></LI>
+							<LI><A class="left" href="ScriptLanguage.html">Scripting language<!--##markup##"size:manual_The_scripting_language.html"--><!--##begin##"size:manual_The_scripting_language.html"--> (952kb)<!--##end##"size:manual_The_scripting_language.html"--></A></LI>
+						</UL>
+					</LI>
+					<LI><A class="left" href="Tutorials.html">Tutorials</A></LI>
+					<LI><A class="left" href="http://www.codeworker.org/wiclear/index.php">Wiki</A></LI>
+					<LI><A class="left" href="ScriptsRepository.html">Repository of scripts</A></LI>
+					<LI><A class="left" href="Download.html">Download</A></LI>
+					<LI><A class="left" href="Links.html">Related links</A></LI>
+				</UL>
+				<BR/><BR/>
+				<H3>MAIN VERSIONS</H3>
+				<P/>
+				<H4>
+					<A href="manual_The_scripting_language.html#_use">Loading of packages</A>
+					<BR/>since version 3.0
+				</H4>
+				<H4>
+					<A href="Documentation.html#category_socket">Socket handling</A>
+					<BR/>since version 2.17
+				</H4>
+				<H4>
+					<A href="highlighting/CodeWorker_grammar.html">BNF of the language</A>
+					<BR/>since version 2.14
+				</H4>
+				<H4>
+					<A href="ScriptsRepository.html#CGI_scripts">CGI program</A>
+					<BR/>since version 2.10
+				</H4>
+				<H4>
+					<A href="ScriptsRepository.html#source__150_to__150_source_translation_XSL_to__I_template__150_based__I__script">XSL pattern matching</A>
+					<BR/>since version 2.08
+				</H4>
+				<H4>
+					Sending HTTP requests
+					<BR/>since version 2.07
+				</H4>
+				<H4>
+					Handling of binary files
+					<BR/>since version 2.04
+				</H4>
+				<BR/><BR/>
+				<A href="mailto:codeworker@free.fr"><H3>CONTACT US</H3></A>
+			</TD>
+			<td class="content" valign="top">
+				The user's guide and the reference manual are both available into the same
+				<I>PDF</I> file. For downloading it, click to the link
+				<A href="CodeWorker.pdf">CodeWorker.pdf<!--##markup##"size:CodeWorker.pdf"--><!--##begin##"size:CodeWorker.pdf"--> (869kb)<!--##end##"size:CodeWorker.pdf"--></A>.
+				<P/>
+				Please do not hesitate to <A href="mailto:codeworker@free.fr">contact us</A> (questions, criticisms, suggestions, ...).
+
+				<H3>Grammar of the language</H3>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A href="highlighting/CodeWorker_grammar.html"><B>CodeWorker_grammar.cwp</B></A><BR/>
+
+				<H3>Quick access to functions and procedures</H3>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A href="#Common"><B>Common</B></A><BR/>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A href="#Parsing"><B>Parsing</B></A><BR/>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A href="#Generation"><B>Generation</B></A><BR/>
+
+				<A name="Common" />
+				<H4>Common</H4>
+				<!--##markup##"quick access: "--><!--##begin##"quick access: "-->				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_interpreter"><B>Category <I>interpreter</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_string"><B>Category <I>string</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_array"><B>Category <I>array</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_node"><B>Category <I>node</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_iterator"><B>Category <I>iterator</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_file"><B>Category <I>file</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_directory"><B>Category <I>directory</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_URL"><B>Category <I>URL</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_datetime"><B>Category <I>datetime</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_numeric"><B>Category <I>numeric</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_standard"><B>Category <I>standard</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_conversion"><B>Category <I>conversion</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_system"><B>Category <I>system</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_command"><B>Category <I>command</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_generation"><B>Category <I>generation</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_parsing"><B>Category <I>parsing</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_socket"><B>Category <I>socket</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_unknown"><B>Category <I>unknown</I></B></a><BR/>
+				<P/>
+				<a name="category_interpreter" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>interpreter</I></td>
+						<td class="company" valign="top">Function for running a <i class="CodeWorker">CodeWorker</i> script</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#autoexpand"><CODE>autoexpand</CODE></a></td>
+						<td class="content" valign="top">Expands a file on markups, following the directives self-contained in the file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#executeString"><CODE>executeString</CODE></a></td>
+						<td class="content" valign="top">Executes a script given in a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#executeStringQuiet"><CODE>executeStringQuiet</CODE></a></td>
+						<td class="content" valign="top">Interprets a string as a script and returns all traces intended to the console.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#expand"><CODE>expand</CODE></a></td>
+						<td class="content" valign="top">Expands a file on markups, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#extendExecutedScript"><CODE>extendExecutedScript</CODE></a></td>
+						<td class="content" valign="top">Extend the current executed script dynamically with the content of the string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#generate"><CODE>generate</CODE></a></td>
+						<td class="content" valign="top">Generates a file, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#generateString"><CODE>generateString</CODE></a></td>
+						<td class="content" valign="top">Generates a string, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseAsBNF"><CODE>parseAsBNF</CODE></a></td>
+						<td class="content" valign="top">Parses a file with a BNF script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseFree"><CODE>parseFree</CODE></a></td>
+						<td class="content" valign="top">Parses a file with an imperative script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseFreeQuiet"><CODE>parseFreeQuiet</CODE></a></td>
+						<td class="content" valign="top">Parses a file with an imperative script, reroute all console messages and returns them as a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseStringAsBNF"><CODE>parseStringAsBNF</CODE></a></td>
+						<td class="content" valign="top">Parses a string with a BNF script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#traceEngine"><CODE>traceEngine</CODE></a></td>
+						<td class="content" valign="top">Displays the state of the interpreter.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translate"><CODE>translate</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translateString"><CODE>translateString</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i> on strings.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_string" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>string</I></td>
+						<td class="company" valign="top">Functions for handling strings</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#charAt"><CODE>charAt</CODE></a></td>
+						<td class="content" valign="top">Returns the characters present at a given position of a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#completeLeftSpaces"><CODE>completeLeftSpaces</CODE></a></td>
+						<td class="content" valign="top">Completes a string with spaces to the left so that it reaches a given size.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#completeRightSpaces"><CODE>completeRightSpaces</CODE></a></td>
+						<td class="content" valign="top">Completes a string with spaces to the right so that it reaches a given size.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#composeAdaLikeString"><CODE>composeAdaLikeString</CODE></a></td>
+						<td class="content" valign="top">Converts a sequence of characters to a Ada-like string without double quote delimiters.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#composeCLikeString"><CODE>composeCLikeString</CODE></a></td>
+						<td class="content" valign="top">Converts a sequence of characters to a C-like string without double quote delimiters.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#composeHTMLLikeString"><CODE>composeHTMLLikeString</CODE></a></td>
+						<td class="content" valign="top">Converts a sequence of characters to an HTML-like text</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#composeSQLLikeString"><CODE>composeSQLLikeString</CODE></a></td>
+						<td class="content" valign="top">Converts a sequence of characters to a SQL-like string without single quote delimiters.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#coreString"><CODE>coreString</CODE></a></td>
+						<td class="content" valign="top">Extracts the core of a string, leaving the beginning and the end.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#countStringOccurences"><CODE>countStringOccurences</CODE></a></td>
+						<td class="content" valign="top">How many occurences of a string to another.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#cutString"><CODE>cutString</CODE></a></td>
+						<td class="content" valign="top">Cuts a string at each separator encountered.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#endString"><CODE>endString</CODE></a></td>
+						<td class="content" valign="top">Compares the end of the string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#endl"><CODE>endl</CODE></a></td>
+						<td class="content" valign="top">Returns an end-of-line, depending on the operating system.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#equalsIgnoreCase"><CODE>equalsIgnoreCase</CODE></a></td>
+						<td class="content" valign="top">Compares two strings, ignoring the case.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#executeString"><CODE>executeString</CODE></a></td>
+						<td class="content" valign="top">Executes a script given in a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#executeStringQuiet"><CODE>executeStringQuiet</CODE></a></td>
+						<td class="content" valign="top">Interprets a string as a script and returns all traces intended to the console.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#findFirstChar"><CODE>findFirstChar</CODE></a></td>
+						<td class="content" valign="top">Returns the position of the first character amongst a set, encountered into a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#findLastString"><CODE>findLastString</CODE></a></td>
+						<td class="content" valign="top">Returns the position of the last occurence of a string to another.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#findNextString"><CODE>findNextString</CODE></a></td>
+						<td class="content" valign="top">Returns the next occurence of a string to another.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#findString"><CODE>findString</CODE></a></td>
+						<td class="content" valign="top">Returns the first occurence of a string to another.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#generateString"><CODE>generateString</CODE></a></td>
+						<td class="content" valign="top">Generates a string, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#joinStrings"><CODE>joinStrings</CODE></a></td>
+						<td class="content" valign="top">Joins a list of strings, adding a separator between them.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#leftString"><CODE>leftString</CODE></a></td>
+						<td class="content" valign="top">Returns the beginning of a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#lengthString"><CODE>lengthString</CODE></a></td>
+						<td class="content" valign="top">Returns the length of a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#midString"><CODE>midString</CODE></a></td>
+						<td class="content" valign="top">Returns a substring starting at a point for a given length.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseStringAsBNF"><CODE>parseStringAsBNF</CODE></a></td>
+						<td class="content" valign="top">Parses a string with a BNF script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#repeatString"><CODE>repeatString</CODE></a></td>
+						<td class="content" valign="top">Returns the concatenation of a string repeated a few times.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#replaceString"><CODE>replaceString</CODE></a></td>
+						<td class="content" valign="top">Replaces a substring with another.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#replaceTabulations"><CODE>replaceTabulations</CODE></a></td>
+						<td class="content" valign="top">Replaces tabulations with spaces.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#rightString"><CODE>rightString</CODE></a></td>
+						<td class="content" valign="top">Returns the end of a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#rsubString"><CODE>rsubString</CODE></a></td>
+						<td class="content" valign="top">Returns the left part of a string, ignoring last characters.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#startString"><CODE>startString</CODE></a></td>
+						<td class="content" valign="top">Checks the beginning of a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#subString"><CODE>subString</CODE></a></td>
+						<td class="content" valign="top">Returns a substring, ignoring the first characters.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#toLowerString"><CODE>toLowerString</CODE></a></td>
+						<td class="content" valign="top">Converts a string to lowercase.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#toUpperString"><CODE>toUpperString</CODE></a></td>
+						<td class="content" valign="top">Converts a string to uppercase.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#trim"><CODE>trim</CODE></a></td>
+						<td class="content" valign="top">Eliminates heading and trailing whitespaces.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#trimLeft"><CODE>trimLeft</CODE></a></td>
+						<td class="content" valign="top">Eliminates the leading whitespaces.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#trimRight"><CODE>trimRight</CODE></a></td>
+						<td class="content" valign="top">Eliminates the trailing whitespaces.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#truncateAfterString"><CODE>truncateAfterString</CODE></a></td>
+						<td class="content" valign="top">Special truncation of a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#truncateBeforeString"><CODE>truncateBeforeString</CODE></a></td>
+						<td class="content" valign="top">Special truncation of a string.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_array" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>array</I></td>
+						<td class="company" valign="top">Functions handling arrays</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#findElement"><CODE>findElement</CODE></a></td>
+						<td class="content" valign="top">Checks the existence of an entry key in an array.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#findFirstSubstringIntoKeys"><CODE>findFirstSubstringIntoKeys</CODE></a></td>
+						<td class="content" valign="top">Returns the first entry key of an array, containing a given string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#findNextSubstringIntoKeys"><CODE>findNextSubstringIntoKeys</CODE></a></td>
+						<td class="content" valign="top">Returns the next entry key of an array, containing a given string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getArraySize"><CODE>getArraySize</CODE></a></td>
+						<td class="content" valign="top">Returns the number of items in an array.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#insertElementAt"><CODE>insertElementAt</CODE></a></td>
+						<td class="content" valign="top">Inserts a new element to a list, at a given position.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#invertArray"><CODE>invertArray</CODE></a></td>
+						<td class="content" valign="top">Inverts the order of items in an array.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#isEmpty"><CODE>isEmpty</CODE></a></td>
+						<td class="content" valign="top">Checks whether a node has items or not.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeAllElements"><CODE>removeAllElements</CODE></a></td>
+						<td class="content" valign="top">Removes all items of the array.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeElement"><CODE>removeElement</CODE></a></td>
+						<td class="content" valign="top">Removes an item, given its entry key.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeFirstElement"><CODE>removeFirstElement</CODE></a></td>
+						<td class="content" valign="top">Removes the first item of the array.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeLastElement"><CODE>removeLastElement</CODE></a></td>
+						<td class="content" valign="top">Removes the last item of the array.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_node" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>node</I></td>
+						<td class="company" valign="top">Functions handling a node</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#clearVariable"><CODE>clearVariable</CODE></a></td>
+						<td class="content" valign="top">Removes the subtree and assigns an empty value.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#equalTrees"><CODE>equalTrees</CODE></a></td>
+						<td class="content" valign="top">Compares two subtrees.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#existVariable"><CODE>existVariable</CODE></a></td>
+						<td class="content" valign="top">Checks the existence of a node.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getVariableAttributes"><CODE>getVariableAttributes</CODE></a></td>
+						<td class="content" valign="top">Extract all attribute names of a tree node.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeRecursive"><CODE>removeRecursive</CODE></a></td>
+						<td class="content" valign="top">Removes a given attribute from the subtree.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeVariable"><CODE>removeVariable</CODE></a></td>
+						<td class="content" valign="top">Removes a given variable.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#slideNodeContent"><CODE>slideNodeContent</CODE></a></td>
+						<td class="content" valign="top">Moves the subtree elsewhere on a branch.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sortArray"><CODE>sortArray</CODE></a></td>
+						<td class="content" valign="top">Sort an array, considering the entry keys.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_iterator" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>iterator</I></td>
+						<td class="company" valign="top">Functions handling an iterator</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createIterator"><CODE>createIterator</CODE></a></td>
+						<td class="content" valign="top">Creates an iterator pointing to the beginning of a list.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createReverseIterator"><CODE>createReverseIterator</CODE></a></td>
+						<td class="content" valign="top">Creates a reverse iterator pointing to the end of a list.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#duplicateIterator"><CODE>duplicateIterator</CODE></a></td>
+						<td class="content" valign="top">Duplicates an iterator.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#first"><CODE>first</CODE></a></td>
+						<td class="content" valign="top">Returns <kbd><i>true</i></kbd> if the iterator points to the first item.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#index"><CODE>index</CODE></a></td>
+						<td class="content" valign="top">Returns the position of an item in a list.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#key"><CODE>key</CODE></a></td>
+						<td class="content" valign="top">Returns the entry key of the item pointed to by the iterator.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#last"><CODE>last</CODE></a></td>
+						<td class="content" valign="top">Returns <kbd><i>true</i></kbd> if the iterator points to the last item.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#next"><CODE>next</CODE></a></td>
+						<td class="content" valign="top">Move an iterator to the next item of a list.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#prec"><CODE>prec</CODE></a></td>
+						<td class="content" valign="top">Move an iterator to the precedent item of a list.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_file" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>file</I></td>
+						<td class="company" valign="top">Functions handling files</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#appendFile"><CODE>appendFile</CODE></a></td>
+						<td class="content" valign="top">Writes the content of a string to the end of a file</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#canonizePath"><CODE>canonizePath</CODE></a></td>
+						<td class="content" valign="top">Builds an absolute path, starting to the current directory.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#changeFileTime"><CODE>changeFileTime</CODE></a></td>
+						<td class="content" valign="top">Changes the access and modification times of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#chmod"><CODE>chmod</CODE></a></td>
+						<td class="content" valign="top">Changes the permissions of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#copyFile"><CODE>copyFile</CODE></a></td>
+						<td class="content" valign="top">Copies a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#copyGenerableFile"><CODE>copyGenerableFile</CODE></a></td>
+						<td class="content" valign="top">Copies a file with protected areas or expandable markups, only if the hand-typed code differs between source and destination.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#copySmartFile"><CODE>copySmartFile</CODE></a></td>
+						<td class="content" valign="top">Copies a file only if the destination differs.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createVirtualFile"><CODE>createVirtualFile</CODE></a></td>
+						<td class="content" valign="top">Creates a transient file in memory.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createVirtualTemporaryFile"><CODE>createVirtualTemporaryFile</CODE></a></td>
+						<td class="content" valign="top">Creates a transient file in memory, <i class="CodeWorker">CodeWorker</i> choosing its name.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#deleteFile"><CODE>deleteFile</CODE></a></td>
+						<td class="content" valign="top">Deletes a file on the disk.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#deleteVirtualFile"><CODE>deleteVirtualFile</CODE></a></td>
+						<td class="content" valign="top">Deletes a transient file from memory.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#existFile"><CODE>existFile</CODE></a></td>
+						<td class="content" valign="top">Checks the existence of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#existVirtualFile"><CODE>existVirtualFile</CODE></a></td>
+						<td class="content" valign="top">Checks the existence of a transient file, created in memory.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#exploreDirectory"><CODE>exploreDirectory</CODE></a></td>
+						<td class="content" valign="top">Browses all files of a directory, recursively or not.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#fileCreation"><CODE>fileCreation</CODE></a></td>
+						<td class="content" valign="top">Returns the creation date of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#fileLastAccess"><CODE>fileLastAccess</CODE></a></td>
+						<td class="content" valign="top">Returns the last access date of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#fileLastModification"><CODE>fileLastModification</CODE></a></td>
+						<td class="content" valign="top">Returns the last modification date of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#fileLines"><CODE>fileLines</CODE></a></td>
+						<td class="content" valign="top">Returns the number of lines in a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#fileMode"><CODE>fileMode</CODE></a></td>
+						<td class="content" valign="top">Returns the permissions of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#fileSize"><CODE>fileSize</CODE></a></td>
+						<td class="content" valign="top">Returns the size of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getGenerationHeader"><CODE>getGenerationHeader</CODE></a></td>
+						<td class="content" valign="top">Returns the comment to put into the header of generated files.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getShortFilename"><CODE>getShortFilename</CODE></a></td>
+						<td class="content" valign="top">Returns the short name of a file</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#indentFile"><CODE>indentFile</CODE></a></td>
+						<td class="content" valign="top">Indents a file, depending on the target language.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#loadBinaryFile"><CODE>loadBinaryFile</CODE></a></td>
+						<td class="content" valign="top">Loads a binary file and stores each byte in a hexadecimal representation of 2 digits.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#loadFile"><CODE>loadFile</CODE></a></td>
+						<td class="content" valign="top">Returns the content of a file or raises an error if not found.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#loadVirtualFile"><CODE>loadVirtualFile</CODE></a></td>
+						<td class="content" valign="top">Returns the content of a transient file or raises an error if not found.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#pathFromPackage"><CODE>pathFromPackage</CODE></a></td>
+						<td class="content" valign="top">Converts a package path to a directory path.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#relativePath"><CODE>relativePath</CODE></a></td>
+						<td class="content" valign="top">Returns the relative path, which allows going from a path to another.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#resolveFilePath"><CODE>resolveFilePath</CODE></a></td>
+						<td class="content" valign="top">Gives the location of a file with no ambiguity.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#saveBinaryToFile"><CODE>saveBinaryToFile</CODE></a></td>
+						<td class="content" valign="top">Saves binary data to a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#saveToFile"><CODE>saveToFile</CODE></a></td>
+						<td class="content" valign="top">Saves the content of a string to a file</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#scanDirectories"><CODE>scanDirectories</CODE></a></td>
+						<td class="content" valign="top">Explores a directory, filtering filenames.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#scanFiles"><CODE>scanFiles</CODE></a></td>
+						<td class="content" valign="top">Returns a flat list of all filenames matching with a filter.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_directory" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>directory</I></td>
+						<td class="company" valign="top">Functions handling directories</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#changeDirectory"><CODE>changeDirectory</CODE></a></td>
+						<td class="content" valign="top">Changes the current directory (<kbd><i>chdir()</i></kbd> in C).</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#copySmartDirectory"><CODE>copySmartDirectory</CODE></a></td>
+						<td class="content" valign="top">Copies files of a directory recursively only when destination files differ from source files.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createDirectory"><CODE>createDirectory</CODE></a></td>
+						<td class="content" valign="top">Creates a new directory.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#existDirectory"><CODE>existDirectory</CODE></a></td>
+						<td class="content" valign="top">Check the existence of a directory.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#exploreDirectory"><CODE>exploreDirectory</CODE></a></td>
+						<td class="content" valign="top">Browses all files of a directory, recursively or not.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getCurrentDirectory"><CODE>getCurrentDirectory</CODE></a></td>
+						<td class="content" valign="top">Returns the current directory (<kbd><i>getcwd()</i></kbd> in C).</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeDirectory"><CODE>removeDirectory</CODE></a></td>
+						<td class="content" valign="top">Removes a directory from the disk.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#scanDirectories"><CODE>scanDirectories</CODE></a></td>
+						<td class="content" valign="top">Explores a directory, filtering filenames.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#scanFiles"><CODE>scanFiles</CODE></a></td>
+						<td class="content" valign="top">Returns a flat list of all filenames matching with a filter.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_URL" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>URL</I></td>
+						<td class="company" valign="top">Functions working on URL transfers (HTTP,...)</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#decodeURL"><CODE>decodeURL</CODE></a></td>
+						<td class="content" valign="top">Decodes an HTTP URL.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#encodeURL"><CODE>encodeURL</CODE></a></td>
+						<td class="content" valign="top">Encodes an URL to HTTP.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getHTTPRequest"><CODE>getHTTPRequest</CODE></a></td>
+						<td class="content" valign="top">Sends an HTTP&#39;s GET request.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#postHTTPRequest"><CODE>postHTTPRequest</CODE></a></td>
+						<td class="content" valign="top">Sends an HTTP&#39;s POST request.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sendHTTPRequest"><CODE>sendHTTPRequest</CODE></a></td>
+						<td class="content" valign="top">Sends an HTTP request.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_datetime" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>datetime</I></td>
+						<td class="company" valign="top">Functions handling date-time</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#addToDate"><CODE>addToDate</CODE></a></td>
+						<td class="content" valign="top">Change a date by shifting its internal fields days/months/years or time.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#compareDate"><CODE>compareDate</CODE></a></td>
+						<td class="content" valign="top">Compares two dates.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#completeDate"><CODE>completeDate</CODE></a></td>
+						<td class="content" valign="top">Extends an incomplete date with <i>today</i> characteristics.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#fileCreation"><CODE>fileCreation</CODE></a></td>
+						<td class="content" valign="top">Returns the creation date of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#fileLastAccess"><CODE>fileLastAccess</CODE></a></td>
+						<td class="content" valign="top">Returns the last access date of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#fileLastModification"><CODE>fileLastModification</CODE></a></td>
+						<td class="content" valign="top">Returns the last modification date of a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#formatDate"><CODE>formatDate</CODE></a></td>
+						<td class="content" valign="top">Changes the format of a date.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getLastDelay"><CODE>getLastDelay</CODE></a></td>
+						<td class="content" valign="top">Returns the time consumed to execute a statement.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getNow"><CODE>getNow</CODE></a></td>
+						<td class="content" valign="top">Returns the current date-time.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setNow"><CODE>setNow</CODE></a></td>
+						<td class="content" valign="top">Fixes the current date-time.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_numeric" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>numeric</I></td>
+						<td class="company" valign="top">Functions handling numbers</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#add"><CODE>add</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a + b$</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#ceil"><CODE>ceil</CODE></a></td>
+						<td class="content" valign="top">Returns the smallest integer greater that or equal to a number</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#decrement"><CODE>decrement</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>set a = $a - 1$;</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#div"><CODE>div</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a / b$</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#equal"><CODE>equal</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a == b$</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#exp"><CODE>exp</CODE></a></td>
+						<td class="content" valign="top">Returns the exponential of a value.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#floor"><CODE>floor</CODE></a></td>
+						<td class="content" valign="top">Returns the largest integer less that or equal to a number</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#increment"><CODE>increment</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>set a = $a + 1$;</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#inf"><CODE>inf</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a &lt; b$</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#isNegative"><CODE>isNegative</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a &lt; 0$</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#isPositive"><CODE>isPositive</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a &gt; 0$</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#log"><CODE>log</CODE></a></td>
+						<td class="content" valign="top">Returns the Neperian logarithm.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#mod"><CODE>mod</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a % b$</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#mult"><CODE>mult</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a * b$</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#pow"><CODE>pow</CODE></a></td>
+						<td class="content" valign="top">Raises a number to the power of another.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sqrt"><CODE>sqrt</CODE></a></td>
+						<td class="content" valign="top">Calculates the square root.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sub"><CODE>sub</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a - b$</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sup"><CODE>sup</CODE></a></td>
+						<td class="content" valign="top">Equivalent admitted writing is <kbd><i>$a &gt; b$</i></kbd>.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_standard" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>standard</I></td>
+						<td class="company" valign="top">Classical functions of any standard library</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#UUID"><CODE>UUID</CODE></a></td>
+						<td class="content" valign="top">Generates an UUID.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#error"><CODE>error</CODE></a></td>
+						<td class="content" valign="top">Raises an error message</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#inputKey"><CODE>inputKey</CODE></a></td>
+						<td class="content" valign="top">If any, returns the last key pressed on the standard input.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#inputLine"><CODE>inputLine</CODE></a></td>
+						<td class="content" valign="top">Wait for the standard input to the console.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#isIdentifier"><CODE>isIdentifier</CODE></a></td>
+						<td class="content" valign="top">Checks whether a string is a C-like identifier or not.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#isNumeric"><CODE>isNumeric</CODE></a></td>
+						<td class="content" valign="top">Checks whether a string is a floating-point number or not.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#randomInteger"><CODE>randomInteger</CODE></a></td>
+						<td class="content" valign="top">Generates a pseudorandom number.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#randomSeed"><CODE>randomSeed</CODE></a></td>
+						<td class="content" valign="top">Changes the seed of the pseudorandom generator.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#traceLine"><CODE>traceLine</CODE></a></td>
+						<td class="content" valign="top">Displays a message to the console, adding a carriage return.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#traceObject"><CODE>traceObject</CODE></a></td>
+						<td class="content" valign="top">Displays the content of a node to the console.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#traceStack"><CODE>traceStack</CODE></a></td>
+						<td class="content" valign="top">Displays the stack to the console.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#traceText"><CODE>traceText</CODE></a></td>
+						<td class="content" valign="top">Displays a message to the console.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_conversion" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>conversion</I></td>
+						<td class="company" valign="top">Type conversion</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#byteToChar"><CODE>byteToChar</CODE></a></td>
+						<td class="content" valign="top">Converts a byte (hexadecimal representation of 2 digits) to a character.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#bytesToLong"><CODE>bytesToLong</CODE></a></td>
+						<td class="content" valign="top">Converts a 4-bytes sequence to an unsigned long integer in its decimal representation.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#bytesToShort"><CODE>bytesToShort</CODE></a></td>
+						<td class="content" valign="top">Converts a 2-bytes sequence to an unsigned short integer in its decimal representation.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#charToByte"><CODE>charToByte</CODE></a></td>
+						<td class="content" valign="top">Converts a character to a byte (hexadecimal representation of 2 digits).</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#charToInt"><CODE>charToInt</CODE></a></td>
+						<td class="content" valign="top">Converts a character to the integer value of the corresponding ASCII.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#hexaToDecimal"><CODE>hexaToDecimal</CODE></a></td>
+						<td class="content" valign="top">Converts an hexadecimal representation to an integer.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#hostToNetworkLong"><CODE>hostToNetworkLong</CODE></a></td>
+						<td class="content" valign="top">Converts a 4-bytes representation of a long integer to the network bytes order.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#hostToNetworkShort"><CODE>hostToNetworkShort</CODE></a></td>
+						<td class="content" valign="top">Converts a 2-bytes representation of a short integer to the network bytes order.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#longToBytes"><CODE>longToBytes</CODE></a></td>
+						<td class="content" valign="top">Converts an unsigned long integer in decimal base to its 4-bytes representation.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#networkLongToHost"><CODE>networkLongToHost</CODE></a></td>
+						<td class="content" valign="top">Converts a 4-bytes representation of a long integer to the host bytes order.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#networkShortToHost"><CODE>networkShortToHost</CODE></a></td>
+						<td class="content" valign="top">Converts a 2-bytes representation of a short integer to the host bytes order.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#octalToDecimal"><CODE>octalToDecimal</CODE></a></td>
+						<td class="content" valign="top">Converts an octal representation to a decimal integer.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#shortToBytes"><CODE>shortToBytes</CODE></a></td>
+						<td class="content" valign="top">Converts an unsigned short integer in decimal base to its 2-bytes representation.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_system" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>system</I></td>
+						<td class="company" valign="top">Functions relative to the operating system</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#computeMD5"><CODE>computeMD5</CODE></a></td>
+						<td class="content" valign="top">Computes the MD5 of a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#environTable"><CODE>environTable</CODE></a></td>
+						<td class="content" valign="top">Equivalent of <kbd><i>environ()</i></kbd> in C</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#existEnv"><CODE>existEnv</CODE></a></td>
+						<td class="content" valign="top">Checks the existence of an environment variable.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getEnv"><CODE>getEnv</CODE></a></td>
+						<td class="content" valign="top">Returns an environment variable, or raises an error if not exist.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#openLogFile"><CODE>openLogFile</CODE></a></td>
+						<td class="content" valign="top">Opens a log file for logging every console trace.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#putEnv"><CODE>putEnv</CODE></a></td>
+						<td class="content" valign="top">Puts a value to an environment variable.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sleep"><CODE>sleep</CODE></a></td>
+						<td class="content" valign="top">Suspends the execution for <kbd><i>millis</i></kbd> milliseconds.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#system"><CODE>system</CODE></a></td>
+						<td class="content" valign="top">Equivalent to the C function <kbd><i>system()</i></kbd>.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_command" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>command</I></td>
+						<td class="company" valign="top">Relative to the command line</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#compileToCpp"><CODE>compileToCpp</CODE></a></td>
+						<td class="content" valign="top">Translates a script to C++.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getIncludePath"><CODE>getIncludePath</CODE></a></td>
+						<td class="content" valign="top">Returns the include path passed via the option <kbd><i>-I</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getProperty"><CODE>getProperty</CODE></a></td>
+						<td class="content" valign="top">Returns the value of a property passed via the option <kbd><i>-D</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getVersion"><CODE>getVersion</CODE></a></td>
+						<td class="content" valign="top">Returns the version of the interpreter.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getWorkingPath"><CODE>getWorkingPath</CODE></a></td>
+						<td class="content" valign="top">Returns the output directory passed via option <kbd><i>-path</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setIncludePath"><CODE>setIncludePath</CODE></a></td>
+						<td class="content" valign="top">Changes the option <kbd><i>-I</i></kbd> while running.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setProperty"><CODE>setProperty</CODE></a></td>
+						<td class="content" valign="top">Adds/changes a property (option <kbd><i>-D</i></kbd>) while running.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setVersion"><CODE>setVersion</CODE></a></td>
+						<td class="content" valign="top">Gives the version of scripts currently interpreted by <i>CodeWorker</i>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setWorkingPath"><CODE>setWorkingPath</CODE></a></td>
+						<td class="content" valign="top">Does the job of the option <kbd><i>-path</i></kbd>.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_generation" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>generation</I></td>
+						<td class="company" valign="top">Functions relative to generation</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#addGenerationTagsHandler"><CODE>addGenerationTagsHandler</CODE></a></td>
+						<td class="content" valign="top">Adds your own CodeWorker&#39;s tags handler</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#autoexpand"><CODE>autoexpand</CODE></a></td>
+						<td class="content" valign="top">Expands a file on markups, following the directives self-contained in the file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#expand"><CODE>expand</CODE></a></td>
+						<td class="content" valign="top">Expands a file on markups, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#extractGenerationHeader"><CODE>extractGenerationHeader</CODE></a></td>
+						<td class="content" valign="top">Gives the generation header of a generated file, if any.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#generate"><CODE>generate</CODE></a></td>
+						<td class="content" valign="top">Generates a file, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#generateString"><CODE>generateString</CODE></a></td>
+						<td class="content" valign="top">Generates a string, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getCommentBegin"><CODE>getCommentBegin</CODE></a></td>
+						<td class="content" valign="top">Returns the current format of a comment&#39;s beginning.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getCommentEnd"><CODE>getCommentEnd</CODE></a></td>
+						<td class="content" valign="top">Returns the current format of a comment&#39;s end.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getGenerationHeader"><CODE>getGenerationHeader</CODE></a></td>
+						<td class="content" valign="top">Returns the comment to put into the header of generated files.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getTextMode"><CODE>getTextMode</CODE></a></td>
+						<td class="content" valign="top">Returns the text mode amongst <b>&quot;DOS&quot;</b>, <b>&quot;UNIX&quot;</b> and <b>&quot;BINARY&quot;</b>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getWriteMode"><CODE>getWriteMode</CODE></a></td>
+						<td class="content" valign="top">Returns how text is written during a generation (insert/overwrite).</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#listAllGeneratedFiles"><CODE>listAllGeneratedFiles</CODE></a></td>
+						<td class="content" valign="top">Gives the list of all generated files.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeGenerationTagsHandler"><CODE>removeGenerationTagsHandler</CODE></a></td>
+						<td class="content" valign="top">Removes a custom generation tags handler</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#selectGenerationTagsHandler"><CODE>selectGenerationTagsHandler</CODE></a></td>
+						<td class="content" valign="top">Selects your own CodeWorker&#39;s tags handler for processing generation tasks</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setCommentBegin"><CODE>setCommentBegin</CODE></a></td>
+						<td class="content" valign="top">Changes what a beginning of comment looks like, perhaps before expanding a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setCommentEnd"><CODE>setCommentEnd</CODE></a></td>
+						<td class="content" valign="top">Changes what an end of comment looks like, perhaps before expanding a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setGenerationHeader"><CODE>setGenerationHeader</CODE></a></td>
+						<td class="content" valign="top">Specifies a comment to put at the beginning of every generated file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setTextMode"><CODE>setTextMode</CODE></a></td>
+						<td class="content" valign="top"><b>&quot;DOS&quot;</b>, <b>&quot;UNIX&quot;</b> or <b>&quot;BINARY&quot;</b></td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setWriteMode"><CODE>setWriteMode</CODE></a></td>
+						<td class="content" valign="top">Selects how to write text during a generation (insert/overwrite).</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translate"><CODE>translate</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translateString"><CODE>translateString</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i> on strings.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_parsing" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>parsing</I></td>
+						<td class="company" valign="top">Functions relative to scanning/parsing</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseAsBNF"><CODE>parseAsBNF</CODE></a></td>
+						<td class="content" valign="top">Parses a file with a BNF script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseFree"><CODE>parseFree</CODE></a></td>
+						<td class="content" valign="top">Parses a file with an imperative script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseFreeQuiet"><CODE>parseFreeQuiet</CODE></a></td>
+						<td class="content" valign="top">Parses a file with an imperative script, reroute all console messages and returns them as a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseStringAsBNF"><CODE>parseStringAsBNF</CODE></a></td>
+						<td class="content" valign="top">Parses a string with a BNF script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translate"><CODE>translate</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translateString"><CODE>translateString</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i> on strings.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_socket" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>socket</I></td>
+						<td class="company" valign="top">Socket operations</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#acceptSocket"><CODE>acceptSocket</CODE></a></td>
+						<td class="content" valign="top">Listens for a client connection and accepts it.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#closeSocket"><CODE>closeSocket</CODE></a></td>
+						<td class="content" valign="top">Closes a socket descriptor.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createINETClientSocket"><CODE>createINETClientSocket</CODE></a></td>
+						<td class="content" valign="top">Creates a stream socket connected to the specified port and IP address.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createINETServerSocket"><CODE>createINETServerSocket</CODE></a></td>
+						<td class="content" valign="top">Creates a server stream socket bound to a specified port.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#receiveBinaryFromSocket"><CODE>receiveBinaryFromSocket</CODE></a></td>
+						<td class="content" valign="top">Reads binary data from the socket, knowing the size.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#receiveFromSocket"><CODE>receiveFromSocket</CODE></a></td>
+						<td class="content" valign="top">Reads text or binary data from a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#receiveTextFromSocket"><CODE>receiveTextFromSocket</CODE></a></td>
+						<td class="content" valign="top">Reads text from a socket, knowing the size.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sendBinaryToSocket"><CODE>sendBinaryToSocket</CODE></a></td>
+						<td class="content" valign="top">Writes binary data to a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sendTextToSocket"><CODE>sendTextToSocket</CODE></a></td>
+						<td class="content" valign="top">Writes text to a socket.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_unknown" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>unknown</I></td>
+						<td class="company" valign="top">Various types of function</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#loadProject"><CODE>loadProject</CODE></a></td>
+						<td class="content" valign="top">Loads a parse tree previously saved thanks to <b>saveProject()</b>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#not"><CODE>not</CODE></a></td>
+						<td class="content" valign="top">The boolean negation, equivalent to <kbd><i>!a</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#produceHTML"><CODE>produceHTML</CODE></a></td>
+						<td class="content" valign="top"></td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#saveProject"><CODE>saveProject</CODE></a></td>
+						<td class="content" valign="top">Saves a parse tree to XML or to a particular text format.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#saveProjectTypes"><CODE>saveProjectTypes</CODE></a></td>
+						<td class="content" valign="top">Factorizes nodes of the projects to distinguish implicit types for node and saves it to XML.</td>
+					</tr>
+				</table>
+				<BR/>
+<!--##end##"quick access: "-->
+
+				<A name="Parsing" />
+				<H4>Parsing</H4>
+				<!--##markup##"quick access: parse"--><!--##begin##"quick access: parse"-->				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_parsing"><B>Category <I>parsing</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_socket"><B>Category <I>socket</I></B></a><BR/>
+				<P/>
+				<a name="category_parsing" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>parsing</I></td>
+						<td class="company" valign="top">Functions relative to scanning/parsing</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#countInputCols"><CODE>countInputCols</CODE></a></td>
+						<td class="content" valign="top">Column number in the line where the parse cursor points to.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#countInputLines"><CODE>countInputLines</CODE></a></td>
+						<td class="content" valign="top">Line number where the parse cursor points to.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getInputFilename"><CODE>getInputFilename</CODE></a></td>
+						<td class="content" valign="top">Returns the path of the input file being parsed.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getInputLocation"><CODE>getInputLocation</CODE></a></td>
+						<td class="content" valign="top">Returns the current position in the input stream.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getLastReadChars"><CODE>getLastReadChars</CODE></a></td>
+						<td class="content" valign="top">Returns the last scanned characters.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#goBack"><CODE>goBack</CODE></a></td>
+						<td class="content" valign="top">Moves back one byte before.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#lookAhead"><CODE>lookAhead</CODE></a></td>
+						<td class="content" valign="top">Scans the next characters without moving the input file position.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseAsBNF"><CODE>parseAsBNF</CODE></a></td>
+						<td class="content" valign="top">Parses a file with a BNF script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseFree"><CODE>parseFree</CODE></a></td>
+						<td class="content" valign="top">Parses a file with an imperative script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseFreeQuiet"><CODE>parseFreeQuiet</CODE></a></td>
+						<td class="content" valign="top">Parses a file with an imperative script, reroute all console messages and returns them as a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#parseStringAsBNF"><CODE>parseStringAsBNF</CODE></a></td>
+						<td class="content" valign="top">Parses a string with a BNF script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#peekChar"><CODE>peekChar</CODE></a></td>
+						<td class="content" valign="top">Scans the current position without moving the file pointer.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readAdaString"><CODE>readAdaString</CODE></a></td>
+						<td class="content" valign="top">Reads a Ada-like string between double quotes.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readByte"><CODE>readByte</CODE></a></td>
+						<td class="content" valign="top">Reads the current character as a byte (hexadecimal representation of 2 digits).</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readBytes"><CODE>readBytes</CODE></a></td>
+						<td class="content" valign="top">Reads a sequence of bytes, given the length.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readCChar"><CODE>readCChar</CODE></a></td>
+						<td class="content" valign="top">Reads a C-like constant character.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readChar"><CODE>readChar</CODE></a></td>
+						<td class="content" valign="top">Reads the current character.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readCharAsInt"><CODE>readCharAsInt</CODE></a></td>
+						<td class="content" valign="top">Reads the current character as an integer.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readChars"><CODE>readChars</CODE></a></td>
+						<td class="content" valign="top">Reads a sequence of characters, given the length.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readIdentifier"><CODE>readIdentifier</CODE></a></td>
+						<td class="content" valign="top">Reads an identifier.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readIfEqualTo"><CODE>readIfEqualTo</CODE></a></td>
+						<td class="content" valign="top">Reads a given string or returns false if it doesn&#39;t match.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readIfEqualToIdentifier"><CODE>readIfEqualToIdentifier</CODE></a></td>
+						<td class="content" valign="top">Reads a given identifier or returns false if it doesn&#39;t match.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readIfEqualToIgnoreCase"><CODE>readIfEqualToIgnoreCase</CODE></a></td>
+						<td class="content" valign="top">Reads a given string ignoring the case, or returns false if it doesn&#39;t match.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readLine"><CODE>readLine</CODE></a></td>
+						<td class="content" valign="top">Reads a line.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readNextText"><CODE>readNextText</CODE></a></td>
+						<td class="content" valign="top">Searches the next occurence of a string.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readNumber"><CODE>readNumber</CODE></a></td>
+						<td class="content" valign="top">Reads a number.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readPythonString"><CODE>readPythonString</CODE></a></td>
+						<td class="content" valign="top">Reads a Python-like string (triple-quoted strings recognized).</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readString"><CODE>readString</CODE></a></td>
+						<td class="content" valign="top">Reads a string between double quotes.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readUptoJustOneChar"><CODE>readUptoJustOneChar</CODE></a></td>
+						<td class="content" valign="top">Searches the first occurence of a character amongst a set of characters and points on it.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#readWord"><CODE>readWord</CODE></a></td>
+						<td class="content" valign="top">Reads a word.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setInputLocation"><CODE>setInputLocation</CODE></a></td>
+						<td class="content" valign="top">Changes the position in the input stream.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#skipBlanks"><CODE>skipBlanks</CODE></a></td>
+						<td class="content" valign="top">Skips all whitespaces and carriage returns.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#skipEmptyCpp"><CODE>skipEmptyCpp</CODE></a></td>
+						<td class="content" valign="top">Skips blanks and C++-like comments.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#skipEmptyCppExceptDoxygen"><CODE>skipEmptyCppExceptDoxygen</CODE></a></td>
+						<td class="content" valign="top">Skips blanks and C++ comments, except comments like Doxygen.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#skipEmptyHTML"><CODE>skipEmptyHTML</CODE></a></td>
+						<td class="content" valign="top">Skips blanks and HTML-like comments.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#skipEmptyLaTeX"><CODE>skipEmptyLaTeX</CODE></a></td>
+						<td class="content" valign="top">Skips blanks and LaTeX-like comments.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#skipSpaces"><CODE>skipSpaces</CODE></a></td>
+						<td class="content" valign="top">Skips all spaces and tabulations.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translate"><CODE>translate</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translateString"><CODE>translateString</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i> on strings.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_socket" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>socket</I></td>
+						<td class="company" valign="top">Socket operations</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#acceptSocket"><CODE>acceptSocket</CODE></a></td>
+						<td class="content" valign="top">Listens for a client connection and accepts it.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#attachInputToSocket"><CODE>attachInputToSocket</CODE></a></td>
+						<td class="content" valign="top">Attaches the input stream of a parsing script to a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#closeSocket"><CODE>closeSocket</CODE></a></td>
+						<td class="content" valign="top">Closes a socket descriptor.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createINETClientSocket"><CODE>createINETClientSocket</CODE></a></td>
+						<td class="content" valign="top">Creates a stream socket connected to the specified port and IP address.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createINETServerSocket"><CODE>createINETServerSocket</CODE></a></td>
+						<td class="content" valign="top">Creates a server stream socket bound to a specified port.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#detachInputFromSocket"><CODE>detachInputFromSocket</CODE></a></td>
+						<td class="content" valign="top">The current parsing script doesn&#39;t use the socket as input stream anymore.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#receiveBinaryFromSocket"><CODE>receiveBinaryFromSocket</CODE></a></td>
+						<td class="content" valign="top">Reads binary data from the socket, knowing the size.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#receiveFromSocket"><CODE>receiveFromSocket</CODE></a></td>
+						<td class="content" valign="top">Reads text or binary data from a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#receiveTextFromSocket"><CODE>receiveTextFromSocket</CODE></a></td>
+						<td class="content" valign="top">Reads text from a socket, knowing the size.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sendBinaryToSocket"><CODE>sendBinaryToSocket</CODE></a></td>
+						<td class="content" valign="top">Writes binary data to a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sendTextToSocket"><CODE>sendTextToSocket</CODE></a></td>
+						<td class="content" valign="top">Writes text to a socket.</td>
+					</tr>
+				</table>
+				<BR/>
+<!--##end##"quick access: parse"-->
+
+				<A name="Generation" />
+				<H4>Generation</H4>
+				<!--##markup##"quick access: generate"--><!--##begin##"quick access: generate"-->				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_generation"><B>Category <I>generation</I></B></a><BR/>
+				&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="#category_socket"><B>Category <I>socket</I></B></a><BR/>
+				<P/>
+				<a name="category_generation" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>generation</I></td>
+						<td class="company" valign="top">Functions relative to generation</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#addGenerationTagsHandler"><CODE>addGenerationTagsHandler</CODE></a></td>
+						<td class="content" valign="top">Adds your own CodeWorker&#39;s tags handler</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#allFloatingLocations"><CODE>allFloatingLocations</CODE></a></td>
+						<td class="content" valign="top">Gives all floating locations registered to the output stream.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#autoexpand"><CODE>autoexpand</CODE></a></td>
+						<td class="content" valign="top">Expands a file on markups, following the directives self-contained in the file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#countOutputCols"><CODE>countOutputCols</CODE></a></td>
+						<td class="content" valign="top">Column number in the line where the cursor points to.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#countOutputLines"><CODE>countOutputLines</CODE></a></td>
+						<td class="content" valign="top">Line number where the cursor points to.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#decrementIndentLevel"><CODE>decrementIndentLevel</CODE></a></td>
+						<td class="content" valign="top">Decrements the indentation level, used to indenting output files automatically while writing.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#equalLastWrittenChars"><CODE>equalLastWrittenChars</CODE></a></td>
+						<td class="content" valign="top">Compares the last written characters with a string value.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#existFloatingLocation"><CODE>existFloatingLocation</CODE></a></td>
+						<td class="content" valign="top">Checks whether a floating location exists or not.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#expand"><CODE>expand</CODE></a></td>
+						<td class="content" valign="top">Expands a file on markups, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#extractGenerationHeader"><CODE>extractGenerationHeader</CODE></a></td>
+						<td class="content" valign="top">Gives the generation header of a generated file, if any.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#generate"><CODE>generate</CODE></a></td>
+						<td class="content" valign="top">Generates a file, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#generateString"><CODE>generateString</CODE></a></td>
+						<td class="content" valign="top">Generates a string, following the directives of a template-based script.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getCommentBegin"><CODE>getCommentBegin</CODE></a></td>
+						<td class="content" valign="top">Returns the current format of a comment&#39;s beginning.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getCommentEnd"><CODE>getCommentEnd</CODE></a></td>
+						<td class="content" valign="top">Returns the current format of a comment&#39;s end.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getFloatingLocation"><CODE>getFloatingLocation</CODE></a></td>
+						<td class="content" valign="top">Returns the position attached to a key of floating location.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getGenerationHeader"><CODE>getGenerationHeader</CODE></a></td>
+						<td class="content" valign="top">Returns the comment to put into the header of generated files.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getLastWrittenChars"><CODE>getLastWrittenChars</CODE></a></td>
+						<td class="content" valign="top">Recalls the last written characters.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getMarkupKey"><CODE>getMarkupKey</CODE></a></td>
+						<td class="content" valign="top">Returns the key of the current markup.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getMarkupValue"><CODE>getMarkupValue</CODE></a></td>
+						<td class="content" valign="top">Returns the value attached to the current markup.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getOutputFilename"><CODE>getOutputFilename</CODE></a></td>
+						<td class="content" valign="top">Returns the path of the output file being generated.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getOutputLocation"><CODE>getOutputLocation</CODE></a></td>
+						<td class="content" valign="top">Returns the current output file position.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getProtectedArea"><CODE>getProtectedArea</CODE></a></td>
+						<td class="content" valign="top">Returns the content of a given protected area, if not put into the file yet.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getProtectedAreaKeys"><CODE>getProtectedAreaKeys</CODE></a></td>
+						<td class="content" valign="top">Returns the list of all protected area keys found into the file before generation.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getTextMode"><CODE>getTextMode</CODE></a></td>
+						<td class="content" valign="top">Returns the text mode amongst <b>&quot;DOS&quot;</b>, <b>&quot;UNIX&quot;</b> and <b>&quot;BINARY&quot;</b>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#getWriteMode"><CODE>getWriteMode</CODE></a></td>
+						<td class="content" valign="top">Returns how text is written during a generation (insert/overwrite).</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#incrementIndentLevel"><CODE>incrementIndentLevel</CODE></a></td>
+						<td class="content" valign="top">Increments the indentation level, used to indenting output files automatically while writing.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#indentText"><CODE>indentText</CODE></a></td>
+						<td class="content" valign="top">Indents the output stream.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#insertText"><CODE>insertText</CODE></a></td>
+						<td class="content" valign="top">Inserts text at a given position.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#insertTextOnce"><CODE>insertTextOnce</CODE></a></td>
+						<td class="content" valign="top">Inserts text at a given position, if never inserted before.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#insertTextOnceToFloatingLocation"><CODE>insertTextOnceToFloatingLocation</CODE></a></td>
+						<td class="content" valign="top">Inserts text at a given floating location, if never inserted before.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#insertTextToFloatingLocation"><CODE>insertTextToFloatingLocation</CODE></a></td>
+						<td class="content" valign="top">Inserts text at a given floating location.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#listAllGeneratedFiles"><CODE>listAllGeneratedFiles</CODE></a></td>
+						<td class="content" valign="top">Gives the list of all generated files.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#newFloatingLocation"><CODE>newFloatingLocation</CODE></a></td>
+						<td class="content" valign="top">Assigns the current file pointer to a floating location.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#overwritePortion"><CODE>overwritePortion</CODE></a></td>
+						<td class="content" valign="top">Overwrites text at a given position.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#populateProtectedArea"><CODE>populateProtectedArea</CODE></a></td>
+						<td class="content" valign="top">Puts a protected area at the current position, giving its content.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#remainingProtectedAreas"><CODE>remainingProtectedAreas</CODE></a></td>
+						<td class="content" valign="top">Returns the list of all protected area keys remaining to put into the file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeFloatingLocation"><CODE>removeFloatingLocation</CODE></a></td>
+						<td class="content" valign="top">Removes the floating location attached to a given key.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeGenerationTagsHandler"><CODE>removeGenerationTagsHandler</CODE></a></td>
+						<td class="content" valign="top">Removes a custom generation tags handler</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#removeProtectedArea"><CODE>removeProtectedArea</CODE></a></td>
+						<td class="content" valign="top">Removes a protected area remaining to put into the file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#resizeOutputStream"><CODE>resizeOutputStream</CODE></a></td>
+						<td class="content" valign="top">Reduces the size of the output, loosing the text out of bound.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#selectGenerationTagsHandler"><CODE>selectGenerationTagsHandler</CODE></a></td>
+						<td class="content" valign="top">Selects your own CodeWorker&#39;s tags handler for processing generation tasks</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setCommentBegin"><CODE>setCommentBegin</CODE></a></td>
+						<td class="content" valign="top">Changes what a beginning of comment looks like, perhaps before expanding a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setCommentEnd"><CODE>setCommentEnd</CODE></a></td>
+						<td class="content" valign="top">Changes what an end of comment looks like, perhaps before expanding a file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setFloatingLocation"><CODE>setFloatingLocation</CODE></a></td>
+						<td class="content" valign="top">Defines a file position that will move when text will be inserted before or just on it.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setGenerationHeader"><CODE>setGenerationHeader</CODE></a></td>
+						<td class="content" valign="top">Specifies a comment to put at the beginning of every generated file.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setOutputLocation"><CODE>setOutputLocation</CODE></a></td>
+						<td class="content" valign="top">Changes the location of the output file pointer.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setProtectedArea"><CODE>setProtectedArea</CODE></a></td>
+						<td class="content" valign="top">Puts a protected area at the current location.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setTextMode"><CODE>setTextMode</CODE></a></td>
+						<td class="content" valign="top"><b>&quot;DOS&quot;</b>, <b>&quot;UNIX&quot;</b> or <b>&quot;BINARY&quot;</b></td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#setWriteMode"><CODE>setWriteMode</CODE></a></td>
+						<td class="content" valign="top">Selects how to write text during a generation (insert/overwrite).</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translate"><CODE>translate</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#translateString"><CODE>translateString</CODE></a></td>
+						<td class="content" valign="top">Performs a <i>source-to-source translation</i> or a <i>program transformation</i> on strings.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#writeBytes"><CODE>writeBytes</CODE></a></td>
+						<td class="content" valign="top">Writes a series of bytes at the current position.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#writeText"><CODE>writeText</CODE></a></td>
+						<td class="content" valign="top">Imperative form of the template writing <kbd><i>@...@</i></kbd>.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#writeTextOnce"><CODE>writeTextOnce</CODE></a></td>
+						<td class="content" valign="top">Writes the text only if it wasn&#39;t encountered before in this function or when inserting.</td>
+					</tr>
+				</table>
+				<BR/>
+				<a name="category_socket" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>socket</I></td>
+						<td class="company" valign="top">Socket operations</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#acceptSocket"><CODE>acceptSocket</CODE></a></td>
+						<td class="content" valign="top">Listens for a client connection and accepts it.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#attachOutputToSocket"><CODE>attachOutputToSocket</CODE></a></td>
+						<td class="content" valign="top">Attaches the output stream of a template-based script to a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#closeSocket"><CODE>closeSocket</CODE></a></td>
+						<td class="content" valign="top">Closes a socket descriptor.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createINETClientSocket"><CODE>createINETClientSocket</CODE></a></td>
+						<td class="content" valign="top">Creates a stream socket connected to the specified port and IP address.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#createINETServerSocket"><CODE>createINETServerSocket</CODE></a></td>
+						<td class="content" valign="top">Creates a server stream socket bound to a specified port.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#detachOutputFromSocket"><CODE>detachOutputFromSocket</CODE></a></td>
+						<td class="content" valign="top">Once completed, the current output stream won&#39;t be sent to a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#flushOutputToSocket"><CODE>flushOutputToSocket</CODE></a></td>
+						<td class="content" valign="top">Flushes the output stream of a template-based script to a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#receiveBinaryFromSocket"><CODE>receiveBinaryFromSocket</CODE></a></td>
+						<td class="content" valign="top">Reads binary data from the socket, knowing the size.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#receiveFromSocket"><CODE>receiveFromSocket</CODE></a></td>
+						<td class="content" valign="top">Reads text or binary data from a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#receiveTextFromSocket"><CODE>receiveTextFromSocket</CODE></a></td>
+						<td class="content" valign="top">Reads text from a socket, knowing the size.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sendBinaryToSocket"><CODE>sendBinaryToSocket</CODE></a></td>
+						<td class="content" valign="top">Writes binary data to a socket.</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#sendTextToSocket"><CODE>sendTextToSocket</CODE></a></td>
+						<td class="content" valign="top">Writes text to a socket.</td>
+					</tr>
+				</table>
+				<BR/>
+<!--##end##"quick access: generate"-->
+
+				<h3>About the manual</h3>
+
+				Efforts are focused on improving the reliability of the documentation on
+				examples and on the reference manual (except on english text, I'm afraid!).
+				<P/>
+				A formal representation describes all functions and procedures that
+				<I class="CodeWorker">CodeWorker</I> provides, with their prototype and a
+				short explanation and an example and the list of all similar functions and
+				procedures.
+				<BR/>
+				This formal representation is used to generate source codes of
+				<I class="CodeWorker">CodeWorker</I> that handle parsing and C++ mapping and
+				execution of each function and procedure of the scripting language. This formal
+				representation that conforms to what <I class="CodeWorker">CodeWorker</I>
+				expects in terms of function/procedure prototypes, is reused to generate the
+				<I>LaTeX</I> part of the reference manual that presents
+				each of them.
+				<BR/>
+				Examples are executed while generating the documentation to be sure they are
+				correct, and to report an up to date output.
+				<P/>
+				The chapter <I>getting started</I> is partially generated too, and the
+				guarantee is given that every script runs successfully and that every example
+				file has the last annotations. To warrant that, scripts are executed while
+				generating the documentation, and example/script files contain some formatted
+				comments just before lines to annotate. While including them into the chapter,
+				their content is numeroted line by line, and notes are extracted. Notes are
+				written just after the content, and refer to the line they explain.
+				<P/>
+				The documentation is written in <I>LaTeX</I>. The great advantage of
+				<I>LaTeX</I> is that it offers a powerful text processing and that it is easy
+				to manipulate for source code generation (text format instead of binary, and it
+				accepts comments). Markups are inserted into the documentation at the points
+				where generated text must be included. A markup is a special comment that
+				<I class="CodeWorker">CodeWorker</I> recognizes. This mode of source code generation
+				is an illustration of what is called <I>expansion mode</I> here.
+			</td>
+		</TR>
+		<TR>
+			<TD class="bottom" valign="top" colspan="2">
+				<a href="http://www.xiti.com/xiti.asp?s=134058" TARGET="_top">
+					<script language="JavaScript1.1">
+					<!--
+						hsh = new Date();
+						hsd = document;
+						hsr = hsd.referrer.replace(/[<>]/g, '');
+						hsi = '<img width="39" height="25" border=0 ';
+						hsi += 'src="http://logv24.xiti.com/hit.xiti?s=134058';
+						hsi += '&p=';
+						hsi += '&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+						if(parseFloat(navigator.appVersion)>=4)
+						{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' + Xiti_s.colorDepth;}
+						hsd.writeln(hsi + '&ref=' + hsr.replace(/&/g, '$') + '" title="Mesurez votre audience"><\!--');
+						//-->
+					</script>
+					<noscript>
+						<img width="39" height="25" border=0 src="http://logv24.xiti.com/hit.xiti?s=134058&p=&" title="Mesurez votre audience">
+					</noscript>
+					<!--//-->
+				</a>
+				&nbsp;<I class="CodeWorker">CodeWorker</I> is maintained by <A href="CurriculumVitae.html">Cedric Lemaire</A>.
+				Please send a mail to <A href="mailto:codeworker@free.fr">Submit a bug or feature</A><BR />
+			</TD>
+		</TR>
+	</TABLE>
+</body>
+</HTML>

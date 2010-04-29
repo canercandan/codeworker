@@ -1,0 +1,150 @@
+//Source file: Y:/DOCUMENTS/PRODUCTDOCUMENTS/INTERFACESPECIFICATIONS/HOSA/IDL/hosa/hosa_pim_contact_interfaces.idl
+
+#ifndef __HOSA_PIM_CONTACT_INTERFACES_DEFINED
+#define __HOSA_PIM_CONTACT_INTERFACES_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+#include "hosa_pim_contact_data.idl"
+#include "hosa_common_data.idl"
+#include "osa.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			module hpim {
+				
+				module hcontact {
+					
+					/* The PIM Contact Application interface is implemented by the Application in order to receive results on requests issued on the PIM Contact Service interface. */
+					
+					interface IpAppHosaPIMContactManager : org::csapi::IpInterface {
+						/* This method delivers the results (positive or negative) of a completed contact entry creation request.
+						@roseuid 3D8B14720296 */
+						void hosaCreateContactRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in se::ericsson::hosa::hpim::TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in se::ericsson::hosa::hpim::TpHosaPIMCreateContactResultList resultPerSubscriber	//A list where each entry specifies whether the contact entry could be created successfully for a specific subscriber/device combination. When the contact entry is created successfuly the  ContactID for every created entry is indicated as well.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed contact entry deletion request.
+						@roseuid 3D8B14720297 */
+						void hosaDeleteContactRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in se::ericsson::hosa::hpim::TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in se::ericsson::hosa::hpim::TpHosaPIMDeleteContactResultList resultList	//A list where each entry specifies whether the contact entry could be deleted successfully for a specific device.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed contact entry retrieval request.
+						@roseuid 3D8B147202B4 */
+						void hosaRetrieveContactsRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in se::ericsson::hosa::hpim::TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in se::ericsson::hosa::hpim::TpHosaPIMRetrieveContactResultInfoList resultList	//A list where each entry contains a retrieved contact entry.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed contact entry retrieval request. Succesfully retrieved contact entries are returned as vCard objects.
+						@roseuid 3DA479B1029D */
+						void hosaRetrieveContactsAsVCardsRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in se::ericsson::hosa::hpim::TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in se::ericsson::hosa::hpim::TpHosaPIMRetrieveVCardInfoList resultList	//A list where each entry contains a retrieved contact entry. Contact entries are formatted as vCard objects.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed contact entry modification request.
+						@roseuid 3D8B147202BE */
+						void hosaModifyContactRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in se::ericsson::hosa::hpim::TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in se::ericsson::hosa::hpim::TpHosaPIMModifyContactResultList resultList	//A list where each entry specifies whether the contact entry could be modified successfully for a specific device.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed contact entry creation request.
+						@roseuid 3DF5C1BA01BD */
+						void hosaCreateContactFromVCardRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in se::ericsson::hosa::hpim::TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in se::ericsson::hosa::hpim::TpHosaPIMCreateContactResultList resultPerSubscriber	//A list where each entry specifies whether the contact entry could be created successfully for a specific subscriber/device combination. When the contact entry is created successfuly the  ContactID for every created entry is indicated as well.
+							);
+							
+					};
+					
+					/* The PIM Contact Service interface is used by an Application to manage and obtain Contact entries from a subscribers address book. */
+					
+					interface IpHosaPIMContactManager : org::csapi::IpService {
+						/* Request to create a contact entry  in the address books of the listed subscribers, based on the provided contact information in the vCard. Since a vCard may contain multiple contact entries, this may result in the addition of more then one contact entry.
+						@roseuid 3D8B13F10345 */
+						org::csapi::TpAssignmentID hosaCreateContactFromVCardReq (
+							in IpAppHosaPIMContactManager appContactManager,	//Specifies the Application interface where the PIM Contact Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in se::ericsson::hosa::hpim::TpHosaPIMSubscriberList subscriberList,	//A list of subscriber identifiers. The subscriber identifier is used to address a subscribers address book.
+							in org::csapi::TpOctetSet vCard,	//Specifies all the information that describes a contact, formatted as a vCard object.
+							in se::ericsson::hosa::hpim::TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions, se::ericsson::hosa::P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to create a contact entry  in the address books of the listed subscribers, based on the provided contact information.
+						@roseuid 3DA1A8F402BA */
+						org::csapi::TpAssignmentID hosaCreateContactReq (
+							in IpAppHosaPIMContactManager appContactManager,	//Specifies the Application interface where the PIM Contact Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in se::ericsson::hosa::hpim::TpHosaPIMSubscriberList subscriberList,	//A list of subscriber identifiers. The subscriber identifier is used to address a subscribers address book.
+							in se::ericsson::hosa::hpim::TpHosaPIMContact contact,	//Specifies all the information that describes a contact.
+							in se::ericsson::hosa::hpim::TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions,se::ericsson::hosa::P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to delete a contact entry  in the address book of the specified subscriber, based on the provided contactID.
+						@roseuid 3D8B14000120 */
+						org::csapi::TpAssignmentID hosaDeleteContactReq (
+							in IpAppHosaPIMContactManager appContactManager,	//Specifies the Application interface where the PIM Contact Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in se::ericsson::hosa::hpim::TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers address book.
+							in org::csapi::TpOctetSet contactID,	//Specifies the identifier that uniquely identifies a contact entry within a subscribers address book.
+							in se::ericsson::hosa::hpim::TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions, se::ericsson::hosa::P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to retrieve contact entries from the address book of the specified subscriber, based on the provided criteria.
+						@roseuid 3D8B141802F1 */
+						org::csapi::TpAssignmentID hosaRetrieveContactsReq (
+							in IpAppHosaPIMContactManager appContactManager,	//Specifies the Application interface where the PIM Contact Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in se::ericsson::hosa::hpim::TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers address book.
+							in se::ericsson::hosa::hpim::TpHosaPIMContactCriteriaExpression criteria	//Specifies the criteria that contact entries need to comply with in order for them to be retrieved.
+							)							
+							raises (org::csapi::TpCommonExceptions, se::ericsson::hosa::P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to retrieve contact entries from the address book of the specified subscriber, based on the provided criteria. The contact entries are requested to be provided as vCard objects.
+						@roseuid 3DA1AB8B0231 */
+						org::csapi::TpAssignmentID hosaRetrieveContactsAsVCardsReq (
+							in IpAppHosaPIMContactManager appContactManager,	//Specifies the Application interface where the PIM Contact Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in se::ericsson::hosa::hpim::TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers address book.
+							in se::ericsson::hosa::hpim::TpHosaPIMContactCriteriaExpression criteria	//Specifies the criteria that contact entries need to comply with in order for them to be retrieved.
+							)							
+							raises (org::csapi::TpCommonExceptions, se::ericsson::hosa::P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to modify an entry  in the address book of the specified subscriber, based on the provided contactID and contact information.
+						@roseuid 3D8B142B02A8 */
+						org::csapi::TpAssignmentID hosaModifyContactReq (
+							in IpAppHosaPIMContactManager appContactManager,	//Specifies the Application interface where the PIM Contact Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in se::ericsson::hosa::hpim::TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers address book.
+							in org::csapi::TpOctetSet contactID,	//The identifier that uniquely identifies the contact entry in the subscribers address book that will be modified. Note that the ContactID in the provided contact record shall be ignored.
+							in se::ericsson::hosa::hpim::TpHosaPIMContact contact,	//Specifies all the information that describes a contact.
+							in se::ericsson::hosa::hpim::TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions, se::ericsson::hosa::P_HOSA_INVALID_PARAMETER_VALUE);
+							
+					};
+					
+				};
+				
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif

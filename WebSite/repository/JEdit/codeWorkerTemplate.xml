@@ -1,0 +1,23 @@
+
+<?xml version="1.0"?>
+
+<!DOCTYPE MODE SYSTEM "xmode.dtd">
+
+<MODE>
+	
+	<!-- Sets the default to makup. I'm not entirely happy with this. Would
+	like the script to stand out a bit more. Maybe I'm just going blind.-->
+    <RULES ESCAPE="\" IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE" DEFAULT="MARKUP">
+		<!-- Delegate handling to CodeWorkerScript mode -->
+		<SPAN DELEGATE="CodeWorkerScript::MAIN">
+			<BEGIN>@</BEGIN>
+			<END>@</END>
+		</SPAN>
+		
+		<!-- Delegate handling to CodeWorkerScript mode -->
+		<SPAN DELEGATE="CodeWorkerScript::MAIN">
+			<BEGIN>&lt;%</BEGIN>
+			<END>%&gt;</END>
+		</SPAN>
+    </RULES>
+</MODE>

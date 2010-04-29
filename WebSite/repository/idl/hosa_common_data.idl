@@ -1,0 +1,46 @@
+//Source file: Y:/documents/productdocuments/interfacespecifications/hosa/idl/hosa/hosa_common_data.idl
+
+#ifndef __HOSA_COMMON_DATA_DEFINED
+#define __HOSA_COMMON_DATA_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+#include "osa.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			/* Specifies an RFC 822 compliant email address. */
+			
+			typedef org::csapi::TpString TpHosaEmailAddress;
+			
+			/* Specifies a list of email addresses. */
+			
+			typedef sequence <TpHosaEmailAddress> TpHosaEmailAddressList;
+			
+			/* Specifies a list of strings. */
+			
+			typedef sequence <org::csapi::TpString> TpHosaStringSet;
+			
+			/* Indicates that one of the parameters of the request contained invalid contents. */
+			
+			exception P_HOSA_INVALID_PARAMETER_VALUE {
+				/* Carries extra information to help identify the source of the exception, e.g. a parameter name. */
+				org::csapi::TpString ExtraInformation;
+			};
+			
+			typedef sequence <org::csapi::TpTimeInterval> TpHosaDateRangeList;
+			
+			typedef sequence <org::csapi::TpDateAndTime> TpHosaDateAndTimeSet;
+			
+		};
+		
+	};
+	
+};
+
+#endif

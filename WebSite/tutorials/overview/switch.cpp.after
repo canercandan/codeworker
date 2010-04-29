@@ -1,0 +1,95 @@
+//------------------------------------------------------------
+//                Intrusive code in a source
+//
+//
+// Type:
+//   CodeWorker -expand switch.cwt switch.cpp
+//
+// After running the script and under Windows/VC++ 6.0, launch
+// "switch.dsp" to compile this expanded source.
+//------------------------------------------------------------
+
+#include <string>
+
+//##markup##"enum PET_TYPE"
+//##data##
+//cat
+//dog
+//snake
+//##data##
+//##begin##"enum PET_TYPE"
+enum PET_TYPE {
+	cat,
+	dog,
+	snake
+
+};
+
+std::string PET_TYPEToString(PET_TYPE ePET_TYPE) {
+	switch(ePET_TYPE) {
+		case cat: return "cat";
+		case dog: return "dog";
+		case snake: return "snake";
+	}
+	return "Undefined";
+}
+//##end##"enum PET_TYPE"
+
+
+int main(int, char**) {
+	std::string sText = "Customer";
+//##markup##"switch(sText)"
+//##data##
+//Product
+//Customer
+//Figurine
+//##data##
+//##begin##"switch(sText)"
+{
+    int iHashCode = 0;
+    std::string sKey = sText;
+    for (int i = 0; i < sKey.size(); i++) {
+        unsigned char c = sKey[i];
+        iHashCode = (31*iHashCode + (c%31)) % 64000000;
+    }
+	bool bDefault = false;
+    switch(iHashCode) {
+        case 17133617: // "Product"
+			if (sKey == "Product") {
+//##protect##"case \"Product\":"
+//##protect##"case \"Product\":"
+			} else {
+				bDefault = true;
+			}
+			break;
+        case 26793087: // "Customer"
+			if (sKey == "Customer") {
+//##protect##"case \"Customer\":"
+//##protect##"case \"Customer\":"
+			} else {
+				bDefault = true;
+			}
+			break;
+        case 20050752: // "Figurine"
+			if (sKey == "Figurine") {
+//##protect##"case \"Figurine\":"
+//##protect##"case \"Figurine\":"
+			} else {
+				bDefault = true;
+			}
+			break;
+        default:
+			bDefault = true;
+    }
+	if (bDefault) {
+//##protect##"default:"
+//##protect##"default:"
+	}
+}
+//##end##"switch(sText)"
+	// Before code expansion, this comment stands just before
+	// the trailing '##data##' tag.
+	// To run this test once again, delete lines the generator
+	// has injected between '##begin##' and '##end##' tags.
+	return 0;
+}

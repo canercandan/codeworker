@@ -1,0 +1,56 @@
+package tiny;
+
+public class @
+//note: swapping to script mode: the value of \textit{this.name} is put into the output file,
+//note: knowing that the variable \textit{this} is determined by the second parameter that is
+//note: passed to the procedure \samp{generate} (see section \ref{generate()} and below). If
+//note: the notation appears confusing to you (where does the writing mode ends, where does
+//note: the script mode starts or the contrary), you can choose to inlay the variables in tags
+//note: \textbf{'<\%'} and \textbf{'\%>'}.
+//merge:
+this.name@ @
+//note: swapping once again to script mode for writing the inheritance, if any
+if existVariable(this.parent) {
+	@ extends @this.parent.name@ @
+}
+//note: swapping to text mode,
+@{
+	// attributes:
+@
+//note: we'll need a function to convert a type specifier of the tiny modeling language to JAVA,
+//note: which expects the attribute's node (parameter mode is \samp{variable}, instead of \samp{value}),
+function getJAVAType(myAttribute : node) {
+	local sType = myAttribute.class.name;
+	if myAttribute.isArray {
+//note: we have chosen \samp{java.util.ArrayList} to represent an array, why not?
+		set sType = "java.util.ArrayList/*<" + sType + ">*/";
+	}
+	return sType;
+}
+
+//note: swapping to script mode for declaring the attributes of the class
+foreach i in this.listOfAttributes {
+	@	private @getJAVAType(i)@ _@i.name@ = null;
+@
+}
+//note: swapping to text mode for putting the constructor into the output file,
+@
+	//constructor:
+	public @this.name@() {
+	}
+
+	// accessors:
+@
+//note: swapping to script mode for implementing the accessors to the attributes of the class
+foreach i in this.listOfAttributes {
+//note: the predefined function \samp{toUpperString} capitalizes the parameter,
+	@	public @getJAVAType(i)@ get@toUpperString(i.name)@() { return _@i.name@; }
+	public void set@toUpperString(i.name)@(@getJAVAType(i)@ @i.name@) { _@i.name@ = @i.name@; }
+@
+}
+//note: the procedure \samp{setProtectedArea} (see section \ref{setProtectedArea()}) adds
+//note: a protected area that is intended to the user and that is preserved during a
+//note: generation process,
+setProtectedArea("Methods");
+//note: swapping to text mode for writing the trailing brace,
+@}

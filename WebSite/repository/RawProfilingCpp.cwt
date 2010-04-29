@@ -1,0 +1,121 @@
+@/*description:
+{
+	This script generates the mplementation of the \textit{profiling module}.
+
+	Each function scanned for the profiling has both a counter and a chronograph assigned.
+	The chronograph holds the total time spent in the function.
+
+	The display of result is the simplest that may exist: functions are listed with the number
+	of calls and the total time (\samp{RawProfiling::displayResults()}).
+
+	The file to generate is \samp{"RawProfiling.cpp"} and will be put in \samp{RAW_PROFILING_DIR}.
+}
+*/
+
+@#include <iostream>
+#include <fstream>
+
+#ifdef WIN32
+#	include "windows.h"
+#	include "winbase.h"
+#else
+#	include <sys/timeb.h>
+#endif
+
+#include "RawProfiling.h"
+
+
+namespace RawProfiling {
+	unsigned long Chronograph::getTimeInMillis() {
+		if (active_) {
+			stop();
+			start();
+		}			
+		return (unsigned long) (elapsed_ / freqInMillis_);
+	}
+
+	int64 Chronograph::now() {
+#ifdef WIN32
+		LARGE_INTEGER value;
+		QueryPerformanceCounter(&value);
+		return (int64)value.QuadPart;
+#else
+		struct timeb tb;
+		ftime(&tb);
+		return (int64)tb.time * 1000 + (int64)tb.millitm;
+#endif
+	}
+
+	int64 Chronograph::freq() {
+#ifdef WIN32
+		LARGE_INTEGER freq;
+		QueryPerformanceFrequency(&freq);
+		return (int64)freq.QuadPart;
+#else
+		return 1000;
+#endif
+	}
+
+
+	void RawProfiling::displayResults() {
+@
+
+foreach i in this.listOfKeys {
+	if i.class {
+		@		std::cout << "@i.class@::@i.name@ (" << @i@_counter << ", " << @i@_chronograph.getTimeInMillis() << "ms)" << std::endl;
+@
+	} else {
+		@		std::cout << "@i.name@ (" << @i@_counter << ", " << @i@_chronograph.getTimeInMillis() << "ms)" << std::endl;
+@
+	}
+}
+
+@	}
+
+	bool RawProfiling::writeToHTML(const std::string& sFilename) {
+		std::ofstream HTMLFile(sFilename.c_str(), std::ios::out | std::ios::binary);
+		if (HTMLFile.fail()) return false;
+		HTMLFile << "<html>" << std::endl;
+		HTMLFile << "\t<body>" << std::endl;
+		HTMLFile << "\t\t<h2>Profiling results</h2>" << std::endl;
+		HTMLFile << "\t\t<table border=\"1\">" << std::endl;
+		HTMLFile << "\t\t\t<tr>" << std::endl;
+		HTMLFile << "\t\t\t\t<td><b>Function</b></td>" << std::endl;
+		HTMLFile << "\t\t\t\t<td><b>Occurrences</b></td>" << std::endl;
+		HTMLFile << "\t\t\t\t<td><b>Time in ms</b></td>" << std::endl;
+		HTMLFile << "\t\t\t</tr>" << std::endl;
+@
+
+foreach i in this.listOfKeys {
+	@		HTMLFile << "\t\t\t<tr>" << std::endl;
+@
+	if i.class {
+		@		HTMLFile << "\t\t\t\t<td><i>@i.class@::@i.name@</i></td>" << std::endl;
+@
+	} else {
+		@		HTMLFile << "\t\t\t\t<td><i>@i.name@</i></td>" << std::endl;
+@
+	}
+	@		HTMLFile << "\t\t\t\t<td>" << @i@_counter << "</td>" << std::endl;
+		HTMLFile << "\t\t\t\t<td>" << @i@_chronograph.getTimeInMillis() << "</td>" << std::endl;
+		HTMLFile << "\t\t\t</tr>" << std::endl;
+@
+}
+
+@		HTMLFile << "\t\t</table>" << std::endl;
+		HTMLFile << "\t</body>" << std::endl;
+		HTMLFile << "</html>" << std::endl;
+		HTMLFile.close();
+		return true;
+	}
+
+
+@
+
+foreach i in this.listOfKeys {
+	@	int RawProfiling::@i@_counter = 0;
+	Chronograph RawProfiling::@i@_chronograph = Chronograph();
+@
+}
+
+@}

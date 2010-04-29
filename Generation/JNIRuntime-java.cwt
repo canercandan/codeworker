@@ -1,0 +1,24 @@
+@
+
+foreach i in this.procedureList if !findElement("info", i.modifierList) && !findElement("visibility", i.modifierList) {
+	@	public static native void @i.name@(@
+	foreach j in i.parameterList {
+		if !j.first() {
+			@, @
+		}
+		@@getJavaType(j.type)@ @getCppVariable(j.name, j.type)@@
+	}
+	@);
+@
+}
+foreach i in this.functionList if !findElement("info", i.modifierList) && !findElement("user", i.modifierList) {
+	@	public static native @getJavaType(i.return_type)@ @i.name@(@
+	foreach j in i.parameterList {
+		if !j.first() {
+			@, @
+		}
+		@@getJavaType(j.type)@ @getCppVariable(j.name, j.type)@@
+	}
+	@);
+@
+}

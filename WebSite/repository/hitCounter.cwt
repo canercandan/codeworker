@@ -1,0 +1,54 @@
+@/*description:
+{
+	It updates the number of hits done on project page. The history saves all remote hosts
+	that have already loaded the page, and keeps the number of hits by date for each
+	remote host.
+	
+	To make it persistent, these data are saved in a file \samp{"hitCounter.txt"}, which is
+	parsed via the script \samp{"hitCounterParser.cwp"}. The file is updated by generating
+	it via the \textit{template-based} script \samp{"hitCounterUpdate.cwt"}.
+}
+
+output "examples/hitCounter.txt", "examples/hitCounter.html";
+*/
+
+if existFile("hitCounter.txt") {
+	parseAsBNF("hitCounterParser.cwp", project, "hitCounter.txt");
+	saveProject("hitCounter.xml");
+}
+
+increment(project.hits);
+local sDate = formatDate(getNow(), "%d%b%Y");
+increment(project.dates[sDate].hits);
+local sHost = getEnv("REMOTE_HOST");
+insert project.hosts[sHost] = sHost;
+increment(project.hosts[sHost].hits);
+increment(project.hosts[sHost].dates[sDate].hits);
+
+saveProject("hitCounter1.xml");
+generate("hitCounterUpdate.cwt", project, "hitCounter.txt");
+@<HTML>
+	<BODY>
+		<TABLE border=1>
+			<TR><TD colspan=2><B>Number of hits: @project.hits@</B></TD></TR>
+@
+foreach i in project.hosts {
+	@			<TR>
+				<TD>@key(i)@</TD><TD>@i.hits@</TD>
+			</TR>
+@
+}
+@		</TABLE>
+		<P/>
+		<TABLE border=1>
+			<TR><TD colspan=2><B>Hits by date</B></TD></TR>
+@
+foreach i in project.dates {
+	@			<TR>
+				<TD>@key(i)@</TD><TD>@i.hits@</TD>
+			</TR>
+@
+}
+@		</TABLE>
+	</BODY>
+</HTML>

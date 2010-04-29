@@ -1,0 +1,65 @@
+// syntactical clauses:
+//note: the world to model is composed of classes ; some special commands are
+//note: used:
+//note: \begin{itemize}
+//note: 	\item \samp{\#ignore(C++)} means that blank characters and \textit{C++-like}
+//note: 		comments will be ignored between pattern matching instructions,
+//note: 	\item \samp{\#empty} means that the position must point to the end
+//note: 		of the input file,
+//note: 	\item \samp{=> \textit{traceLine("file read successfully");}} means that
+//note: 		a trace must be executed just after matching with the end of file
+//note: 		(the pattern matching instruction is \samp{\#empty}) ; let retain that
+//note:			an instruction or a block of instructions is announced by \textbf{'=>'},
+//note: \end{itemize}
+//note:
+world ::= #ignore(C++) [class_declaration]* #empty
+			=> { traceLine("file read successfully"); };
+//note: a class declaration begins with identifier "class", and \samp{\textit{IDENT}:"class"}
+//note: means that an identifier is expected, and that this identifier is worth \samp{"class"}.
+//note: This instruction isn't identical to \samp{"class" \textit{IDENT}} that validates
+//note: the expression \textit{"classes"}, where \samp{\textit{IDENT}} matches to \textit{"es"}.
+//note: A class has a name, read by the first \textit{IDENT} clause call,
+//note: and may inherit from a parent, read by the second \textit{IDENT}
+class_declaration ::= IDENT:"class" IDENT [':' IDENT]? class_body;
+//note: the body of a class is composed of attributes and methods
+class_body ::= '{' [attribute_decl | method_decl]* '}';
+//note: the attribute is preceded by its type, and \textit{IDENT} reads
+//note: the name of the attribute
+attribute_decl ::= type_specifier IDENT ';';
+//note: the method has a return type or expects \samp{void} keyword, and
+//note: may expect some parameters ;
+//note: \textit{IDENT} reads the name of the method
+method_decl ::= [IDENT:"void" | type_specifier] IDENT
+				'(' [parameters_decl]? ')' ';';
+//note: a comma separates parameters
+parameters_decl ::= parameter [',' parameters_decl]*;
+//note: an access mode may be specified to the parameter ; the type is then
+//note: specified, and \textit{IDENT} reads the name
+parameter ::= [parameter_mode]? type_specifier IDENT;
+//note: a parameter may be passed:
+//note: \begin{itemize}
+//note:		\item \textbf{in} and its value cannot be changed by the method,
+//note:		\item \textbf{inout} and its value may be changed into the method,
+//note:		\item \textbf{out} and the method doesn't care about the initial value
+//note:			of the parameter, but is expected to assign a value to it into the body,
+//note: \end{itemize}
+//note: The pattern \samp{\textit{IDENT}:\{"in", "inout", "out"\}} means that the identifier
+//note: must match with one of the constant strings listed between brackets. It isn't
+//note: identical to the pattern \samp{"in" | "inout" | "out"} that validates
+//note: the beginning of \textit{"\textbf{in}t"}.
+parameter_mode ::= IDENT:{"in", "inout", "out"};
+//note: a type is a \textit{basic type} or an array of basic types
+type_specifier ::= basic_type ['[' ']']?;
+//note: some basic types, including object types
+basic_type ::= "int" | "boolean" | "double" | "string" | class_specifier;
+//note: \textit{IDENT} reads the class name, and the object may be aggregated
+class_specifier ::= ["aggregate"]? IDENT;
+
+// lexical clauses:
+//note: this clause reads an identifier, such as \textit{pretty\_pig1} ;
+//note: \samp{\#!ignore} means that no character is ignored, even if
+//note: it matches C++ comment or a blank. If we forget clause \samp{\#!ignore},
+//note: then \textit{IDENT} will validate \textit{pretty/*comment*/\_pig 1} as
+//note: an identifier.
+IDENT ::= #!ignore ['a'..'z'|'A'..'Z'|'_']
+					['a'..'z'|'A'..'Z'|'_'|'0'..'9']*;

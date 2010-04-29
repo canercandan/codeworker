@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<XML_DIZ_INFO>
+<MASTER_PAD_VERSION_INFO>
+    <MASTER_PAD_VERSION>1.15</MASTER_PAD_VERSION>
+    <MASTER_PAD_INFO>Portable Application Description, or PAD for short, is a data set that is used by shareware authors to disseminate information to anyone interested in their software products. To find out more go to http://www.asp-shareware.org/pad</MASTER_PAD_INFO>
+</MASTER_PAD_VERSION_INFO>
+<Company_Info>
+        <Company_Name>Cedric Lemaire</Company_Name>
+        <Address_1>6, avenue Henri IV</Address_1>
+        <Address_2 />
+        <City_Town>Meudon</City_Town>
+        <State_Province />
+        <Zip_Postal_Code>92190</Zip_Postal_Code>
+        <Country>France</Country>
+        <Company_WebSite_URL>http://www.codeworker.org</Company_WebSite_URL>
+<Contact_Info>
+        <Author_First_Name>Cedric</Author_First_Name>
+        <Author_Last_Name>Lemaire</Author_Last_Name>
+        <Author_Email>codeworker@free.fr</Author_Email>
+        <Contact_First_Name>Cedric</Contact_First_Name>
+        <Contact_Last_Name>Lemaire</Contact_Last_Name>
+        <Contact_Email>codeworker@free.fr</Contact_Email>
+    </Contact_Info>
+<Support_Info>
+        <Sales_Email />
+        <Support_Email>codeworker@free.fr</Support_Email>
+        <General_Email>codeworker@free.fr</General_Email>
+        <Sales_Phone />
+        <Support_Phone />
+        <General_Phone />
+        <Fax_Phone />
+    </Support_Info>
+</Company_Info>
+<Program_Info>
+        <Program_Name>CodeWorker</Program_Name>
+        <Program_Version>4.5.3</Program_Version>
+        <Program_Release_Month>04</Program_Release_Month>
+        <Program_Release_Day>27</Program_Release_Day>
+        <Program_Release_Year>2010</Program_Release_Year>
+        <Program_Cost_Dollars />
+        <Program_Cost_Other_Code />
+        <Program_Cost_Other />
+        <Program_Type>Freeware</Program_Type>
+        <Program_Release_Status>New Release</Program_Release_Status>
+        <Program_Install_Support>No Install Support</Program_Install_Support>
+        <Program_OS_Support>Win98,WinNT 4.x,WinXP,Windows2000,Unix,Linux</Program_OS_Support>
+        <Program_Language>English</Program_Language>
+<File_Info>
+        <Filename_Versioned>CodeWorker_WIN4_5_3.zip</Filename_Versioned>
+        <Filename_Previous>CodeWorker_WIN4_5_2.zip</Filename_Previous>
+        <Filename_Generic>CodeWorker_WIN.zip</Filename_Generic>
+        <Filename_Long />
+        <File_Size_Bytes>665632</File_Size_Bytes>
+        <File_Size_K>650</File_Size_K>
+        <File_Size_MB>0.65</File_Size_MB>
+    </File_Info>
+<Expire_Info>
+        <Has_Expire_Info>N</Has_Expire_Info>
+        <Expire_Count />
+        <Expire_Based_On>Days</Expire_Based_On>
+        <Expire_Other_Info />
+        <Expire_Month />
+        <Expire_Day />
+        <Expire_Year />
+    </Expire_Info>
+        <Program_Change_Info>Bug fixes and improvement of the generation headers.</Program_Change_Info>
+        <Program_Specific_Category>Development Tools</Program_Specific_Category>
+        <Program_Categories>Development Tools::Code Generators,Development Tools::Parsing Tools,Development Tools::Interpreter,Development Tools::Scripting Languages</Program_Categories>
+        <Program_System_Requirements>200 Mhz, 128 Mo RAM, 10Mo Hard Disk</Program_System_Requirements>
+        <Includes_JAVA_VM>N</Includes_JAVA_VM>
+        <Includes_VB_Runtime>N</Includes_VB_Runtime>
+        <Includes_DirectX>N</Includes_DirectX>
+</Program_Info>
+<Program_Descriptions>
+<English>
+        <Keywords>code generator,code generation,extended BNF,parsing tool,generative programming,program transformation,source-to-source translation,scripting language</Keywords>
+        <Char_Desc_45>Scripting language for generative programming</Char_Desc_45>
+        <Char_Desc_80>A scripting language for parsing text and generating source code efficiently.</Char_Desc_80>
+        <Char_Desc_250>A scripting language that works on generative programming. It offers facilities for building a DSL, for generating code, for source-to-source translation or program transformation, after restricting human interventions to the essentials.</Char_Desc_250>
+        <Char_Desc_450>A scripting language for producing reusable, tailor-made, evolvable and reliable IT systems with a high level of automation. This is a software engineering approach called &quot;generative programming&quot;.
+
+The most remarkable advantage is about generating source code automatically after restricting human interventions to the essentials.
+
+An extended BNF syntax allows defining new Domain-Specific languages or parsing existing format.</Char_Desc_450>
+        <Char_Desc_2000>CodeWorker is a scripting language for producing reusable, tailor-made, evolvable and reliable IT systems with a high level of automation. This is a software engineering approach called &quot;generative programming&quot;.
+The most remarkable advantage is about generating source code automatically after restricting human interventions to the essentials.
+
+An extended BNF syntax allows defining new Domain-Specific languages or parsing existing format (HTML pages for example).
+
+A template-based syntax like PHP and JSP allows writing the patterns for generating code.
+
+The code generation knows how to preserve protected areas with hand-typed code and offers code expansion, source-to-source translation and program transformation.
+
+These tasks are executed in a straightforward process, with no binding to an external programming language and with no translation of requirements specification in a constraining format.</Char_Desc_2000>
+</English>
+</Program_Descriptions>
+<Web_Info>
+<Application_URLs>
+        <Application_Info_URL>http://www.codeworker.org</Application_Info_URL>
+        <Application_Order_URL />
+        <Application_Screenshot_URL>http://www.codeworker.org/CodeWorker398x153.jpg</Application_Screenshot_URL>
+        <Application_Icon_URL>http://www.codeworker.org/CodeWorker_icon.jpg</Application_Icon_URL>
+        <Application_XML_File_URL>http://www.codeworker.org/downloads/pad_file.xml</Application_XML_File_URL>
+    </Application_URLs>
+<Download_URLs>
+        <Primary_Download_URL>http://www.codeworker.org/downloads/CodeWorker_WIN4_5_3.zip</Primary_Download_URL>
+        <Secondary_Download_URL>http://www.codeworker.org/downloads/CodeWorker_SRC4_5_3.zip</Secondary_Download_URL>
+        <Additional_Download_URL_1 />
+        <Additional_Download_URL_2 />
+    </Download_URLs>
+</Web_Info>
+<Permissions>
+        <Distribution_Permissions>&quot;CodeWorker&quot;:	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr</Distribution_Permissions>
+        <EULA>&quot;CodeWorker&quot;:	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr</EULA>
+</Permissions>
+<ASP>
+    <ASP_FORM>Y</ASP_FORM>
+    <ASP_Member>N</ASP_Member>
+    <ASP_Member_Number />
+</ASP>
+</XML_DIZ_INFO>

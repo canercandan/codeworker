@@ -1,0 +1,235 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+LaTeX2Flat ::=
+		#ignore(LaTeX)
+		[
+			"\\newcommand" ignoreBraces [blanks '[' [~']']* ']']* ignoreBraces
+				|
+			"\\special" ignoreBraces
+				|
+			~"\\pdfchapter"
+				|
+			"\\pdfchapter"
+			#continue
+			[
+				'*' 
+					|
+				rawCompoundText:sName
+				chapterContent(sName)
+			]
+		]*
+		#continue
+		#empty;
+
+rawCompoundText:value ::= blanks #!ignore '{' [~'}']*:rawCompoundText '}';
+compoundText ::= blanks '{' #continue ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) command] | '$' mathEscape | paragraphJump | ~'}':cChar => writeText(cChar); ]* '}';
+mathEscape ::= ['\\' #continue commandMath | paragraphJump | ~'$']* '$';
+commandMath ::= "backslash" => writeText("\\"); | "triangle" => {writeText("^");};
+
+command ::=	[
+				"begin" #continue begin | "makebox" #continue makeBox |
+				"textit" #continue textIt | "textbf" #continue textBf | "samp" #continue samp |
+				"textrm" #continue textRm | "tiny" #continue tiny | "textsc" #continue textSc |
+				"texttt" #continue textTt | "footnote" #continue footNote |
+				"label" #continue label | "pdflabel" #continue label |
+				"index" #continue index | "ref" #continue reference
+			]
+				|
+			#!ignore specialCommand;
+begin ::=	blanks '{' blanks #continue #readIdentifier:sBegin blanks '}'
+			beginContent<sBegin>
+			"\\end" blanks '{' blanks #readIdentifier blanks '}';
+beginContent<"description"> ::= beginContent<"itemize">;
+beginContent<"itemize"> ::=
+	=> local bFirst = true;
+	[
+		'\\' #!ignore ['%' => {@%@} | #ignore(LaTeX) commandItemize(bFirst)]
+			|
+		'$' mathEscape | paragraphJump | ~'\\':cChar => writeText(cChar);
+	]*
+	=> {
+		writeText(endl());
+	};
+commandItemize(bFirst : node) ::=
+		"item" => {
+			if bFirst set bFirst = false;
+			else {
+				writeText(endl());
+			}
+			@	- @
+		}
+			|
+		!"end" #continue command;
+beginContent<"alltt"> ::=
+		[
+			'\\' !"end" #continue command | '$' mathEscape
+				|
+			~'\\':cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					@<BR/>@
+					writeText(endl());
+				} else {
+					writeText(cChar);
+				}
+			}
+		]*;
+beginContent<"verbatim"> ::=
+		[
+			~"\\end":cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					writeText(endl());
+				} else {
+					writeText(cChar);
+				}
+			}
+		]*;
+beginContent<"center"> ::=
+		[
+			'\\' !"end" #continue command | '$' mathEscape
+				|
+			~'\\':cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					writeText(endl());
+				} else {
+					writeText(cChar);
+				}
+			}
+		]*;
+beginContent<"tableii"> ::=
+		[blanks '{' [~'}']* '}']2
+		[
+			compoundText
+		]*
+		[blanks '\\' !"end" #continue commandTableii]*
+		blanks;
+commandTableii ::=
+		"lineii"
+		[
+			compoundText
+		]*;
+beginContent<"tableiii"> ::=
+		[blanks '{' [~'}']* '}']2
+		[
+			compoundText
+		]*
+		[blanks '\\' !"end" #continue commandTableiii]*
+		blanks;
+commandTableiii ::=
+		"lineiii"
+		[
+			compoundText
+		]*;
+makeBox ::=
+		blanks #continue '['
+		NUMBER:dLength
+		[~']']* ']'
+		[blanks '[' [~']']* ']'] [compoundText]?;
+textIt ::= compoundText;
+textBf ::= compoundText;
+textRm ::= compoundText;
+footNote ::= #continue =>{@ (@} compoundText =>{@)@};
+samp ::=  compoundText;
+tiny ::=
+		[
+			compoundText
+				|
+			['\\' #continue command | '$' mathEscape | paragraphJump | ~'}':cChar => writeText(cChar); ]*
+		];
+textSc ::= compoundText;
+textTt ::=
+		blanks '{' blanks
+		[
+			'\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) command]
+				|
+			'$' mathEscape
+				|
+			~'}':cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					@<BR/>@
+					writeText(endl());
+				} else {
+					writeText(cChar);
+				}
+			}
+		]*
+		'}';
+label ::= rawCompoundText;
+index ::= rawCompoundText;
+reference ::=  compoundText:sText => {@(@sText@)@};
+
+chapterContent(sName : value) ::=
+		[!["\\pdfchapter" | "\\printindex" | "\\end"] ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) chapterCommand] | '$' mathEscape | paragraphJump | ~'\\':cChar => writeText(cChar);]]*;
+chapterCommand ::=	"pdfsection" #continue #ignore(LaTeX) section | command;
+paragraphJump ::=
+		[['\r']? '\n']
+		[
+			[['\r']? '\n']+ => {writeText(endl());writeText(endl());}
+				|
+			=> writeText(" ");
+		];
+section ::=
+		=> local sName;
+		[#generatedString(sName) compoundText]
+		=> {
+			writeText(endl());
+			@	@sName@@
+			writeText(endl());
+		}
+		#continue
+		[!["\\pdfchapter"| "\\pdfsection" | "\\printindex" | "\\end"] ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) sectionCommand] | '$' mathEscape | paragraphJump | ~'\\':cChar => writeText(cChar);]]*;
+sectionCommand ::=	["pdfsubsection" | "subsection"] #continue subsection | command;
+subsection ::=
+		=> local sName;
+		[#generatedString(sName) compoundText]
+		=> {
+			writeText(endl());
+			@		@sName@@
+			writeText(endl());
+		}
+		#continue
+		[!["\\pdfchapter"| "\\pdfsection" | "\\pdfsubsection" | "\\subsection" | "\\printindex" | "\\end"] ['\\' #continue subsectionCommand | '$' mathEscape | paragraphJump | ~'\\':cChar => writeText(cChar);]]*;
+subsectionCommand ::=	["pdfsubsubsection" | "subsubsection"] #continue subsubsection | command;
+subsubsection ::=
+		=> local sName;
+		[#generatedString(sName) compoundText]
+		=> {
+			writeText(endl());
+			@			@sName@@
+			writeText(endl());
+		}
+		#continue
+		[!["\\pdfchapter"| "\\pdfsection" | "\\pdfsubsection" | "\\subsection" | "\\pdfsubsubsection" | "\\subsubsection" | "\\printindex" | "\\end"] ['\\' #continue command | '$' mathEscape | paragraphJump | ~'\\':cChar => writeText(cChar);]]*;
+
+
+specialCommand ::=
+		"CodeWorker\\" => {@"CodeWorker"@} |
+		"WebSite\\" => {writeText("\"codeworker@free.fr\"");} |
+		'{' => {@{@} | '}' => {@}@} | '@' => {writeText("@");} | '#' => {@#@} |
+		'_' => {@_@} | '&' => {@&@} | '%' => {@%@} |
+		'^' => {@^@} | '~' => {@~@} | "'e" => {@é@} |
+		'\\' [' '| '\t' | '\r']* ['\n']? => {writeText(endl());} |
+		'\"' => {@"@} | '$' => {@$@};
+ignoreBraces ::= blanks '{' [ignoreBraces | ~'}']* '}';
+
+blanks ::= [' '| '\t' | '\r' | '\n']*;
+DIGIT	::=	'0'..'9';
+NUMBER	::=	#!ignore [DIGIT]+ ['.' [DIGIT]+]? [['e' | 'E'] ['+' | '-']? [DIGIT]+]?;

@@ -1,0 +1,199 @@
+#include "../WebSite/repository/CWcode2DevCom.cwp"
+
+// Coloration syntaxique des mot-clés du TLC (Traffic Light Control)
+function keyword<"TLC">(sId : value) {
+	return sId in	{"strategy", "duration", "activate", "desactivate", "start", "time", "vehicles_hour"};
+}
+
+// Coloration syntaxique des mot-clés du GRZ (GraphViz)
+function keyword<"GRZ">(sId : value) {
+	return sId in	{"digraph", "ranksep", "node", "shape", "style", "fillcolor", "fontname", "fontcolor", "color", "label"};
+}
+
+#overload mainCWcode ::=
+		=> local sCodeWorkerPath;
+		=> {
+			local sAbsolutePath = canonizePath(getOutputFilename());
+			local iIndex = sAbsolutePath.findLastString('/');
+			do {
+				if $iIndex <= 0$ {
+					sCodeWorkerPath = "http://www.codeworker.org/";
+					break;
+				}
+				sAbsolutePath = sAbsolutePath.leftString($iIndex + 1$);
+				if existFile(sAbsolutePath + "CodeWorker.css") break;
+				sCodeWorkerPath += "../";
+				iIndex = findLastString(sAbsolutePath.rsubString(1), '/');
+			} while true;
+			local sDate = completeDate($formatDate(getNow(), "%t") - 0.375$, "%t");
+			@            <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"-->
+<html>
+<head>
+	<title>@newFloatingLocation("title");@</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+    <meta name="description" content=@newFloatingLocation("description");@ />
+	<meta name="keywords" content=@newFloatingLocation("keywords");@>
+	<meta http-equiv="pragma" content="no-cache" />
+	<meta http-equiv="cache-control" content="no-cache" />
+
+	<link rel="stylesheet" type="text/css" href="@sCodeWorkerPath@CodeWorker.css" />
+	<style type="text/css">
+		<!--
+			body {
+				margin-left : 5px;
+				margin-right : 10px;
+				text-align : justify;
+			}
+			pre {
+				background-color: #FFFFFF;
+				overflow: auto;
+				margin-left : 30px;
+				margin-right : 30px;
+			}
+
+			.synopsis {
+				padding : 10px;
+				color : #666666;
+				background-color : #FFFFFF;
+				font-weight : normal;
+				text-align : justify;
+				font-size : 12px;
+				font-family : "Verdana";
+				text-decoration : none;
+				border: #804000;
+				border-style: solid;
+				border-width: 1px;
+				margin-left : 50px;
+				margin-right : 50px;
+			}
+
+			.colonne { 
+				padding: 3px;
+				font-size : 11px;
+				font-family : "Verdana";  
+				background-color: #FFFFFF;
+			}
+			.colonne_entete {
+				padding: 3px;
+				background-color: #B0A000;
+				font-weight: bold;
+				font-size : 11px;
+				font-family : "Verdana";  
+			}
+			span.cpp_comment
+			{
+				color: #007b00;
+				background-color: transparent
+			}
+			span.xml_comment, span.cpp_define {
+				color: #008000;
+			}
+			span.csharp_ch,span.xml_ch {
+				color: #993399;
+			}
+			span.csharp_type,span.xml_attribute {
+				font-weight : bold;
+				color: #3366CC;
+			}
+			span.xml_tag {
+				font-weight : bold;
+				color: #000080;
+			}
+			.entete {
+				background-color: #BBDDFF;
+				font-weight: bold;
+			}
+			.image {
+				margin : 10px;
+				text-align : center;
+			}
+			.summaryIndent0 {
+				color : #333333;
+				margin-left : 0px;
+				font-weight : normal;
+				font-size : 12px;
+				font-family : "Verdana";
+				text-decoration : none;
+			}
+			.summaryIndent1 {
+				color : #666666;
+				margin-left : 15px;
+				font-weight : normal;
+				font-size : 11px;
+				font-family : "Verdana";
+				text-decoration : none;
+			}
+			.summaryIndent2 {
+				color : #999999;
+				margin-left : 30px;
+				font-weight : normal;
+				font-size : 10px;
+				font-family : "Verdana";
+				text-decoration : none;
+			}
+			.tableau {
+				margin : 20px;
+			}
+			.titre_code {
+				padding : 2px;
+				background-color: #C08000;
+				font-weight: bold;
+				font-size : 10px;
+				font-family : "Verdana";  
+			}
+		-->
+	</style>
+
+</head>
+<body>
+@
+		}
+		#super::#super::mainCWcode
+		=> {
+			@	<hr/>
+	<a href="http://www.xiti.com/xiti.asp?s=134058" TARGET="_top">
+		<script language="JavaScript1.1">
+		<!--
+			hsh = new Date();
+			hsd = document;
+			hsr = hsd.referrer.replace(/[<>]/g, '');
+			hsi = '<img width="39" height="25" border=0 ';
+			hsi += 'src="http://logv24.xiti.com/hit.xiti?s=134058';
+			hsi += '&p=';
+			hsi += '&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+			if(parseFloat(navigator.appVersion)>=4)
+			{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' + Xiti_s.colorDepth;}
+			hsd.writeln(hsi + '&ref=' + hsr.replace(/&/g, '$') + '" title="Mesurez votre audience"><\!--');
+			//-->
+		</script>
+		<noscript>
+			<img width="39" height="25" border=0 src="http://logv24.xiti.com/hit.xiti?s=134058&p=&" title="Mesurez votre audience">
+		</noscript>
+		<!--//-->
+	</a>
+	&nbsp;<I class="CodeWorker">CodeWorker</I> is maintained by <A href="@
+	if !sCodeWorkerPath.startString("http://") && !existFile(sCodeWorkerPath + "CurriculumVitae.html") {
+		@http://www.codeworker.org/@
+	} else {
+		@@sCodeWorkerPath@@
+	}
+	@CurriculumVitae.html">Cedric Lemaire</A>.
+	Please send a mail to <A href="mailto:codeworker@writeText('@');@free.fr">Submit a bug or feature</A><BR />
+</body>
+</html>@
+		}
+		;
+
+#overload CWcode<"docinfo/">(options : node) ::=
+		removeCodeBegin(options)
+		=> {
+			@by <a href="mailto:@options["email"]@/">@options["author"]@</a>
+  <p/>
+@
+			if options["keywords"] {
+				insertTextToFloatingLocation("keywords", "\"" + options["keywords"] + "\"");
+			}
+		}
+		;
+

@@ -1,0 +1,71 @@
+<html>
+	<header>
+	</header>
+	<body>
+		<table border="1" cellpadding="1" cellspacing="7">
+			<tr>
+				<td><b>Script name</b></td>
+			</tr>
+<!--##markup##"HTML conversion"--><!--##script##--><!--
+local sSourceDir = this.sourceDir;
+local sDestinationDir = this.destinationDir;
+local sDocURL = this.docURL;
+if !sSourceDir set sSourceDir = getCurrentDirectory();
+else if !sSourceDir.endString('/') && !sSourceDir.endString('\\') set sSourceDir += '/';
+if !sDestinationDir set sDestinationDir = getCurrentDirectory() + "highlighting/";
+else if !sDestinationDir.endString('/') && !sDestinationDir.endString('\\') set sDestinationDir += '/';
+
+local theDirectory;
+if !scanDirectories(theDirectory.directories[0], sSourceDir, "*.cw?") error("unable to scan directory");
+foreach i in cascading theDirectory.directories {
+	foreach j in i.files {
+		local sScriptFile = i + j;
+		set sScriptFile = sScriptFile.subString(sSourceDir.length());
+		local sHTMLFile = sDestinationDir + sScriptFile.rsubString(3) + "html";
+		local grammar;
+		insert grammar.docURL = sDocURL;
+		traceLine("Converting \"" + sScriptFile + "\" to HTML...");
+		translate("CWscript2HTML.cwp", grammar, sSourceDir + sScriptFile, sHTMLFile);
+		@			<tr>
+				<td><a href="@sHTMLFile@">@sScriptFile@</a></td>
+			</tr>
+@
+	}
+}
+--><!--##script##--><!--##begin##"HTML conversion"-->			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/CodeWorker_grammar.html">CodeWorker_grammar.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/CWscript2HTML.html">CWscript2HTML.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/InlineCodeExpander.html">InlineCodeExpander.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/mixedCodeGenerator.html">mixedCodeGenerator.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/switch.html">switch.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/tinyDSL2HTML.html">tinyDSL2HTML.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/tinyDSL_bodyCpp.html">tinyDSL_bodyCpp.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/tinyDSL_headerCpp.html">tinyDSL_headerCpp.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/tinyDSL_leader.html">tinyDSL_leader.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/tinyDSL_parsing.html">tinyDSL_parsing.gen</a></td>
+			</tr>
+			<tr>
+				<td><a href="c:/perso/JackHerrington/highlighting/tinyDSL_scanning.html">tinyDSL_scanning.gen</a></td>
+			</tr>
+<!--##end##"HTML conversion"-->
+		</table>
+	</body>
+</html>

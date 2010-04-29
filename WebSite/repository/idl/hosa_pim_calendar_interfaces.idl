@@ -1,0 +1,274 @@
+//Source file: Y:/DOCUMENTS/PRODUCTDOCUMENTS/INTERFACESPECIFICATIONS/HOSA/IDL/hosa/hosa_pim_calendar_interfaces.idl
+
+#ifndef __HOSA_PIM_CALENDAR_INTERFACES_DEFINED
+#define __HOSA_PIM_CALENDAR_INTERFACES_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+#include "hosa_pim_calendar_data.idl"
+#include "osa.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			module hpim {
+				
+				module hcalendar {
+					
+					/* The PIM Calendar Application interface is implemented by the Application in order to receive results on requests issued on the PIM Calendar Service interface. */
+					
+					interface IpAppHosaPIMCalendarManager : org::csapi::IpInterface {
+						/* This method delivers the results (positive or negative) of a completed calendar event creation request.
+						@roseuid 3D8B16900191 */
+						void hosaCreateCalendarEventRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMCreateCalendarResultList resultList	//A list where each entry specifies whether the calendar event could be created successfully for a specific subscriber. When the calendar event is created successfuly the EventID for every created entry is indicated as well.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed calendar event modification request.
+						@roseuid 3D8B169001BA */
+						void hosaModifyCalendarEventRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMModifyCalendarEntryResultList resultList	//A list where each entry specifies whether the calendar event could be modified successfully for a specific device.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed calendar event retrieval request.
+						@roseuid 3DAAC0A800D6 */
+						void hosaRetrieveCalendarEventsRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMRetrieveCalendarEventResultInfoList resultList	//A list where each entry contains a retrieved calendar event.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed calendar event deletion request.
+						@roseuid 3D8B169001AF */
+						void hosaDeleteCalendarEventRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMDeleteCalendarEntryResultList resultList	//A list where each entry specifies whether the calendar event  could be deleted successfully for a specific device.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed todo item creation request.
+						@roseuid 3DC7837200DE */
+						void hosaCreateToDoRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMCreateCalendarResultList resultList	//A list where each entry specifies whether the todo item could be created successfully for a specific subscriber. When the todo item is created successfuly the  toDoID for every created entry is indicated as well.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed todo item modification request.
+						@roseuid 3DC783DA0368 */
+						void hosaModifyToDoRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMModifyCalendarEntryResultList resultList	//A list where each entry specifies whether the todo entry could be modified successfully for a specific device.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed todo item retrieval request.
+						@roseuid 3D8B169001B9 */
+						void hosaRetrieveToDosRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMRetrieveToDoResultInfoList resultList	//A list where each entry contains a retrieved todo item.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed todo item deletion request.
+						@roseuid 3DC783A801B8 */
+						void hosaDeleteToDoRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMDeleteCalendarEntryResultList resultList	//A list where each entry specifies whether the todo entry could be deleted successfully for a specific device.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed free/busy information retrieval request.
+						@roseuid 3DAAD8B00050 */
+						void hosaRetrieveFreeBusyInformationRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMRetrieveFreeBusyInformationResultInfo result	//A list where each entry contains a free timeslots in the users calendar.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed calendar entries creation request.
+						@roseuid 3DC78E470031 */
+						void hosaCreateCalendarEntriesFromVCalendarRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMCreateCalendarResultList resultList	//A list where each entry specifies whether the calendar item (event or todo) could be created successfully for a specific subscriber from the provided vCalendar object. When the calendar event is created successfuly the EventID/ToDoID for every created entry is indicated as well.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed calendar event retrieval request. Succesfully retrieved calendar events are returned as vCalendar objects.
+						@roseuid 3DAAD8580374 */
+						void hosaRetrieveCalendarEventsAsVCalendarRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMRetrieveVCalendarResultInfoList resultList	//A list where each entry contains a retrieved calendar event. Calendar events are formatted as vCalendar objects.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed todo item retrieval request. Succesfully retrieved todo items are returned as vCalendar objects.
+						@roseuid 3DAAD85F01EE */
+						void hosaRetrieveToDosAsVCalendarsRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMRetrieveVCalendarResultInfoList resultList	//A list where each entry contains a retrieved todo item. To do items are formatted as vCalendar objects.
+							);
+							
+						/* This method delivers the results (positive or negative) of a completed free/busy information retrieval request. Succesfully retrieved free/busy items are returned in one  vCalendar object.
+						@roseuid 3DAAD8F102B6 */
+						void hosaRetrieveFreeBusyInformationAsVCalendarRes (
+							in org::csapi::TpAssignmentID requestID,	//Identifies the request for which this result is send.
+							in TpHosaPIMResultCode resultCode,	//Indicates if the request could be served completely, partly or not at all.
+							in TpHosaPIMRetrieveVCalendarResultInfoList result	//A vCalendar object containing a list of free timeslots in the users calendar.
+							);
+							
+					};
+					
+					/* The PIM Calendar Service interface is used by an Application to manage and obtain calendar entries from a subscribers calendar. */
+					
+					interface IpHosaPIMCalendarManager : org::csapi::IpService {
+						/* Request to create a calendar event  in the calendars of the listed subscribers, based on the provided calendar event information.
+						@roseuid 3DAA8DAC0100 */
+						org::csapi::TpAssignmentID hosaCreateCalendarEventReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriberList subscriberList,	//A list of subscriber identifiers. The subscriber identifier is used to address a subscribers calendar.
+							in TpHosaPIMCalendarEvent event,	//Specifies all the information that describes a calendar event.
+							in TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to modify a calendar event  in the calendar of the specified subscriber, based on the provided eventID and event information.
+						@roseuid 3DAAA7A0008B */
+						org::csapi::TpAssignmentID hosaModifyCalendarEventReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in org::csapi::TpOctetSet eventID,	//The identifier that uniquely identifies the calendar event in the subscribers calendar that will be modified. Note that the EventID in the provided calendar event record shall be ignored.
+							in TpHosaPIMCalendarEvent event,	//Specifies all the information that describes a calendar event.
+							in TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to retrieve calendar events from the calendar of the specified subscriber, based on the provided criteria.
+						@roseuid 3DAAA6F003DC */
+						org::csapi::TpAssignmentID hosaRetrieveCalendarEventsReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in TpHosaPIMCalendarEventCriteria criteria	//Specifies the criteria that calendar events need to comply with in order for them to be retrieved.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to delete an event entry  in the address book of the specified subscriber, based on the provided eventID.
+						@roseuid 3DAAA5FF03DF */
+						org::csapi::TpAssignmentID hosaDeleteCalendarEventReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in org::csapi::TpOctetSet eventID,	//Specifies the identifier that uniquely identifies a calendar event in a subscribers calendar.
+							in TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to create a todo entry  in the calendars of the listed subscribers, based on the provided todo information.
+						@roseuid 3D8B161302D2 */
+						org::csapi::TpAssignmentID hosaCreateToDoReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriberList subscriberList,	//A list of subscriber identifiers. The subscriber identifier is used to address a subscribers calendar.
+							in TpHosaPIMCalendarToDoEntry toDo,	//Specifies all the information that describes a todo item.
+							in TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to modify a todo entry  in the calendar of the specified subscriber, based on the provided toDoID and todo information.
+						@roseuid 3D8B161302FA */
+						org::csapi::TpAssignmentID hosaModifyToDoReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in org::csapi::TpOctetSet toDoID,	//The identifier that uniquely identifies the todo item in the subscribers calendar that will be modified. Note that the ToDoID in the provided todo record shall be ignored.
+							in TpHosaPIMCalendarToDoEntry toDo,	//Specifies all the information that describes a todo item.
+							in TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to retrieve todo entries from the calendar of the specified subscriber, based on the provided criteria.
+						@roseuid 3D8B161302E6 */
+						org::csapi::TpAssignmentID hosaRetrieveToDosReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in TpHosaPIMCalendarToDoCriteria criteria	//Specifies the criteria that ToDo entries need to comply with in order for them to be retrieved. When no criteria are specified all the to do items of the subscriber shall be retrieved.
+							)							
+							raises (org::csapi::TpCommonExceptions,P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to delete a todo entry  in the address book of the specified subscriber, based on the provided toDoID.
+						@roseuid 3D8B161302DC */
+						org::csapi::TpAssignmentID hosaDeleteToDoReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in org::csapi::TpOctetSet toDoID,	//Specifies the identifier that uniquely identifies a todo item in a subscribers calendar.
+							in TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to retrieve free/busy information from the calendar of the specified subscriber for a given user.
+						@roseuid 3DAAAF4E018D */
+						org::csapi::TpAssignmentID hosaRetrieveFreeBusyInformationReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in TpHosaPIMSubscriber user,	//The identification of the user for which free/busy information is requested.
+							in org::csapi::TpTimeInterval dateRange	//A range with a begin date/time and an end date/time, that specifies the time window for which free/busy information shall be collected.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to create a calendar entry  in the calendars of the listed subscribers, based on the provided calendar information in the vCalendar. Since a vCalendar may contain multiple event and todo entries, this may result in the addition of more then one event and/or todo entry.
+						@roseuid 3DAA74F303B2 */
+						org::csapi::TpAssignmentID hosaCreateCalendarEntriesFromVCalendarReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriberList subscriberList,	//A list of subscriber identifiers. The subscriber identifier is used to address a subscribers calendar.
+							in org::csapi::TpOctetSet vCalendar,	//Specifies all information that makes up calendar entries, formatted as a vCalendar object.
+							in TpHosaPIMTargetDevice targetDevice	//Whether the modification action is to be performed on the central server, the terminal or both.
+							)							
+							raises (org::csapi::TpCommonExceptions,P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to retrieve calendar events from the calendar of the specified subscriber, based on the provided criteria. The calendar events are requested to be provided as vCalendar object(s).
+						@roseuid 3DAA75940350 */
+						org::csapi::TpAssignmentID hosaRetrieveCalendarEventsAsVCalendarReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in TpHosaPIMCalendarEventCriteria criteria	//Specifies the criteria that calendar events need to comply with in order for them to be retrieved.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to retrieve todo entries from the calendar of the specified subscriber, based on the provided criteria. The todo entries are requested to be provided as vCalendar object(s).
+						@roseuid 3DAAAECA01D3 */
+						org::csapi::TpAssignmentID hosaRetrieveToDosAsVCalendarsReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in TpHosaPIMCalendarToDoCriteria criteria	//Specifies the criteria that ToDo entries need to comply with in order for them to be retrieved. When no criteria are specified all the to do items of the subscriber shall be retrieved.
+							)							
+							raises (org::csapi::TpCommonExceptions,P_HOSA_INVALID_PARAMETER_VALUE);
+							
+						/* Request to retrieve free/busy information from the calendar of the specified subscriber for a given user. The free/busy time information is requested to be provided as a  vCalendar object.
+						@roseuid 3DAAAFFD01AD */
+						org::csapi::TpAssignmentID hosaRetrieveFreeBusyInformationAsVCalendarReq (
+							in IpAppHosaPIMCalendarManager appCalendarManager,	//Specifies the Application interface where the PIM Calendar Service shall send the result for this request to. When this reference is not specified (null value) then the default call back is used.
+							in TpHosaPIMSubscriber subscriber,	//The subscriber identifier is used to address a subscribers calendar.
+							in TpHosaPIMSubscriber user,	//The identification of the user for which free/busy information is requested.
+							in org::csapi::TpTimeInterval dateRange	//A range with a begin date/time and an end date/time, that specifies the time window for which free/busy information shall be collected.
+							)							
+							raises (org::csapi::TpCommonExceptions, P_HOSA_INVALID_PARAMETER_VALUE);
+							
+					};
+					
+				};
+				
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif

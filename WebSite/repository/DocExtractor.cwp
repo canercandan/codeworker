@@ -1,0 +1,23 @@
+doc_extractor ::=
+		[
+			-> [
+				"/**"
+				[
+						#skipIgnore(blanks)
+						"[" #readIdentifier:"description"
+						[
+								'=' #continue
+								#readCString:sFile
+								=> {@@translateString("DocExtractor.cwp", project, loadFile(sFile))@@}
+							|
+								#continue ']'
+								->(:sText)"[/description]"
+								=> {@@sText@@}
+						]
+					|
+						#continue
+						->"**/"
+				]
+			]
+		]*
+		;

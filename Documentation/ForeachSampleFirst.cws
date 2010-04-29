@@ -1,0 +1,18 @@
+local myObjectModeling;
+insert myObjectModeling.packages["Massif"] = "...";
+local myPackage;
+ref myPackage = myObjectModeling.packages["Massif"];
+insert myPackage.packages["Alps"] = "...";
+insert myPackage.packages["Himalaya"] = "...";
+insert myPackage.packages["Rock Mountains"] = "...";
+insert myObjectModeling.packages["Silverware"] = "...";
+ref myPackage = myObjectModeling.packages["Silverware"];
+insert myPackage.packages["Spoon"] = "...";
+insert myPackage.packages["Fork"] = "...";
+insert myPackage.packages["Knife"] = "...";
+
+//highlight:
+foreach i in cascading first myObjectModeling.packages {
+//normal:
+	traceLine("\t" + key(i));
+}

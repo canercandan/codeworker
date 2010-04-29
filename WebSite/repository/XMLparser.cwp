@@ -1,0 +1,80 @@
+/*description:
+{
+	the production rule \textit{XML_DOCUMENT} scans and parses XML files in general.
+
+	The parse tree conforms to the following logic structure that matches to the XML one
+	exactly:
+	\begin{itemize}
+		\item \textit{name-of-XML-element}[]: all elements that share the same parent node
+			and the same name \textit{name-of-XML-element} are put into an array of nodes
+			whose name is the name of the XML element.\\
+			If the element is alone, the structure doesn't change and the array contains the
+			element only.
+		\item \textit{name-of-XML-attribute}: the value of the attribute is assigned to a
+			folder of the parse tree, which stands as a child of the owner element and whose
+			name is the name of the attribute.
+	\end{itemize}
+
+	Please note that an XML identifier admits \textbf{'.'} and \textbf{'-'} characters, which
+	are rejected by \CodeWorker\ in an identifier. So, these characters are degenerated in
+	underscores.
+}
+*/
+
+function normalizeClauseName(sClauseName) {
+	return replaceString(".", "_", replaceString("-", "_", sClauseName));
+}
+
+XML_DOCUMENT	::=
+		#ignore(XML)
+		[
+			"<?xml" #continue
+			"version" '=' #readCString
+			["encoding" #continue '=' #readCString]?
+			"?>"
+		]?
+		[
+			"<!DOCTYPE" #continue
+			IDENTIFIER EXTERNAL_DOCTYPE
+			[#readCString]* '>'
+		]?
+		ELEMENT(this)
+		#empty;
+
+ANY_ATTRIBUTES(myCurrentNode : node)	::=
+		[
+			IDENTIFIER:sAttribute
+			#continue '='
+			#readCString:sValue
+			=> insert #evaluateVariable("myCurrentNode." + normalizeClauseName(sAttribute)) = sValue;
+		]*;
+
+ELEMENT(myCurrentNode : node)	::=
+		'<' IDENTIFIER:sOpenElement
+		 #continue
+		=> local sVariable = "myCurrentNode." + normalizeClauseName(sOpenElement);
+		=> pushItem #evaluateVariable(sVariable);
+		=> localref myElement = #evaluateVariable(sVariable + "#back");
+		ANY_ATTRIBUTES(myElement)
+		[
+				"/>"
+			|
+				'>'
+				[
+						[ELEMENT(myElement)]+
+					|
+						PCDATA_LITERAL:myElement
+				]
+				"</" IDENTIFIER:sCloseElement
+				=> if sOpenElement != sCloseElement error("'</" + sCloseElement + ">' found to close '<" + sOpenElement + ">'");
+				'>'
+		];
+
+PCDATA_LITERAL	::=	#!ignore #continue [ESC|~'<']*:PCDATA_LITERAL;
+EXTERNAL_DOCTYPE	::= "PUBLIC" #continue #readCString #readCString | "SYSTEM" #continue #readCString;
+IDENTIFIER : value	::=
+		#!ignore #readIdentifier:IDENTIFIER
+		[['-' | '.'] #readIdentifier]*:sIdentifier
+		=> set IDENTIFIER += sIdentifier;
+		;
+ESC				::=	#!ignore '\\' ['n' | 't' | 'v' | 'b' | 'r' | 'f' | 'a' | '\\' | '?' | '\'' | '"' | HEX | OCTAL];

@@ -1,0 +1,23 @@
+local iPort = 8999;
+if getProperty("server") {
+	local hServerSocket = createINETServerSocket(iPort, 5);
+
+	traceLine("The server is listening (port " + iPort + ")...");
+	local hClientSocket = acceptSocket(hServerSocket);
+
+	traceLine("client socket = " + hClientSocket);
+	traceLine("\treceived = '" + receiveTextFromSocket(hClientSocket, 5) + "'");
+	traceLine("\tsend data...");
+	sendTextToSocket(hClientSocket, "test server");
+
+	closeSocket(hClientSocket);
+	closeSocket(hServerSocket);
+} else if getProperty("client") {
+	local hClientSocket = createINETClientSocket("10.252.27.245", iPort);
+
+	traceLine("The client sends data...");
+	sendTextToSocket(hClientSocket, "name:");
+	traceLine("\treceived = '" + receiveTextFromSocket(hClientSocket, 11) + "'");
+
+	closeSocket(hClientSocket);
+}

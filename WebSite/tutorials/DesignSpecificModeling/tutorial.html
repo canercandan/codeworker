@@ -1,0 +1,1049 @@
+            <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"-->
+<html>
+<head>
+	<title>Practice of parsing and code generation for generative programming with CodeWorker</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+    <meta name="description" content="A Generative Programming approach consists of automating programming tasks for software and product-line software families. The combination of parsing and code generation helps greatly to accelerate development processes. This tutorial tackles some of the functionality of CodeWorker, a parsing tool and a source code generator, and shows some concrete uses for inspiring the reader." />
+	<meta name="keywords" content="BNF parsing tool,source code generator,code generator,generative programming,DSL,domain specific language,source to source translation,program transformation">
+	<meta http-equiv="pragma" content="no-cache" />
+	<meta http-equiv="cache-control" content="no-cache" />
+
+	<link rel="stylesheet" type="text/css" href="../../CodeWorker.css" />
+	<style type="text/css">
+		<!--
+			body {
+				margin-left : 5px;
+				margin-right : 10px;
+				text-align : justify;
+			}
+			pre {
+				background-color: #FFFFFF;
+				overflow: auto;
+				margin-left : 30px;
+				margin-right : 30px;
+			}
+
+			.synopsis {
+				padding : 10px;
+				color : #666666;
+				background-color : #FFFFFF;
+				font-weight : normal;
+				text-align : justify;
+				font-size : 12px;
+				font-family : "Verdana";
+				text-decoration : none;
+				border: #804000;
+				border-style: solid;
+				border-width: 1px;
+				margin-left : 50px;
+				margin-right : 50px;
+			}
+
+			.colonne { 
+				padding: 3px;
+				font-size : 11px;
+				font-family : "Verdana";  
+				background-color: #FFFFFF;
+			}
+			.colonne_entete {
+				padding: 3px;
+				background-color: #B0A000;
+				font-weight: bold;
+				font-size : 11px;
+				font-family : "Verdana";  
+			}
+			span.cpp_comment
+			{
+				color: #007b00;
+				background-color: transparent
+			}
+			span.xml_comment, span.cpp_define {
+				color: #008000;
+			}
+			span.csharp_ch,span.xml_ch {
+				color: #993399;
+			}
+			span.csharp_type,span.xml_attribute {
+				font-weight : bold;
+				color: #3366CC;
+			}
+			span.xml_tag {
+				font-weight : bold;
+				color: #000080;
+			}
+			.entete {
+				background-color: #BBDDFF;
+				font-weight: bold;
+			}
+			.image {
+				margin : 10px;
+				text-align : center;
+			}
+			.summaryIndent0 {
+				color : #333333;
+				margin-left : 0px;
+				font-weight : normal;
+				font-size : 12px;
+				font-family : "Verdana";
+				text-decoration : none;
+			}
+			.summaryIndent1 {
+				color : #666666;
+				margin-left : 15px;
+				font-weight : normal;
+				font-size : 11px;
+				font-family : "Verdana";
+				text-decoration : none;
+			}
+			.tableau {
+				margin : 20px;
+			}
+			.titre_code {
+				padding : 2px;
+				background-color: #C08000;
+				font-weight: bold;
+				font-size : 10px;
+				font-family : "Verdana";  
+			}
+		-->
+	</style>
+
+</head>
+<body>
+<h1>Practice of parsing and code generation for generative programming with CodeWorker</h1>
+by <a href="mailto:codeworker@free.fr/">Cedric Lemaire</a>
+  <p/>
+
+<p/><p class="synopsis">A <a href="http://www.codegeneration.net/tiki-read_article.php?articleId=64">Generative Programming</a>
+approach consists of automating programming tasks for software and product-line software families. The combination
+of parsing and code generation helps greatly to accelerate development processes. This tutorial tackles some of the
+functionality of <a href="http://www.codeworker.org">CodeWorker</a>, a parsing tool and a source code generator,
+and shows some concrete uses for inspiring the reader.</p>
+<p/><br/><a class="summaryIndent0" href="#L0">1 Textbook case and features we'll study</a><br/><a class="summaryIndent0" href="#L1">2 How parsing and code generation are chained</a><br/><a class="summaryIndent0" href="#L2">3 Creation and parsing of the DSL</a><br/><a class="summaryIndent1" href="#L3_0">3.1 Specification of a strategy</a><br/><a class="summaryIndent1" href="#Parser">3.2 Parsing of a strategy written in the DSL</a><br/><a class="summaryIndent0" href="#CodeGeneration">4 Code generation and program transformation</a><br/><a class="summaryIndent1" href="#L4_0">4.1 Traditional generation of code: example with the C++ header file</a><br/><a class="summaryIndent1" href="#L4_1">4.2 Generation preserving hand-typed code: example with the C++ body file</a><br/><a class="summaryIndent1" href="#ProgramTransformation">4.3 Program transformation</a><br/><a class="summaryIndent1" href="#L4_3">4.4 Code generation with an external tool</a><br/><a class="summaryIndent0" href="#CodeExpansion">5 Code expansion or how to inject generated code into a hand-typed file</a><br/><a class="summaryIndent0" href="#Translation">6 Source-to-source translation</a><br/><a class="summaryIndent0" href="#L6">7 Conclusion</a><h2><a name="L0"></a>1 Textbook case and features we&#39;ll study</h2>
+<p/>Let&#39;s say you are writing software for controlling all the traffic lights of a town, applying strategies that may
+react in real-time to the state of the traffic. Sensors count the number of vehicles per hour reaching or leaving
+a crossroad by a given street.
+<br/>A lot of well-specified control strategies have to be implemented both in C++ for the real-time application and
+in Java for a traffic light simulator. The documentation of the project must include a diagram for each strategy,
+representing them as graphs in <a href="http://www.w3.org/Graphics/PNG">PNG pictures</a>.
+<br/>You can&#39;t build a generic mechanism for interpreting strategies dynamically, because you use a third party rule
+engine for executing them whose framework obliges you to hard-code them almost entirely.
+<p/>As you know <a href="http://www.w3.org/XML">XML</a>, you decided to specify the strategies in XML and, from here, to generate as much code as possible
+with an <a href="http://www.w3.org/TR/xslt">XSL transformation</a> or a similar process. But two constraints could make it difficult. Firstly, you have
+to preserve some hand-typed code in the core of the generated code and secondly, you would like to inject
+generated code somewhere in a hand-typed piece of source code.
+<br/>Another constraint will decide for you. The customer wants to be able to control the strategies you wrote in XML,
+to change them or simply to contribute new ones. But he doesn&#39;t feel confident enough with this syntax, so you
+propose that they spend a few days on writing a GUI for editing strategies in a graphical way. Not granted.
+<p/>Never mind, you finally decide to write your own little language, using a quite convenient syntax. You&#39;ll parse
+it and generate the required source code, pictures and documentation from the syntactic tree. To have a glance
+at what the language of strategies looks like, see <a href="#BusinessDayNight_TLC">next section</a>.
+<p/>For a more concise description and for recapitulating the items, we&#39;ll explore further:
+<br/><ul>
+<li> Creation of a <a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">Domain-Specific Language</a>:
+<br/>	<ul>
+	<li> definition of a syntax for the language,
+	</li><li> <a href="#Parser">writing of the corresponding parser</a>,
+	</li></ul>
+</li><li> From specifications written in the precedent <a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">DSL</a>:
+<br/>	<ul>
+	<li> <a href="#CodeGeneration">C++ code generation with hand-typed areas</a>,
+	</li><li> <a href="#ProgramTransformation">Program transformation of the DSL on boolean expressions</a>,
+	</li><li> <a href="#CodeExpansion">Java code generation by expanding code</a>,
+	</li><li> Generation of a graph to a <a href="http://www.w3.org/Graphics/PNG">PNG picture</a>, using <a href="http://www.graphviz.org">Graphviz</a>,
+	</li><li> <a href="#Translation">Translation of a strategy</a> to an <a href="http://www.openoffice.org">Open Office 2.0</a> text document with the syntax highlighting of the <a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">DSL</a>,
+	</li></ul>
+</li></ul>
+<p/>All these tasks require a highly tailor-made solution, depending on the technical and Business constraints
+imposed on the project. They will be fully implemented in <a href="http://www.codeworker.org">CodeWorker</a>, a
+well-adapted tool for this kind of development process automation.
+<p/><h2><a name="L1"></a>2 How parsing and code generation are chained</h2>
+<p/><a href="http://www.codeworker.org">CodeWorker</a> executes a <i>leader script</i>, which takes charge the driving
+of these parsing and code generation tasks:
+<p/><pre><div class="titre_code">demo.cws</div><span class="comment">// iterate all strategy file having the extension &quot;.tlc&quot;</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#forfile">forfile</A> strategyFile <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <span class="string">&quot;*.tlc&quot;</span> {
+    <span class="comment">// The BNF parse script &quot;TrafficLight.cwp&quot; applies on the strategy file</span>
+    <span class="comment">// and populates the global variable &#39;project&#39;.</span>
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#parseAsBNF">parseAsBNF</A>(<span class="string">&quot;TrafficLight.cwp&quot;</span>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, strategyFile);
+
+    <span class="comment">// Iterate all strategies and generates a C++ header and body but also</span>
+    <span class="comment">// a picture for each.</span>
+    <span class="comment">// The template-based script applies on a sub node of the parse tree,</span>
+    <span class="comment">// corresponding to the specification of the current strategy, and generates</span>
+    <span class="comment">// a C++ file or a Graphviz input file.</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>.strategies {
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#generate">generate</A>(<span class="string">&quot;TrafficLight-headerC++.cwt&quot;</span>, i, <span class="string">&quot;output/&quot;</span> + i.name + <span class="string">&quot;.h&quot;</span>);
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#generate">generate</A>(<span class="string">&quot;TrafficLight-bodyC++.cwt&quot;</span>, i, <span class="string">&quot;output/&quot;</span> + i.name + <span class="string">&quot;.cpp&quot;</span>);
+        <span class="comment">// Generate the input file for Graphviz, which will build a PNG picture</span>
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#generate">generate</A>(<span class="string">&quot;TrafficLight-Graphviz.cwt&quot;</span>, i, i.name + <span class="string">&quot;.grz&quot;</span>);
+        <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#system">system</A>(<span class="string">&quot;../../../bin/dot.exe -Tpng -o &quot;</span> + i.name + <span class="string">&quot;.png &quot;</span> + i.name + <span class="string">&quot;.grz&quot;</span>);
+    }
+
+
+    <span class="comment">// The translation script &quot;TrafficLight2OpenOffice20.cwp&quot; applies on the</span>
+    <span class="comment">// strategy file and generates the content of an Open Office 2.0 text</span>
+    <span class="comment">// document. We didn&#39;t put here the zip compression of the generated file</span>
+    <span class="comment">// with some others and its renaming to a &quot;.odt&quot; extension.</span>
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#translate">translate</A>(<span class="string">&quot;TrafficLight2OpenOffice20.cwp&quot;</span>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, strategyFile, <span class="string">&quot;OpenOffice2.0/content.xml&quot;</span>);
+}
+
+<span class="comment">// strategies for test are injected directly into the Java simulator</span>
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#expand">expand</A>(<span class="string">&quot;TrafficLight-embeddedJava.cwt&quot;</span>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, <span class="string">&quot;TrafficLightSimulator.java&quot;</span>);
+
+<span class="comment">// Save the parse tree to a XML file, just for showing the structure of the tree</span>
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#saveProject">saveProject</A>(<span class="string">&quot;strategies.xml&quot;</span>);
+</pre>
+<p/>This script iterates all files of the current directory describing one or more strategies. For each strategy
+contained in a file, it parses the content and generates the C++ source code and produces a picture. Then, it
+generates an Open Office 2.0 text document of the file.
+<p/>The following command line runs the script:
+<br/><kbd>codeworker demo.cws</kbd>
+<p/><h2><a name="L2"></a>3 Creation and parsing of the DSL</h2>
+<p/>Here is a sample of what a description of strategy looks like:
+<p/><pre><a name="BusinessDayNight_TLC"></a><div class="titre_code">BusinessDayNight.tlc</div><span class="csharp_type">strategy</span> BusinessDayNight {
+   <span class="csharp_type">start</span> <span class="csharp_type">time</span>() &gt; (17*60 + 30)*60 <span class="cpp_comment">/*17h30 in seconds*/</span>;
+   
+<span class="cpp_comment">//	vehicles_hour(&quot;boulevard des Italiens&quot;-&gt;place_opera) &gt; 600</span>
+<span class="cpp_comment">//		=&gt; duration(&quot;avenue de l&#39;Opera&quot;-&gt;place_opera, 1min20/0min40/1min50);</span>
+   <span class="csharp_type">vehicles_hour</span>(place_opera-&gt;<span class="csharp_ch">&quot;boulevard des Capucines&quot;</span>) &lt; 400
+     =&gt; <span class="csharp_type">duration</span>(scribe-&gt;<span class="csharp_ch">&quot;rue Scribe&quot;</span>, 1min05/2min00);
+   <span class="csharp_type">vehicles_hour</span>(<span class="csharp_ch">&quot;rue de la Paix&quot;</span>-&gt;rue_paix) &gt; 300
+     =&gt; <span class="csharp_type">activate</span>(RivoliLowDensity);
+   <span class="csharp_type">vehicles_hour</span>(auber-&gt;<span class="csharp_ch">&quot;rue auber&quot;</span>) &gt; 500 =&gt; <span class="csharp_type">desactivate</span>;
+   
+   <span class="csharp_type">time</span>() &gt; (22*60 + 30)*60 <span class="cpp_comment">/*22h30 in seconds*/</span> =&gt; <span class="csharp_type">desactivate</span>;
+}
+</pre>
+<p/><h3><a name="L3_0"></a>3.1 Specification of a strategy</h3>
+<p/>A name is assigned to each strategy, for referencing them without ambiguity. A strategy is inactive by default,
+and a <b>start</b> clause specifies when to wake it up. Then, the rules attached to an active strategy are executed
+regularly. A rule triggers some actions if its antecedent (a boolean expression) is valid.
+<p/>In the precedent section, the sample shows a strategy named <i>BusinessDayNight</i>, becoming active after 17h30. The
+first rule triggers an action once the number of vehicles coming to <i>place de l&#39;Op&eacute;ra</i> crossroad from
+<i>boulevard des Italiens</i> street exceeds 600 per hour.
+<p/><img src="images/Crossroad.jpg" alt="Modeling of crossroads and street segments" width="534" class="image"/>
+<p/>An action may activate another rule, desactivate the current one or change the time during when a traffic light
+stays green. The latter action is called <i>duration</i> and requires the coordinates of the traffic light (street,
+crossroad and direction: coming in or out of the crossroad) and the duration for staying green. It may be followed by
+other durations, to apply on other traffic lights, revolving around the crossroad in the anticlockwise.
+<p/>Note that for facilitating the translation of the <a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">DSL</a> to C++ or Java, boolean expressions used for expressing
+conditions and antecedents of rules are common enough to compile directly in these two programming languages.
+<p/><a name="Parser"></a><h3><a name="Parser"></a>3.2 Parsing of a strategy written in the DSL</h3>
+<p/>Now, let&#39;s attack the parse script of the <a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">DSL</a> in
+<a href="http://www.codeworker.org">CodeWorker</a>. The script defines
+<a href="http://en.wikipedia.org/wiki/Backus-Naur_form">BNF (Backus-Naur Form)</a> production rules, with some
+variations in the notation and enriching of various features to help build a grammar faster for the purpose
+of being pragmatic. 
+<p/><table class="tableau" cellspacing="0" border="1" align="center">
+<tr class="entete"><td class="colonne_entete">BNF vocabulary</td></tr><tr><td class="colonne">
+We have to define the vocabulary currently used in BNF notations. Please, don&#39;t run away. We&#39;ll explain each
+word further in situation.
+<p/>The declaration of a BNF production rule starts with its name, generally followed by the symbol <b><kbd>::=</kbd></b>,
+which announces the definition of the production rule itself. The definition is a sequence of BNF symbols or
+alternatives of BNF sequences, which ends with a semi-comma.
+<p/>A BNF symbol may be a call to a production rule (known as a <i>non-terminal</i>) or a well-defined sequence of
+characters (known as a <i>terminal</i>), which must match exactly the current scanned input as a subset. <a href="http://www.codeworker.org">CodeWorker</a>
+accepts another type of BNF symbols that it calls <i>BNF directive</i>. It may be a hard-coded non-terminal, such
+as the production rule of a C-like string or a C-like identifier, or a directive concerning the way the parser works,
+such as the indication of what kind of insignificant characters to ignore in the scanned input, between each
+BNF symbol execution. A BNF directive always starts with the symbol <kbd>#</kbd>.
+<p/>A BNF sequence is a sequence of BNF symbols, which are applied in the order of the controlling sequence. If a
+symbol fails in matching the scanned input, the iteration of the BNF sequence stops and the BNF sequence is
+considered having failed.
+<p/>An alternative of BNF sequences executes BNF sequences in the order of the controlling sequence up to the first
+one to succeed.
+<br/></td></tr></table>
+
+<p/>Once serialized in XML, the <a href="http://www.codeworker.org">CodeWorker</a>&#39;s internal parse tree of the strategy <a href="#BusinessDayNight_TLC">BusinessDayNight</a>
+should look like:
+<p/><pre><div class="titre_code">strategies.xml</div><span class="xml_tag">&lt;<span class="php_attribute">project</span>&gt;</span>
+   <span class="xml_tag">&lt;<span class="php_attribute">strategies</span>&gt;</span>
+     <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;BusinessDayNight&quot;</span>&gt;</span>
+      <span class="xml_tag">&lt;<span class="php_attribute">name</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;BusinessDayNight&quot;</span> /&gt;</span>
+      <span class="xml_tag">&lt;<span class="php_attribute">start</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;time() &amp;gt; (17*60 + 30)*60&quot;</span> /&gt;</span>
+      <span class="xml_tag">&lt;<span class="php_attribute">rules</span>&gt;</span>
+          <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;0&quot;</span>&gt;</span>
+             <span class="xml_tag">&lt;<span class="php_attribute">condition</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;vehicles_hour(place_opera-&amp;gt;&amp;quot;boulevard des Capucines&amp;quot;) &amp;lt; 400&quot;</span> /&gt;</span>
+             <span class="xml_tag">&lt;<span class="php_attribute">actions</span>&gt;</span>
+               <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;0&quot;</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;duration&quot;</span>&gt;</span>
+                <span class="xml_tag">&lt;<span class="php_attribute">crossroad_entry</span>&gt;</span>
+                    <span class="xml_tag">&lt;<span class="php_attribute">crossroad</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;scribe&quot;</span> /&gt;</span>
+                    <span class="xml_tag">&lt;<span class="php_attribute">direction</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;c-&amp;gt;s&quot;</span> /&gt;</span>
+                    <span class="xml_tag">&lt;<span class="php_attribute">street</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;rue Scribe&quot;</span> /&gt;</span>
+                <span class="xml_tag">&lt;/<span class="php_attribute">crossroad_entry</span>&gt;</span>
+                <span class="xml_tag">&lt;<span class="php_attribute">durations</span>&gt;</span>
+                    <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;0&quot;</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;65&quot;</span> /&gt;</span>
+                    <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;1&quot;</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;120&quot;</span> /&gt;</span>
+                <span class="xml_tag">&lt;/<span class="php_attribute">durations</span>&gt;</span>
+               <span class="xml_tag">&lt;/<span class="php_attribute">__ARRAY_ENTRY</span>&gt;</span>
+             <span class="xml_tag">&lt;/<span class="php_attribute">actions</span>&gt;</span>
+          <span class="xml_tag">&lt;/<span class="php_attribute">__ARRAY_ENTRY</span>&gt;</span>
+          <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;1&quot;</span>&gt;</span>
+             <span class="xml_tag">&lt;<span class="php_attribute">condition</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;vehicles_hour(&amp;quot;rue de la Paix&amp;quot;-&amp;gt;rue_paix) &amp;gt; 300&quot;</span> /&gt;</span>
+             <span class="xml_tag">&lt;<span class="php_attribute">actions</span>&gt;</span>
+               <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;0&quot;</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;activate&quot;</span>&gt;</span>
+                <span class="xml_tag">&lt;<span class="php_attribute">strategy</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;RivoliLowDensity&quot;</span> /&gt;</span>
+               <span class="xml_tag">&lt;/<span class="php_attribute">__ARRAY_ENTRY</span>&gt;</span>
+             <span class="xml_tag">&lt;/<span class="php_attribute">actions</span>&gt;</span>
+          <span class="xml_tag">&lt;/<span class="php_attribute">__ARRAY_ENTRY</span>&gt;</span>
+          <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;2&quot;</span>&gt;</span>
+             <span class="xml_tag">&lt;<span class="php_attribute">condition</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;vehicles_hour(auber-&amp;gt;&amp;quot;rue auber&amp;quot;) &amp;gt; 500&quot;</span> /&gt;</span>
+             <span class="xml_tag">&lt;<span class="php_attribute">actions</span>&gt;</span>
+               <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;0&quot;</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;desactivate&quot;</span> /&gt;</span>
+             <span class="xml_tag">&lt;/<span class="php_attribute">actions</span>&gt;</span>
+          <span class="xml_tag">&lt;/<span class="php_attribute">__ARRAY_ENTRY</span>&gt;</span>
+          <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;3&quot;</span>&gt;</span>
+             <span class="xml_tag">&lt;<span class="php_attribute">condition</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;time() &amp;gt; (22*60 + 30)*60&quot;</span> /&gt;</span>
+             <span class="xml_tag">&lt;<span class="php_attribute">actions</span>&gt;</span>
+               <span class="xml_tag">&lt;<span class="php_attribute">__ARRAY_ENTRY</span> <span class="php_attribute">__KEY</span>=<span class="xml_ch">&quot;0&quot;</span> <span class="php_attribute">__VALUE</span>=<span class="xml_ch">&quot;desactivate&quot;</span> /&gt;</span>
+             <span class="xml_tag">&lt;/<span class="php_attribute">actions</span>&gt;</span>
+          <span class="xml_tag">&lt;/<span class="php_attribute">__ARRAY_ENTRY</span>&gt;</span>
+      <span class="xml_tag">&lt;/<span class="php_attribute">rules</span>&gt;</span>
+     <span class="xml_tag">&lt;/<span class="php_attribute">__ARRAY_ENTRY</span>&gt;</span>
+   <span class="xml_tag">&lt;/<span class="php_attribute">strategies</span>&gt;</span>
+<span class="xml_tag">&lt;/<span class="php_attribute">project</span>&gt;</span>
+</pre>
+<p/>We&#39;ll see step by step how to populate this parse tree:
+<p/><pre><div class="titre_code">TrafficLight.cwp</div><i>TrafficLightControl</i> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_ignore">#ignore</a>(<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_directives__ignore">C++</a>) <span class="comment">// ignore C++-like comments and whitespaces</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="comment">// a syntax error will occur if the BNF sequence fails</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><i>strategy</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a> <span class="comment">// repetition of strategies consuming</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_empty">#empty</a> <span class="comment">// end of file necessarily reached after the reading of strategies</span>
+    ;
+</pre>
+<p/><table class="tableau" cellspacing="0" border="1" align="center">
+<tr class="entete"><td class="colonne_entete">Translation</td></tr><tr><td class="colonne">This production rule consists of reading zero, one or more strategies, ignoring whitespaces and
+C++-like comments. Once all strategies have been parsed, the end of file must be reached or a syntax error occurs.</td></tr></table>
+
+<p/>This production rule is called <i>TrafficLightControl</i> and its definition is composed of a unique BNF sequence,
+ending with a semi-comma.
+<br/>The BNF sequence contains 3 <i>BNF directives</i> and one repetition. The first directive, <kbd>#ignore(C++)</kbd>, means
+that whitespaces and C++-like comments are insignificant for the parsing: the grammar won&#39;t see them.
+<br/>The second directive, <kbd>#continue</kbd> obliges the rest of the BNF sequence to be valid. If a BNF symbol
+fails, a syntax error will occur automatically, reporting as accurately as possible the BNF symbol which fails and
+the location in the scanned input (line and column numbers).
+<br/>The third and last directive expects the end of file, and then fails if the current position in the scanned input
+isn&#39;t at the end.
+<br/>The repetition <kbd>[strategy]*</kbd> is a regular expression, which means that the <i>non-terminal</i> <kbd>strategy</kbd>
+may apply zero, one or more times with success.
+<p/><pre><div class="titre_code">BNF declaration of a strategy</div><i>strategy</i> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;strategy&quot;</span> <span class="comment">// identifier must be worth &#39;strategy&#39;</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="comment">// the rest of the BNF sequence doesn&#39;t have to fail</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sName <span class="comment">// assign the consumed id to a local variable</span>
+    <span class="comment">// the &#39;=&gt;&#39; symbol escapes the BNF to execute a non-BNF instruction</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.strategies.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#findElement">findElement</A>(sName) {
+        <span class="comment">// Error! The strategy already exists in the parse tree!</span>
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;cannot define the strategy &#39;&quot;</span> + sName + <span class="string">&quot;&#39; twice!&quot;</span>);
+    }
+    <span class="comment">// insert the strategy to the parse tree and keep a reference</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.strategies[sName].name = sName;
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#localref">localref</A> theStrategy = <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.strategies[sName];
+    <span class="string">&#39;{&#39;</span>
+    <i>start_condition</i>(theStrategy) <span class="comment">// when to trigger the strategy</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><i>rule</i>(theStrategy)<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]+</a> <span class="comment">// at least one rule to parse</span>
+    <span class="string">&#39;}&#39;</span>
+    ;
+</pre>
+<p/><table class="tableau" cellspacing="0" border="1" align="center">
+<tr class="entete"><td class="colonne_entete">Translation</td></tr><tr><td class="colonne">If the production rule matches an identifier and if this identifier is worth the keyword
+<kbd>strategy</kbd>, then there is no ambiguity: it&#39;s about a strategy description and so, the BNF sequence must
+be correct up to the trailing brace. The strategy must never have been defined before or an explicit error message
+raises. The production rule inserts the new strategy into the parse tree and parses the <i>start clause</i> and
+all rules.</td></tr></table>
+
+<p/>The production rule <i>strategy</i> is also composed of a unique BNF sequence. The BNF directive <kbd>#readIdentifier</kbd>
+is a hard-coded non-terminal, which scans a C-like identifier. In <kbd>#readIdentifier:&quot;strategy&quot;</kbd>, the
+scanned identifier is compared to the constant string <kbd>&quot;strategy&quot;</kbd> and must be equal, whereas in
+<kbd>#readIdentifier:sName</kbd>, the scanned identifier is assigned to the local variable <kbd>sName</kbd>,
+declared implicitly here.
+<p/>The <kbd>=&gt;</kbd> symbol is followed by an instruction ending with a semi-comma or a block of instructions enclosed
+between braces. This looks like a kind of escape mode which notifies the BNF engine that this code has nothing to do
+with BNF and that it is more common scripting intructions, like control statement, computations, variable
+assignments... The first one serves to raise an error message if the association table containing the parse tree
+of each strategy already owns an entry key with the name of the current strategy. The next ones serve to populate
+the parse tree or to declare a local variable pointing to the parse tree of the strategy.
+<p/>Note that <b><kbd>&#39;{&#39;</kbd></b> and <b><kbd>&#39;}&#39;</kbd></b> are both <i>terminals</i>.
+<p/><pre><div class="titre_code">The 'start' clause</div><i>start_condition</i>(theStrategy : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;start&quot;</span>     <span class="comment">// add to the parse tree the condition</span>
+    <i>condition</i>:theStrategy.start <span class="comment">// to start running the strategy</span>
+    <span class="string">&#39;;&#39;</span>
+    ;
+</pre>
+<p/><table class="tableau" cellspacing="0" border="1" align="center">
+<tr class="entete"><td class="colonne_entete">Translation</td></tr><tr><td class="colonne">This production rule must match an identifier being worth <kbd>start</kbd>. A condition ending
+with a semi-comma must follow the keyword. The condition isn&#39;t decomposed to a syntactic tree: it&#39;s sufficient for
+us to keep it as a sequence of characters stored into the strategy.</td></tr></table>
+
+<p/><i>start_condition</i> requires an argument, which is a reference to the parse tree of the strategy. This parse
+tree will receive a new branch (or attribute) called <i>start</i> and being worth the scanned condition.
+<p/><pre><div class="titre_code">BNF declaration of a rule</div><i>rule</i>(theStrategy : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <i>condition</i>:sAntecedent <span class="comment">// the antecedent of the rule is a condition</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+    <span class="string">&quot;=&gt;&quot;</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> theStrategy.rules; <span class="comment">// add a new rule in the list</span>
+    <span class="comment">// access to the last element of the list for inserting a new attribute</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.condition = sAntecedent;
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.actions; <span class="comment">// add a new action</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sAction <span class="comment">// keyword of the action to execute</span>
+    <span class="comment">// call of a generic BNF non-terminal, resolved by &#39;sAction&#39;</span>
+    <i>rule_action</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&lt;</a>sAction<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&gt;</a>(theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.actions#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>)
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+        <span class="string">&#39;,&#39;</span> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="comment">// a comma separates the actions</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.actions;
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sAction
+        <i>rule_action</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&lt;</a>sAction<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&gt;</a>(theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.actions#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>)
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a>
+    <span class="string">&#39;;&#39;</span>
+    ;
+</pre>
+<p/><table class="tableau" cellspacing="0" border="1" align="center">
+<tr class="entete"><td class="colonne_entete">Translation</td></tr><tr><td class="colonne">If it finds an antecedent, <i>rule</i> parses the antecedent and the consequent of a strategy rule.
+<br/>The antecedent is simply a condition ending with the symbol <kbd>=&gt;</kbd>. The consequent is a series of actions
+separated by a comma. It ends with a semi-comma.</td></tr></table>
+
+<p/>The parse tree of the new rule is pushed at the end of the list of rules (instruction <kbd><a href="manual_The_scripting_language.html#pushItem" class="procedure">pushItem</a></kbd>),
+called <kbd>theStrategy.rules</kbd>. The last element of the list is accessible by writing <kbd>theStrategy.rules#back</kbd>.
+<p/>To prevent an eventual growth of action types, the grammar uses generic non-terminals. <i>generic</i> is to understand
+with a similar meaning as in <i>generic programming</i>. A generic non-terminal is a concept developed in <a href="http://www.codeworker.org">CodeWorker</a>,
+which consists of writing several instances of a BNF production rule. For example, the little language admits three
+action types for the moment. We&#39;ll write 3 instances of the production rule <i>rule_action</i>, parameterized by a
+constant string being the name of the action:
+<br/><ul>
+<li> <kbd>rule_action&lt;&quot;duration&quot;&gt;(theAction : node) ::= ... // parsing of a &#39;duration&#39; action</kbd>
+</li><li> <kbd>rule_action&lt;&quot;activate&quot;&gt;(theAction : node) ::= ... // parsing of a &#39;activate&#39; action</kbd>
+</li><li> <kbd>rule_action&lt;&quot;desactivate&quot;&gt;(theAction : node) ::= ... // parsing of a &#39;desactivate&#39; action</kbd>
+</li></ul>
+<p/>The BNF engine will resolve the call to the correct instantiation of the production rule at runtime. Here, one
+reads the name of the action, used to resolve the switching on the correct instantiation.
+<br/><pre style="overflow: auto;">...
+#readIdentifier:sAction // keyword of the action to execute
+// call of a generic BNF non-terminal, resolved by &#39;sAction&#39;
+rule_action&lt;sAction&gt;(theStrategy.rules#back.actions#back)
+</pre>
+<p/><pre><div class="titre_code">BNF declaration of a street segment</div><i>street_segment</i>(theSegment : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:theSegment.crossroad
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="string">&quot;-&gt;&quot;</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theSegment.direction = <span class="string">&quot;c-&gt;s&quot;</span>;
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a>:theSegment.street
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a>:theSegment.street
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="string">&quot;-&gt;&quot;</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theSegment.direction = <span class="string">&quot;s-&gt;c&quot;</span>;
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:theSegment.crossroad
+    ;
+</pre>
+<p/><table class="tableau" cellspacing="0" border="1" align="center">
+<tr class="entete"><td class="colonne_entete">Translation</td></tr><tr><td class="colonne">A street segment gives the coordinates of a traffic light, knowing the street and the
+crossroad and the direction: an arrow indicates whether it enters or leaves the crossroad by the street. Some
+clarifications about the consistency: to avoid any ambiguity, the map is seen as an oriented graph, where
+crossroads are the nodes; when <i>leaving</i> a crossroad, the traffic light is the one on the other lane.</td></tr></table>
+
+<p/>One of the only interest on this production rule is to show what an alternative of two BNF sequences looks like. The
+sequences are separated by the alternate symbol <b>|</b>. The second sequence is executed if and only if the first
+one has failed.
+<p/>Note that the BNF directive <kbd>#readCString</kbd> is an hard-coded non-terminal, which reads a C-like constant
+string put between double quotes. It transforms the scanned value before returning, removing the double quotes and
+resolving escaped characters.
+<p/><pre><div class="titre_code">Scans a time and converts it to seconds</div><span class="comment">// This BNF non-terminal reads a time like 1min15 and</span>
+<span class="comment">// restitutes it in seconds: the keyword &#39;value&#39; means that</span>
+<span class="comment">// the non-terminal will return its own transformation rather</span>
+<span class="comment">// than the consumed character sequence.</span>
+<i>timeInSeconds</i>:<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">value</a> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readInteger">#readInteger</a>:iMin
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+    <span class="string">&quot;min&quot;</span>
+    <span class="comment">// arithmetic expressions are enclosed between &#39;$&#39; symbols</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#timeInSeconds">timeInSeconds</A> = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>iMin * <span class="numeric">60</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>;
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readInteger">#readInteger</a>:iSec
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#timeInSeconds">timeInSeconds</A> = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>timeInSeconds + iSec<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>;
+    ;
+</pre>
+<p/><table class="tableau" cellspacing="0" border="1" align="center">
+<tr class="entete"><td class="colonne_entete">Translation</td></tr><tr><td class="colonne">This production rule reads a time like <kbd>1min20</kbd> and converts it to seconds (80 seconds
+for the example) and returns this transformed value, rather than the scanned characters as usual.</td></tr></table>
+
+<p/>If a production rule intends to transform the scanned value before it returns, it must indicate that willing in the
+prototype, using the keyword <b><kbd>value</kbd></b> after the rule&#39;s name, looking like
+<kbd>timeInSeconds<b>:value</b> ::= ...;</kbd>. Then, the production rule declares a local variable having
+the same name, <kbd>timeInSeconds</kbd> for the example. The transformation of the scanned value must be assigned
+to this variable.
+<p/>Note that <a href="http://www.codeworker.org">CodeWorker</a> works on strings by default and isn&#39;t aware of numeric values, but you can force the resolution
+of an arithmetic expression, enclosing it between <b><kbd>$</kbd></b> symbols. So,
+<kbd><A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#timeInSeconds">timeInSeconds</A> = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>timeInSeconds + iSec<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>;</kbd> sums <kbd>timeInSeconds</kbd> and <kbd>iSec</kbd>,
+while <kbd><A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#timeInSeconds">timeInSeconds</A> = timeInSeconds + iSec;</kbd> concatenates the string value of the variable
+<kbd>iSec</kbd> to the end of <kbd>timeInSeconds</kbd>.
+<p/><h2><a name="CodeGeneration"></a>4 Code generation and program transformation</h2>
+<p/>In <a href="http://www.codeworker.org">CodeWorker</a>, scripts generating code are called <i>template-based scripts</i> and work in the same spirit as
+PHP scripts. Syntactically, they mix both rough text to write to the output file and scripting instructions to
+execute.
+<p/><h3><a name="L4_0"></a>4.1 Traditional generation of code: example with the C++ header file</h3>
+<p/>The most widespread way of generating code consists of writing 100% of a file, erasing what could have been
+included by hand between two cycles of generation. The C++ header file we want to generate from the
+<a href="#BusinessDayNight_TLC">BusinessDayNight strategy</a> should look like:
+<p/><pre><div class="titre_code">output/BusinessDayNight.h</div><span class="cpp_define">#ifndef</span> _BusinessDayNight_h_
+<span class="cpp_define">#define</span> _BusinessDayNight_h_
+
+<span class="cpp_define">#include</span> <span class="csharp_ch">&quot;TrafficLightStrategy.h&quot;</span>
+
+<span class="csharp_type">class</span> BusinessDayNight : <span class="csharp_type">public</span> TrafficLightStrategy {
+   <span class="csharp_type">public</span>:
+     inline BusinessDayNight() {}
+     <span class="csharp_type">virtual</span> ~BusinessDayNight();
+
+     <span class="csharp_type">virtual</span> <span class="csharp_type">bool</span> start() <span class="csharp_type">const</span>;   
+     <span class="csharp_type">virtual</span> <span class="csharp_type">int</span> executeRules();
+
+   <span class="csharp_type">private</span>:
+     <span class="csharp_type">bool</span> executeRule0();
+     <span class="csharp_type">bool</span> executeRule1();
+     <span class="csharp_type">bool</span> executeRule2();
+     <span class="csharp_type">bool</span> executeRule3();
+};
+
+<span class="cpp_define">#endif</span>
+</pre>
+<p/>The following template-based script takes charge of the whole generation of the C++ header file:
+<p/><pre><div class="titre_code">TrafficLight-headerC++.cwt</div><span class="raw_text">#ifndef _@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_h_
+#define _@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_h_
+
+#include &quot;TrafficLightStrategy.h&quot;
+
+class @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text"> : public TrafficLightStrategy {
+    public:
+        inline @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">() {}
+        virtual ~@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">();
+
+        virtual bool start() const;        
+        virtual int executeRules();
+
+    private:
+@</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.rules {
+    <span class="raw_text">@</span><span class="raw_text">        bool executeRule@</span>i.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text">();
+@</span>
+}
+<span class="raw_text">@</span><span class="raw_text">};
+
+#endif
+</span></pre>
+<p/>A template-based script starts directly in rough text. The symbol <b><kbd>@</kbd></b> (or <b><kbd>&lt;%</kbd></b>
+alternatively) toggles the execution of scripting instructions, which may end by another occurence of the
+<b><kbd>@</kbd></b> symbol (or <b><kbd>%&gt;</kbd></b>) to come back to rough text.
+<p/><pre><div class="titre_code">Example</div><span class="raw_text">...
+    private:
+@</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.rules {
+    <span class="raw_text">@</span><span class="raw_text">        bool executeRule@</span>
+    <span class="comment">//...</span>
+}</pre>
+<p/>Note: an expression enclosed between <b><kbd>@...@</kbd></b> (or <b><kbd>&lt;%...%&gt;</kbd></b>) is resolved and the
+result is written to the output file. Example: <kbd><span class="raw_text">#ifndef _@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span></kbd> means that the
+name of the current strategy must be written between some rough text.
+<p/><h3><a name="L4_1"></a>4.2 Generation preserving hand-typed code: example with the C++ body file</h3>
+<p/>We&#39;ll assume that the developer may have to implement some specific code by hand before the method <kbd>executeRules()</kbd>
+returns while the strategy is active.
+<p/>A manner of inserting hand-typed code in the core of a generated file is to anchor a protected area the interpreter
+detects and preserves from a generation cycle to another. In the source code, a protected area starts and finishes with
+a special comment. The special comment begins with <kbd>##protect##</kbd> and is followed by a C-like string,
+which is a unique key designating the protected area without ambiguity into the output file. Write the hand-typed
+code directly between the special comments.
+<p/><table class="tableau" cellspacing="0" border="1" align="center">
+<tr class="entete"><td class="colonne_entete">Format of comments</td></tr><tr><td class="colonne">By default, a comment starts with <b><kbd>//</kbd></b> and finishes with an end of line (or file),
+exactly like a C++ inline comment. Of course, if you decide to insert a protected area into a HTML file or other,
+you can stipulate a new format, calling the functions <kbd><a href="manual_The_scripting_language.html#setCommentBegin" class="procedure">setCommentBegin</a></kbd> and
+<kbd><a href="manual_The_scripting_language.html#setCommentEnd" class="procedure">setCommentEnd</a></kbd>. If the syntax of comments is too sophisticated to be represented as
+a free sequence of characters enclosed between two well-known invariant tags like <b><kbd>&lt;!--</kbd></b> and
+<b><kbd>--&gt;</kbd></b>, you can describe the BNF grammar of comments (among others) in the function
+<kbd><a href="manual_The_scripting_language.html#setGenerationTagsHandler" class="procedure">setGenerationTagsHandler</a></kbd>.</td></tr></table>
+
+<p/><pre><div class="titre_code">output/BusinessDayNight.cpp</div><span class="cpp_define">#include</span> <span class="csharp_ch">&quot;BusinessDayNight.h&quot;</span>
+
+BusinessDayNight::~BusinessDayNight() {}
+
+<span class="csharp_type">bool</span> BusinessDayNight::start() <span class="csharp_type">const</span> {
+   <span class="csharp_type">return</span> time() &gt; (17*60 + 30)*60;
+}
+
+<span class="csharp_type">int</span> BusinessDayNight::executeRules() {
+   <span class="csharp_type">int</span> iTriggeredRules = 0;
+   <span class="csharp_type">if</span> (bActive_) {
+     <span class="csharp_type">if</span> (executeRule0()) ++iTriggeredRules;
+     <span class="csharp_type">if</span> (executeRule1()) ++iTriggeredRules;
+     <span class="csharp_type">if</span> (executeRule2()) ++iTriggeredRules;
+     <span class="csharp_type">if</span> (executeRule3()) ++iTriggeredRules;
+<span class="cpp_comment">//##protect##&quot;Post Processing, to handle by hand!&quot;</span>
+     <span class="cpp_comment">// hand-typed code, added by CL</span>
+     <span class="csharp_type">if</span> (iTriggeredRules &gt; 3) setHigherPriority();
+<span class="cpp_comment">//##protect##&quot;Post Processing, to handle by hand!&quot;</span>
+   }
+   <span class="csharp_type">return</span> iTriggeredRules;
+}
+
+<span class="csharp_type">bool</span> BusinessDayNight::executeRule0() {
+   <span class="csharp_type">if</span> (!bActive_ || (vehicles_hour(<span class="csharp_ch">&quot;boulevard des Capucines&quot;</span>, <span class="csharp_ch">&quot;place_opera&quot;</span>, <span class="csharp_ch">&quot;c-&gt;s&quot;</span>) &lt; 400 == false)) <span class="csharp_type">return</span> false;
+   {
+     <span class="csharp_type">int</span> durations[] = {65, 120, -1};
+     setDuration(<span class="csharp_ch">&quot;rue Scribe&quot;</span>, <span class="csharp_ch">&quot;scribe&quot;</span>, <span class="csharp_ch">&quot;c-&gt;s&quot;</span>, durations);
+   }
+   <span class="csharp_type">return</span> true;
+}
+
+<span class="csharp_type">bool</span> BusinessDayNight::executeRule1() {
+   <span class="csharp_type">if</span> (!bActive_ || (vehicles_hour(<span class="csharp_ch">&quot;rue de la Paix&quot;</span>, <span class="csharp_ch">&quot;rue_paix&quot;</span>, <span class="csharp_ch">&quot;s-&gt;c&quot;</span>) &gt; 300 == false)) <span class="csharp_type">return</span> false;
+   activateStrategy(<span class="csharp_ch">&quot;RivoliLowDensity&quot;</span>);
+   <span class="csharp_type">return</span> true;
+}
+
+<span class="csharp_type">bool</span> BusinessDayNight::executeRule2() {
+   <span class="csharp_type">if</span> (!bActive_ || (vehicles_hour(<span class="csharp_ch">&quot;rue auber&quot;</span>, <span class="csharp_ch">&quot;auber&quot;</span>, <span class="csharp_ch">&quot;c-&gt;s&quot;</span>) &gt; 500 == false)) <span class="csharp_type">return</span> false;
+   bActive_ = false;
+   <span class="csharp_type">return</span> true;
+}
+
+<span class="csharp_type">bool</span> BusinessDayNight::executeRule3() {
+   <span class="csharp_type">if</span> (!bActive_ || (time() &gt; (22*60 + 30)*60 == false)) <span class="csharp_type">return</span> false;
+   bActive_ = false;
+   <span class="csharp_type">return</span> true;
+}
+
+</pre>
+<p/>To anchor a protected area at the current position of the output file, use the function <kbd><a href="manual_The_scripting_language.html#setProtectedArea" class="procedure">setProtectedArea</a></kbd>
+that expects the unique key of the protected area as parameter. The first time, the protected area is empty and
+you have to fill it by hand in the output file once the generation has been achieved. The next time, the protected area
+will be preserved, even if you change the position of the anchor.
+<p/>The following template-based script takes charge of the generation of the C++ body file and shows how to anchor
+a protected area called <kbd>&quot;Post Processing, to handle by hand!&quot;</kbd>:
+<p/><pre><div class="titre_code">TrafficLight-bodyC++.cwt</div><span class="raw_text">#include &quot;@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">.h&quot;
+
+@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">::~@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">() {}
+
+bool @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">::start() const {
+    return @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.start<span class="raw_text">@</span><span class="raw_text">;
+}
+
+int @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">::executeRules() {
+    int iTriggeredRules = 0;
+    if (bActive_) {
+@</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.rules {
+    <span class="raw_text">@</span><span class="raw_text">        if (executeRule@</span>i.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text">()) ++iTriggeredRules;
+@</span>
+}
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setProtectedArea">setProtectedArea</A>(<span class="string">&quot;Post Processing, to handle by hand!&quot;</span>);
+<span class="raw_text">@</span><span class="raw_text">    }
+    return iTriggeredRules;
+}
+
+@</span>
+
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_include">#include</a> <span class="string">&quot;TrafficLight-sharedFunctions.cws&quot;</span>
+
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.rules {
+    <span class="raw_text">@</span><span class="raw_text">bool @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">::executeRule@</span>i.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text">() {
+    if (!bActive_ || (@</span>convertAntecedent2Cpp(i.condition)<span class="raw_text">@</span><span class="raw_text"> == false)) return false;
+@</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> j <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> i.actions {
+        writeAction&lt;j&gt;(j, <span class="string">&quot;C++&quot;</span>);
+    }
+    <span class="raw_text">@</span><span class="raw_text">    return true;
+}
+
+@</span>
+}
+</pre>
+<p/>Perhaps, you have noticed the preprocessor directive <kbd><a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_include">#include</a> <span class="string">&quot;TrafficLight-sharedFunctions.cws&quot;</span></kbd>. It
+means that the content of the referenced file must be included in the script, to replace the directive exactly like
+in C or C++. Here, we implement the instantiations of generic functions in charge of generating the Java or C++
+source code of each action. They are the equivalent of generic BNF production rules we have encountered in the
+parser, but for generating code. They won&#39;t learn anything to us, contrary to the function <kbd>convertAntecedent2Cpp</kbd>,
+explained in the next section.
+<p/><a name="ProgramTransformation"></a><h3><a name="ProgramTransformation"></a>4.3 Program transformation</h3>
+<p/>A <i>program transformation</i> consists of applying some changes on the source code, like refactoring or optimization for
+instance.
+<p/>The script <kbd>&quot;TrafficLight-sharedFunctions.cws&quot;</kbd> contains some functions shared between Java and C++ to
+generate a strategy, but one of them has to transform a strategy antecedent to another syntax, also accepted by the
+grammar of the DSL and which has the great advantage of conforming to the C++ and Java syntax too!
+<p/>It seems pretentious to call this manipulation a <i>program transformation</i>, as it applies on a little piece
+of strategy description and not on the whole strategy, but it uses exactly the same mechanisms as on a complete
+file!
+<p/>The aim of this <i>program transformation</i> is to change <kbd>vehicles_hour(place_opera-&gt;<span class="csharp_ch">&quot;boulevard des Capucines&quot;</span>)</kbd>
+to <kbd>vehicles_hour(<span class="csharp_ch">&quot;boulevard des Capucines&quot;</span>, <span class="csharp_ch">&quot;place_opera&quot;</span>, <span class="csharp_ch">&quot;c-&gt;s&quot;</span>)</kbd>. A program-transformation script
+is a <i>translation</i> script, being able to both execute BNF rules and generate code. Such a script is executed
+through the function <kbd><a href="manual_The_scripting_language.html#translate" class="procedure">translate</a></kbd> (input/output are files) or
+<kbd><a href="manual_The_scripting_language.html#translateString" class="procedure">translateString</a></kbd> (input/output are strings).
+<p/><pre><div class="titre_code">TrafficLight-sharedFunctions.cws</div><A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A> convertAntecedent2Cpp(sAntecedent : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">value</a>) {
+    <span class="comment">// this function returns the transformation of the antecedent</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#return">return</A> <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#translateString">translateString</A>({
+            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_implicitCopy">#implicitCopy</a> <span class="comment">// What You Scan Is What You Write</span>
+            <i>antecedent</i> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+                <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+                        <span class="comment">// consume strings: it may contain &#39;vehicles_hour&#39; and</span>
+                        <span class="comment">// we won&#39;t transform it into a message</span>
+                        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a>
+                    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+                        <span class="comment">// if not, perhaps is it an identifier?</span>
+                        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sId
+                        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+                            <span class="comment">// facultative sequence: process a transformation</span>
+                            <span class="comment">// if the keyword is worth &#39;vehicles_hour&#39;</span>
+                            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_check">#check</a>(sId == <span class="string">&quot;vehicles_hour&quot;</span>)
+                            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="comment">// from here, the syntax must be correct</span>
+                            <span class="string">&#39;(&#39;</span>
+                            <span class="comment">// stop copying to the output what is scanned</span>
+                            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_explicitCopy">#explicitCopy</a>
+                            <span class="comment">// parses the coordinates of a sensor</span>
+                            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> theSegment;
+                            <i>street_segment</i>(theSegment)
+                            <span class="string">&#39;)&#39;</span>
+                            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {
+                                <span class="comment">// the transformation itself</span>
+                                <span class="raw_text">@</span><span class="raw_text">&quot;@</span>theSegment.street<span class="raw_text">@</span><span class="raw_text">&quot;, &quot;@</span>theSegment.crossroad<span class="raw_text">@</span><span class="raw_text">&quot;, &quot;@</span>theSegment.direction<span class="raw_text">@</span><span class="raw_text">&quot;)@</span>
+                            }<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">
+                        ]?</a>
+                    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+                        <span class="comment">// reading of the char if end of string not reached;</span>
+                        <span class="comment">// implicit copy to the output string</span>
+                        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_complementary">~</a><a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_empty">#empty</a>
+                <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a>
+                ;            
+            <i>street_segment</i>(theSegment : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a> <span class="comment">/*[skip]...*/</span> <i>do</i> <i>not</i> <i>care</i>;
+        }, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>, sAntecedent);
+}
+</pre>
+<p/>The key of a program-transformation script is based on the BNF directive <kbd><a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_implicitCopy">#implicitCopy</a></kbd>. It
+stipulates that what is scanned from the input must be copied to the output file simultaneously. For our example,
+the output is equivalent to the input, except on the function <i>vehicles_hour</i> returning a sensor value.
+<p/><h3><a name="L4_3"></a>4.4 Code generation with an external tool</h3>
+<p/><a href="http://www.codeworker.org">CodeWorker</a> doesn&#39;t generate PNG pictures by itself, neither graphs nor charts, but it can generate the input
+file of a tool capable of generating pictures. <a href="http://www.graphviz.org">Graphviz</a> is such a tool which
+has developed its own <a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">Domain-Specific Language</a>
+for describing a graph, with nodes and relationships and their graphical properties.
+<p/>The description of the graph corresponding to the strategy <a href="#BusinessDayNight_TLC">BusinessDayNight</a> is:
+<p/><pre><div class="titre_code">BusinessDayNight.grz</div><span class="csharp_type">digraph</span> SigC {
+   <span class="csharp_type">ranksep</span>=2
+   <span class="csharp_type">node</span> [<span class="csharp_type">shape</span>=record,<span class="csharp_type">style</span>=filled];
+   BusinessDayNight [<span class="csharp_type">style</span>=filled, <span class="csharp_type">fillcolor</span>=<span class="csharp_ch">&quot;#A1E1FF&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>];
+   BusinessDayNight_start [<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;time()\n&gt;\n(17*60\ +\ 30)*60&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">shape</span>=box];
+   BusinessDayNight -&gt; BusinessDayNight_start [<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;start&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">fontcolor</span>=<span class="csharp_ch">&quot;red&quot;</span>,<span class="csharp_type">color</span>=<span class="csharp_ch">&quot;red&quot;</span>,<span class="csharp_type">style</span>=<span class="csharp_ch">&quot;bold&quot;</span>];
+   <span class="csharp_type">ranksep</span>=4
+
+   BusinessDayNight_rule0 [<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;vehicles_hour(place_opera-&gt;\&quot;boulevard\ des\ Capucines\&quot;)\n&lt;\n400&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">shape</span>=box];
+   BusinessDayNight -&gt; BusinessDayNight_rule0 [<span class="csharp_type">color</span>=<span class="csharp_ch">&quot;purple&quot;</span>,<span class="csharp_type">style</span>=<span class="csharp_ch">&quot;bold&quot;</span>];
+   BusinessDayNight_rule0_0 [<span class="csharp_type">shape</span>=record,<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;{duration|scribe-\&gt;\&quot;rue\ Scribe\&quot;\n1min05/2min00}&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">fillcolor</span>=yellow];
+   BusinessDayNight_rule0 -&gt; BusinessDayNight_rule0_0 [<span class="csharp_type">color</span>=<span class="csharp_ch">&quot;orange&quot;</span>,<span class="csharp_type">style</span>=<span class="csharp_ch">&quot;bold&quot;</span>];
+
+   BusinessDayNight_rule1 [<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;vehicles_hour(\&quot;rue\ de\ la\ Paix\&quot;-&gt;rue_paix)\n&gt;\n300&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">shape</span>=box];
+   BusinessDayNight -&gt; BusinessDayNight_rule1 [<span class="csharp_type">color</span>=<span class="csharp_ch">&quot;purple&quot;</span>,<span class="csharp_type">style</span>=<span class="csharp_ch">&quot;bold&quot;</span>];
+   BusinessDayNight_rule1_0 [<span class="csharp_type">shape</span>=record,<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;{activate|RivoliLowDensity}&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">fillcolor</span>=yellow];
+   BusinessDayNight_rule1 -&gt; BusinessDayNight_rule1_0 [<span class="csharp_type">color</span>=<span class="csharp_ch">&quot;orange&quot;</span>,<span class="csharp_type">style</span>=<span class="csharp_ch">&quot;bold&quot;</span>];
+
+   BusinessDayNight_rule2 [<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;vehicles_hour(auber-&gt;\&quot;rue\ auber\&quot;)\n&gt;\n500&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">shape</span>=box];
+   BusinessDayNight -&gt; BusinessDayNight_rule2 [<span class="csharp_type">color</span>=<span class="csharp_ch">&quot;purple&quot;</span>,<span class="csharp_type">style</span>=<span class="csharp_ch">&quot;bold&quot;</span>];
+   BusinessDayNight_rule2_0 [<span class="csharp_type">shape</span>=record,<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;{desactivate}&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">fillcolor</span>=yellow];
+   BusinessDayNight_rule2 -&gt; BusinessDayNight_rule2_0 [<span class="csharp_type">color</span>=<span class="csharp_ch">&quot;orange&quot;</span>,<span class="csharp_type">style</span>=<span class="csharp_ch">&quot;bold&quot;</span>];
+
+   BusinessDayNight_rule3 [<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;time()\n&gt;\n(22*60\ +\ 30)*60&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">shape</span>=box];
+   BusinessDayNight -&gt; BusinessDayNight_rule3 [<span class="csharp_type">color</span>=<span class="csharp_ch">&quot;purple&quot;</span>,<span class="csharp_type">style</span>=<span class="csharp_ch">&quot;bold&quot;</span>];
+   BusinessDayNight_rule3_0 [<span class="csharp_type">shape</span>=record,<span class="csharp_type">label</span>=<span class="csharp_ch">&quot;{desactivate}&quot;</span>,<span class="csharp_type">fontname</span>=<span class="csharp_ch">&quot;Arial-Narrow&quot;</span>,<span class="csharp_type">fillcolor</span>=yellow];
+   BusinessDayNight_rule3 -&gt; BusinessDayNight_rule3_0 [<span class="csharp_type">color</span>=<span class="csharp_ch">&quot;orange&quot;</span>,<span class="csharp_type">style</span>=<span class="csharp_ch">&quot;bold&quot;</span>];
+}
+</pre>
+<p/>In the <i>leader script</i>, the instruction <kbd>system(&quot;utils/dot.exe -Tpng -o BusinessDayNight.png BusinessDayNight.grz&quot;)</kbd>
+runs <a href="http://www.graphviz.org">Graphviz</a> with the appropriate parameters:
+<p/><img src="images/BusinessDayNight.png" alt="Diagram of the business day night strategy" width="785" class="image"/>
+<p/>The template-based script generating the <a href="http://www.graphviz.org">Graphviz</a> input file from the parse tree
+of a strategy has no singularities, and so, doesn&#39;t deserve to be shown here.
+<p/><h2><a name="CodeExpansion"></a>5 Code expansion or how to inject generated code into a hand-typed file</h2>
+<p/>Let&#39;s imagine that the developer has decided to include all strategies as inner classes directly in the Java file
+of the simulator manager (<kbd>&quot;TrafficLightSimulator.java&quot;</kbd>), perhaps for not generating a Java file per
+strategy and having then to purge these files properly when a strategy changes its name or disappears.
+<p/><pre><div class="titre_code">TrafficLightSimulator.java</div><span class="csharp_type">package</span> org.trafficlights.simulator;
+
+<span class="csharp_type">import</span> org.trafficlights.rules.*;
+
+<span class="cpp_comment">// All legacy strategies, coming from &quot;.tlc&quot; files, are injected here</span>
+<span class="cpp_comment">// in Java, as inner classes.</span>
+<span class="cpp_comment">//##markup##&quot;strategies&quot;</span>
+
+<span class="cpp_comment">/*
+Here, the developer will directly type some strategies, which aren&#39;t
+the legacy one, as specified by the customer in &quot;.tlc&quot; files, but those
+// that he wants to test before trashing them.
+
+The DSL code inside the ##data## tags isn&#39;t Java valid code, so one encloses
+the complete markup between comments
+//##markup##&quot;DSL: TrafficLight&quot;
+//##data##
+strategy BusinessDayMorning {
+   start time() &lt; (6*60 + 30)*60; // activate the rule before 6h30
+   
+   vehicles_hour(&quot;avenue de l&#39;Opera&quot;-&gt;place_opera) &gt; 800
+     =&gt; duration(&quot;boulevard des Italiens&quot;-&gt;place_opera, 0min50/1min10);
+   vehicles_hour(&quot;boulevard des Capucines&quot;-&gt;place_opera) &gt; 700
+     =&gt; duration(scribe-&gt;&quot;rue Scribe&quot;, 1min05/1min30);
+   time() &gt; (9*60 + 30)*60 =&gt; desactivate; // inhibate the rule after 9h30
+}
+//##data##
+*/</span>
+
+<span class="csharp_type">public</span> <span class="csharp_type">class</span> Simulator {
+   <span class="cpp_comment">// This class is implemented by hand and works on strategies</span>
+   <span class="cpp_comment">// previously declared as inner classes.</span>
+   <span class="cpp_comment">// ...</span>
+}
+</pre>
+<p/>The strategies have to be injected as inner Java classes at the position marked by the special comment
+<kbd><span class="comment">//##markup##&quot;strategies&quot;</span></kbd>. When <a href="http://www.codeworker.org">CodeWorker</a> applies a code-expansion, it scrutinizes
+the whole processed file for detecting such special comments, then it executes the <i>template-based</i> script
+to inject generated code just below the markup. To isolate properly the injected code from the rest of the source
+code, the generator encloses the injected code between tags <kbd><span class="comment">//##begin##&quot;strategies&quot;</span></kbd> and
+<kbd><span class="comment">//##end##&quot;strategies&quot;</span></kbd> (in our example).
+<p/>As the same <i>template-based</i> script applies to the whole processed file, a key identifies the markup, put as
+a constant string, between double quotes. Contrary to protected area keys, they haven&#39;t to be unique here. The
+<i>template-based</i> script can query the key of the markup currently generated, thanks to the function
+<kbd><a href="manual_The_scripting_language.html#getMarkupKey" class="procedure">getMarkupKey</a></kbd>, and then it can decide what to generate at this place.
+<p/>For instance, this sample of the <i>template-based script</i> <kbd>&quot;TrafficLight-embeddedJava.cwt&quot;</kbd>:
+<p/><pre><div class="titre_code">TrafficLight-embeddedJava.cwt</div><A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>() == <span class="string">&quot;strategies&quot;</span> {
+    <span class="comment">// the current markup key is worth &quot;strategies&quot;:</span>
+    <span class="comment">// generate the implementation of each strategy</span>
+    <span class="comment">// class, coming from &quot;.tlc&quot; files</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> strategy <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.strategies {
+        generateJavaClass(strategy);
+    }
+}</pre>
+<p/>will inject the following code below the <kbd>&quot;strategies&quot;</kbd> markup in <kbd>&quot;TrafficLightSimulator.java&quot;</kbd>:
+<p/><pre><div class="titre_code">TrafficLightSimulator.java</div><span class="cpp_comment">//##markup##&quot;strategies&quot;</span>
+<span class="cpp_comment">//##begin##&quot;strategies&quot;</span>
+<span class="csharp_type">class</span> BusinessDayNight <span class="csharp_type">extends</span> TrafficLightStrategy {
+   <span class="csharp_type">public</span> BusinessDayNight() {}
+   <span class="cpp_comment">// [part without any interest skipped] ...</span>
+}
+
+<span class="cpp_comment">//##end##&quot;strategies&quot;</span>
+</pre>
+<p/>In some cases, it&#39;s interesting to attach specific data to the markup. The special comment <kbd>//##data##</kbd>
+both starts and ends the data section, whose content is avalable thanks to the function <kbd><a href="manual_The_scripting_language.html#getMarkupValue" class="procedure">getMarkupValue</a></kbd>.
+<p/>Here, for instance, the developer wants to write temporary or test strategies directly in the Java file of the
+simulator. The best way is to populate the data section of markups like <kbd>//##markup##&quot;DSL: TrafficLight&quot;</kbd>. As
+the DSL code doesn&#39;t compile under a Java compiler, the whole markup is put into a multi-line comment:
+<p/><pre><div class="titre_code">TrafficLightSimulator.java</div><span class="cpp_comment">/*
+Here, the developer will directly type some strategies, which aren&#39;t
+the legacy one, as specified by the customer in &quot;.tlc&quot; files, but those
+// that he wants to test before trashing them.
+
+The DSL code inside the ##data## tags isn&#39;t Java valid code, so one encloses
+the complete markup between comments
+//##markup##&quot;DSL: TrafficLight&quot;
+//##data##
+strategy BusinessDayMorning {
+   start time() &lt; (6*60 + 30)*60; // activate the rule before 6h30
+   
+   vehicles_hour(&quot;avenue de l&#39;Opera&quot;-&gt;place_opera) &gt; 800
+     =&gt; duration(&quot;boulevard des Italiens&quot;-&gt;place_opera, 0min50/1min10);
+   vehicles_hour(&quot;boulevard des Capucines&quot;-&gt;place_opera) &gt; 700
+     =&gt; duration(scribe-&gt;&quot;rue Scribe&quot;, 1min05/1min30);
+   time() &gt; (9*60 + 30)*60 =&gt; desactivate; // inhibate the rule after 9h30
+}
+//##data##
+*/</span></pre>
+<p/>The following sample of the <i>template-based script</i> <kbd>&quot;TrafficLight-embeddedJava.cwt&quot;</kbd> will inject
+the source code of temporary strategies:
+<p/><pre><div class="titre_code">TrafficLight-embeddedJava.cwt</div><A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#startString">startString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(), <span class="string">&quot;DSL: &quot;</span>) {
+    <span class="comment">// the current markup key embeds strategies written</span>
+    <span class="comment">// directly into the Java file</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#subString">subString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(), <span class="numeric">5</span>) != <span class="string">&quot;TrafficLight&quot;</span> {
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;only one DSL recognized for the moment: &#39;TrafficLight&#39;!&quot;</span>);
+    }
+
+    <span class="comment">// parsing of the strategies attached to the markup: the function</span>
+    <span class="comment">// &#39;getMarkupValue()&#39; returns data embedded in the markup</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> theParseTree;
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#parseStringAsBNF">parseStringAsBNF</A>(<span class="string">&quot;TrafficLight.cwp&quot;</span>, theParseTree, <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupValue">getMarkupValue</A>());
+
+    <span class="raw_text">@</span><span class="raw_text">*/
+@</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> strategy <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> theParseTree.strategies {
+        generateJavaClass(strategy);
+    }
+    <span class="raw_text">@</span><span class="raw_text">/*
+@</span>
+}</pre>
+<p/>The function <kbd><a href="manual_The_scripting_language.html#parseAsString" class="procedure">parseAsString</a></kbd> parses the data section of any DSL markup and populates
+a local parse tree, passed to a function taking charge of the generation of each extracted strategy.
+<p/><h2><a name="Translation"></a>6 Source-to-source translation</h2>
+<p/>A source-to-source translation consists of converting a file to another format. In <a href="http://www.codeworker.org">CodeWorker</a>, a translation script
+is a <i>BNF-parse</i> script including parts of <i>template-based</i> scripts, similarly to a
+<a href="#ProgramTransformation">program transformation</a>. Most of the time, a source-to-source
+translation doesn&#39;t require the BNF directive <kbd>#implicitCopy</kbd>, contrary to a <a href="#ProgramTransformation">program transformation</a>.
+<p/>As an example, we&#39;ll translate a &quot;.tlc&quot; file describing strategies in our DSL to an Open Office 2.0 text
+document. Such a document is a zipped file containing XML files and sub-directories and pictures, where the file
+extension has changed to <kbd>&quot;.odt&quot;</kbd>. The main file <kbd>&quot;content.xml&quot;</kbd> contains the document itself,
+with used styles only and references to pictures.
+<p/>Here, we&#39;ll just focus on the generation of the main file, <kbd>&quot;content.xml&quot;</kbd>. The leader script executes
+the translation with the instruction <kbd><A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#translate">translate</A>(<span class="string">&quot;TrafficLight2OpenOffice20.cwp&quot;</span>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, strategyFile, <span class="string">&quot;OpenOffice2.0/content.xml&quot;</span>);</kbd>.
+<p/>The following screen shot of the PDF document shows the translation of the strategy <a href="#BusinessDayNight_TLC">BusinessDayNight</a>
+to Open Office 2.0:
+<p/><img src="images/OpenOffice20.jpg" alt="Screen shot of the Open Office 2.0 document generated from a strategy" width="795" class="image"/>
+<p/>The translation script generating the precedent document looks like:
+<p/><pre><div class="titre_code">TrafficLight2OpenOffice20.cwp</div><span class="comment">// Special manipulation if we are going to write a new paragraph</span>
+<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</a> handleBeginningOfParagraph(bBeginningOfParagraph : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>) {
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> bBeginningOfParagraph {
+        <span class="raw_text">@</span><span class="raw_text">&lt;text:p text:style-name=&quot;P1&quot;&gt;@</span>
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#bBeginningOfParagraph">bBeginningOfParagraph</A> = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_literals">false</a>;
+    }
+}
+
+<i>TrafficLight2OASIS</i> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {
+        <span class="comment">// Invariant part of the document, such as styles</span>
+        <span class="raw_text">@</span><span class="raw_text">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;office:document-content xmlns:office=&quot;urn:oasis:names:tc:opendocument:xmlns:office:1.0&quot;@</span><span class="comment">// skipped...</span>
+    }
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> bBeginningOfParagraph = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_literals">true</a>;
+    <span class="comment">// consume token by token</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+            <span class="comment">// an identifier: keyword or function of the language or sensor</span>
+            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sWord
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> handleBeginningOfParagraph(bBeginningOfParagraph);
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+                    <span class="comment">// a keyword</span>
+                    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_check">#check</a>(sWord <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">in</a> {<span class="string">&quot;activate&quot;</span>, <span class="string">&quot;desactivate&quot;</span>, <span class="string">&quot;duration&quot;</span>, <span class="string">&quot;start&quot;</span>, <span class="string">&quot;strategy&quot;</span>})
+                    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;text:span text:style-name=&quot;T1&quot;&gt;@</span>sWord<span class="raw_text">@</span><span class="raw_text">&lt;/text:span&gt;@</span>}
+                <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+                    <span class="comment">// the sensor: &#39;hour&#39; is displayed in subscript</span>
+                    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_check">#check</a>(sWord == <span class="string">&quot;vehicles_hour&quot;</span>)
+                    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;text:span text:style-name=&quot;T3&quot;&gt;vehicles&lt;/text:span&gt;&lt;text:span text:style-name=&quot;T5&quot;&gt;hour&lt;/text:span&gt;@</span>}
+                <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+                    <span class="comment">// a function</span>
+                    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_check">#check</a>(sWord == <span class="string">&quot;time&quot;</span>)
+                    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;text:span text:style-name=&quot;T3&quot;&gt;@</span>sWord<span class="raw_text">@</span><span class="raw_text">&lt;/text:span&gt;@</span>}
+                <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+                    <span class="comment">// other</span>
+                    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;text:span text:style-name=&quot;T2&quot;&gt;@</span>sWord<span class="raw_text">@</span><span class="raw_text">&lt;/text:span&gt;@</span>}<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">
+            ]</a>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+            <span class="comment">// a constant string</span>
+            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a>:sText
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> handleBeginningOfParagraph(bBeginningOfParagraph);
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;text:span text:style-name=&quot;T6&quot;&gt;&amp;quot;@</span>sText.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#composeHTMLLikeString">composeHTMLLikeString</A>()<span class="raw_text">@</span><span class="raw_text">&amp;quot;&lt;/text:span&gt;@</span>}
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+            <span class="comment">// symbols to highlight</span>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><span class="string">&quot;=&gt;&quot;</span> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a> <span class="string">&quot;-&gt;&quot;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]</a>:sSymbol
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> handleBeginningOfParagraph(bBeginningOfParagraph);
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;text:span text:style-name=&quot;T7&quot;&gt;@</span>sSymbol.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#composeHTMLLikeString">composeHTMLLikeString</A>()<span class="raw_text">@</span><span class="raw_text">&lt;/text:span&gt;@</span>}
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+            <span class="comment">// multi-line comment</span>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_negation">!</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_negation">!</a><span class="string">&quot;/*&quot;</span>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> handleBeginningOfParagraph(bBeginningOfParagraph);
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#-_amp_gt_">-&gt;</a><span class="string">&quot;*/&quot;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]</a>:sComment
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;text:span text:style-name=&quot;T4&quot;&gt;@</span>sComment.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#composeHTMLLikeString">composeHTMLLikeString</A>()<span class="raw_text">@</span><span class="raw_text">&lt;/text:span&gt;@</span>}
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+            <span class="comment">// inline comment</span>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_negation">!</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_negation">!</a><span class="string">&quot;//&quot;</span>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> handleBeginningOfParagraph(bBeginningOfParagraph);
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_complementary">~</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><span class="string">&#39;\r&#39;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]?</a> <span class="string">&#39;\n&#39;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a>:sComment
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;text:span text:style-name=&quot;T4&quot;&gt;@</span>sComment.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#composeHTMLLikeString">composeHTMLLikeString</A>()<span class="raw_text">@</span><span class="raw_text">&lt;/text:span&gt;@</span>}
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+            <span class="comment">// special case: tabulation</span>
+            <span class="string">&#39;\t&#39;</span>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> handleBeginningOfParagraph(bBeginningOfParagraph);
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;text:tab /&gt;@</span>}
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+            <span class="comment">// special case: end of paragraph</span>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><span class="string">&#39;\r&#39;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]?</a> <span class="string">&#39;\n&#39;</span>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {
+                <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> bBeginningOfParagraph {
+                    <span class="raw_text">@</span><span class="raw_text">&lt;text:p text:style-name=&quot;P1&quot;&gt;@</span>
+                } <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">else</a> {
+                    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#bBeginningOfParagraph">bBeginningOfParagraph</A> = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_literals">true</a>;
+                }
+                <span class="raw_text">@</span><span class="raw_text">&lt;/text:p&gt;@</span>
+            }
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+            <span class="comment">// any other non-empty character</span>
+            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readChar">#readChar</a>:cChar
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> handleBeginningOfParagraph(bBeginningOfParagraph);
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>{<span class="raw_text">@</span><span class="raw_text">@</span>cChar.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#composeHTMLLikeString">composeHTMLLikeString</A>()<span class="raw_text">@</span><span class="raw_text">@</span>}<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">
+    ]*</a>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {
+        <span class="comment">// may have a paragraph to close</span>
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a>bBeginningOfParagraph {
+            <span class="raw_text">@</span><span class="raw_text">&lt;/text:p&gt;@</span>
+        }
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sFileName = <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getShortFilename">getShortFilename</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getInputFilename">getInputFilename</A>());
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sPictureFile = sFileName.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#rsubString">rsubString</A>(<span class="numeric">4</span>) + <span class="string">&quot;.png&quot;</span>;
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> sFileName.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#endString">endString</A>(<span class="string">&quot;.tlc&quot;</span>) &amp;&amp; sPictureFile.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#existFile">existFile</A>() {
+            <span class="comment">// reference the PNG diagram of the strategy in the document and</span>
+            <span class="comment">// copy it to the directory devoted to pictures</span>
+            <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#copyFile">copyFile</A>(sPictureFile, <span class="string">&quot;OpenOffice2.0/Pictures/&quot;</span> + sPictureFile);
+            <span class="raw_text">@</span><span class="raw_text">&lt;text:p text:style-name=&quot;P1&quot; /&gt;&lt;text:p text:style-name=&quot;P1&quot;&gt;@</span>
+            <span class="raw_text">@</span><span class="raw_text">&lt;draw:frame draw:style-name=&quot;fr1&quot; draw:name=&quot;graphics1&quot; text:anchor-type=&quot;paragraph&quot; @</span>
+            <span class="comment">// extract the width and height of the picture, loaded as a binary file:</span>
+            <span class="comment">// each byte is represented by two hexadecimal digits</span>
+            <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sHexaDimensions = <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#rightString">rightString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#leftString">leftString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#loadBinaryFile">loadBinaryFile</A>(sPictureFile), <span class="numeric">48</span>), <span class="numeric">16</span>);
+            <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> dheight = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a><span class="numeric">6.9</span>*<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#hexaToDecimal">hexaToDecimal</A>(sHexaDimensions.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#rightString">rightString</A>(<span class="numeric">8</span>)) / <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#hexaToDecimal">hexaToDecimal</A>(sHexaDimensions.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#leftString">leftString</A>(<span class="numeric">8</span>))<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>;
+            <span class="raw_text">@</span><span class="raw_text">svg:width=&quot;6.9in&quot; @</span>
+            <span class="raw_text">@</span><span class="raw_text">svg:height=&quot;@</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#floor">floor</A>(<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a><span class="numeric">1</span> + dheight*<span class="numeric">10</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>)/<span class="numeric">10</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a><span class="raw_text">@</span><span class="raw_text">in&quot; @</span>
+            <span class="raw_text">@</span><span class="raw_text">draw:z-index=&quot;0&quot;&gt;&lt;draw:image xlink:href=&quot;Pictures/@</span>sPictureFile<span class="raw_text">@</span><span class="raw_text">&quot; xlink:type=&quot;simple&quot;@</span>
+            <span class="raw_text">@</span><span class="raw_text"> xlink:show=&quot;embed&quot; xlink:actuate=&quot;onLoad&quot;/&gt;&lt;/draw:frame&gt;&lt;/text:p&gt;@</span>
+        }
+        <span class="comment">// end of the document</span>
+        <span class="raw_text">@</span><span class="raw_text">&lt;/office:text&gt;&lt;/office:body&gt;&lt;/office:document-content&gt;@</span>
+    }
+    ;
+
+</pre>
+<p/><h2><a name="L6"></a>7 Conclusion</h2>
+<p/>Coupled with high-level specifications, code generation accelerates the development of tedious and repetitive
+tasks, but also builds flexible, reactive and reliable software or software families. <a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">Domain-Specific
+Languages</a> are a way to describe high-level specifications not depending on the implementation choices and growing
+the Business coverage without introducing new bugs. The technical skills on how to translate the specifications
+to various implementations are capitalized in <i>template-based</i> scripts as much as possible, bringing a new
+axis to reusability. Changing technical choices, such as the framework of the architecture or applications,
+amounts to writing other <i>template-based</i> scripts for a large part, the one depending on the high-level
+specifications.
+<p/>Building a <a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">DSL</a> may be an efficent
+bridge between the Business requirements and the development. It allows working in domains where requirements are
+constantly moving or growing, as the code is generated as much as possible from the high-level specifications. Some
+highly-customized diagrams or documents can be generated for helping the Business to understand the specifications
+and to improve them. If some new Business features may appear and have to be formalized later, they will enrich the
+<a href="http://en.wikipedia.org/wiki/Domain-specific_programming_language">DSL</a> and some changes in
+<i>template-based</i> scripts will take them into account, generating their code or documentation.
+<p/>The specifications may already exist as IDL files or C API or HTML documentation..., when you are retrieving
+information from an existent application for improving it or building other software. In that case, it makes no
+sense to invent a new DSL. You just have to write a parser for these files, IDL or other, just for extracting
+pertinent data. It means that you don&#39;t need a complete parser of the language and I hope to have convinced you
+how easy it is to write a parser. Otherwise, the script repository of <a href="http://www.codeworker.org">CodeWorker</a>
+contains both an IDL and a C parser, for instance.
+<p/>The code generator should be efficient enough to generate source code or text in several manners: traditional code
+generation, with or without preserving hand-typed areas, code expansion by injecting generated code, source-to-source
+translation or program transformation. The code generator offers a lot of features we didn&#39;t have had time
+to show, such as inserting code into a part of the output file already generated or changing the output stream
+during a generation process.
+<br/>	<hr/>
+	<a href="http://www.xiti.com/xiti.asp?s=134058" TARGET="_top">
+		<script language="JavaScript1.1">
+		<!--
+			hsh = new Date();
+			hsd = document;
+			hsr = hsd.referrer.replace(/[<>]/g, '');
+			hsi = '<img width="39" height="25" border=0 ';
+			hsi += 'src="http://logv24.xiti.com/hit.xiti?s=134058';
+			hsi += '&p=';
+			hsi += '&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+			if(parseFloat(navigator.appVersion)>=4)
+			{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' + Xiti_s.colorDepth;}
+			hsd.writeln(hsi + '&ref=' + hsr.replace(/&/g, '$') + '" title="Mesurez votre audience"><\!--');
+			//-->
+		</script>
+		<noscript>
+			<img width="39" height="25" border=0 src="http://logv24.xiti.com/hit.xiti?s=134058&p=&" title="Mesurez votre audience">
+		</noscript>
+		<!--//-->
+	</a>
+	&nbsp;<I class="CodeWorker">CodeWorker</I> is maintained by <A href="../../CurriculumVitae.html">Cedric Lemaire</A>.
+	Please send a mail to <A href="mailto:codeworker@free.fr">Submit a bug or feature</A><BR />
+</body>
+</html>

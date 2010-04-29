@@ -1,0 +1,67 @@
+//------------------------------------------------------------------------
+// Extended-BNF script for parsing a tiny modeling language.
+//
+// Called by "tinyDSL_leader.cws".
+//
+// Logical structure of the parse tree:
+//   |
+//   +- classes: array of classes, indexed by the class name,
+//      |
+//      +- name: the class name,
+//      |
+//      +- attributes: array of attributes, indexed by their name
+//         |
+//         +- name: attribute's name
+//         |
+//         +- aggregate (optional): 'true' if the attribute points to
+//         |                        object(s) that belong(s) to the class
+//         +- type: type specifier
+//            |
+//            +- name: "double", "string" or class name
+//            |
+//            +- isArray (optional): 'true' if the attribute is an array
+//------------------------------------------------------------------------
+
+tinyDSL	::= #continue #ignore(C++) [class_definition]* #empty;
+
+class_definition	::=
+		#readIdentifier:"class" #continue #readIdentifier:sClassName
+		=> if this.classes.findElement(sClassName) error("class '" + sClassName + "' is already defined");
+		=> insert this.classes[sClassName].name = sClassName;
+		[':' #continue #readIdentifier:this.classes[sClassName].superClass]?
+		'{'
+		[attribute_definition(this.classes[sClassName])]*
+		'}'
+		;
+
+attribute_definition(theClass : node)	::=
+		#readIdentifier:sAttributeName
+		=> if theClass.attributes.findElement(sAttributeName) error("attribute '" + sAttributeName + "' already exists in class '" + theClass.name + "'");
+		#continue
+		=> insert theClass.attributes[sAttributeName].name = sAttributeName;
+		=> localref theAttribute = theClass.attributes[sAttributeName];
+		':'
+		[
+			#readIdentifier:"aggregate"
+			=> insert theAttribute.aggregate = true;
+		]?
+		type_specifier(theAttribute.type)
+		=> if theAttribute.aggregate && !theAttribute.type.isObject set theAttribute.aggregate = false;
+		';'
+		;
+
+type_specifier(theType : node)	::=
+		simple_type(theType)
+		['[' #continue ']' => insert theType.isArray = true;]?
+		;
+
+simple_type(theType : node)	::=
+		#readIdentifier:{"double", "string"}:theType.name
+	|
+		#readIdentifier:sClassName
+		=> {
+			if !this.classes.findElement(sClassName) error("unknown simple type '" + sClassName + "'");
+			insert theType.name = sClassName;
+			insert theType.isObject = true;
+		}
+		;

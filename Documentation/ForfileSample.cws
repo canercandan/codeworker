@@ -1,0 +1,12 @@
+local iIndex = 0;
+//highlight:
+forfile i in cascading "*.html" {
+//normal:
+    if	$findString(i, "manual_") < 0$ &&
+		$findString(i, "Bugs") < 0$ {
+			traceLine(i);
+	}
+	// if too long, stop the iteration
+	if $iIndex > 15$ break;
+	increment(iIndex);
+}

@@ -1,0 +1,25 @@
+//command: -I Scripts/Tutorial -path .
+//command: -define DESIGN_FILE=GettingStarted/SolarSystem0.sml
+//command: -script GettingStarted/LeaderScript2.cws
+//hide:
+setProperty("DESIGN_FILE", "GettingStarted/SolarSystem0.sml");
+if !getProperty("DESIGN_FILE")
+	error("'-define DESIGN_FILE=file' expected on the command line");
+traceLine("'Simple Modeling' design file to parse = \""
+		  + getProperty("DESIGN_FILE") + "\"");
+//hide:
+clearVariable(project.listOfClasses);
+parseAsBNF("GettingStarted/SimpleML-parsing.cwp",
+		   project, getProperty("DESIGN_FILE"));
+#include "TreeDecoration.cws"
+
+#include "SharedFunctions.cws"
+foreach myClass in project.listOfClasses {
+	traceLine("generating class '" + myClass.name + "' ...");
+	generate("GettingStarted/CppObjectHeader.cwt", myClass, getWorkingPath() + "Scripts/Tutorial/GettingStarted/Cpp/" + myClass.name + ".h");
+	generate("GettingStarted/CppObjectBody.cwt", myClass, getWorkingPath() + "Scripts/Tutorial/GettingStarted/Cpp/" + myClass.name + ".cpp");
+//note: generates the JAVA implementation of the current design class,
+//highlight:
+	generate("GettingStarted/JAVAObject.cwt", myClass, getWorkingPath() + "Scripts/Tutorial/GettingStarted/JAVA/solarsystem/" + myClass.name + ".java");
+//normal:
+}

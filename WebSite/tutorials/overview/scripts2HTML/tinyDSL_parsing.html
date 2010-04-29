@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><span class="comment">//------------------------------------------------------------------------</span>
+<span class="comment">// Extended-BNF script for parsing a tiny modeling language.</span>
+<span class="comment">//</span>
+<span class="comment">// Called by &quot;tinyDSL_leader.cws&quot;.</span>
+<span class="comment">//</span>
+<span class="comment">// Logical structure of the parse tree:</span>
+<span class="comment">//   |</span>
+<span class="comment">//   +- classes: array of classes, indexed by the class name,</span>
+<span class="comment">//      |</span>
+<span class="comment">//      +- name: the class name,</span>
+<span class="comment">//      |</span>
+<span class="comment">//      +- attributes: array of attributes, indexed by their name</span>
+<span class="comment">//         |</span>
+<span class="comment">//         +- name: attribute&#39;s name</span>
+<span class="comment">//         |</span>
+<span class="comment">//         +- aggregate (optional): &#39;true&#39; if the attribute points to</span>
+<span class="comment">//         |                        object(s) that belong(s) to the class</span>
+<span class="comment">//         +- type: type specifier</span>
+<span class="comment">//            |</span>
+<span class="comment">//            +- name: &quot;double&quot;, &quot;string&quot; or class name</span>
+<span class="comment">//            |</span>
+<span class="comment">//            +- isArray (optional): &#39;true&#39; if the attribute is an array</span>
+<span class="comment">//------------------------------------------------------------------------</span>
+
+<i>tinyDSL</i>    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_ignore">#ignore</a>(<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_directives__ignore">C++</a>) <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><i>class_definition</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_empty">#empty</a>;
+
+<i>class_definition</i>    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;class&quot;</span> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sClassName
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.classes.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#findElement">findElement</A>(sClassName) <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;class &#39;&quot;</span> + sClassName + <span class="string">&quot;&#39; is already defined&quot;</span>);
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.classes[sClassName].name = sClassName;
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><span class="string">&#39;:&#39;</span> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.classes[sClassName].superClass<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]?</a>
+        <span class="string">&#39;{&#39;</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><i>attribute_definition</i>(<a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.classes[sClassName])<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a>
+        <span class="string">&#39;}&#39;</span>
+        ;
+
+<i>attribute_definition</i>(theClass : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>)    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sAttributeName
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> theClass.attributes.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#findElement">findElement</A>(sAttributeName) <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;attribute &#39;&quot;</span> + sAttributeName + <span class="string">&quot;&#39; already exists in class &#39;&quot;</span> + theClass.name + <span class="string">&quot;&#39;&quot;</span>);
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theClass.attributes[sAttributeName].name = sAttributeName;
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#localref">localref</A> theAttribute = theClass.attributes[sAttributeName];
+        <span class="string">&#39;:&#39;</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;aggregate&quot;</span>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theAttribute.aggregate = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_literals">true</a>;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">
+        ]?</a>
+        <i>type_specifier</i>(theAttribute.type)
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> theAttribute.aggregate &amp;&amp; <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a>theAttribute.type.isObject <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> theAttribute.aggregate = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_literals">false</a>;
+        <span class="string">&#39;;&#39;</span>
+        ;
+
+<i>type_specifier</i>(theType : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>)    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+        <i>simple_type</i>(theType)
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><span class="string">&#39;[&#39;</span> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="string">&#39;]&#39;</span> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theType.isArray = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_literals">true</a>;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]?</a>
+        ;
+
+<i>simple_type</i>(theType : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>)    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:{<span class="string">&quot;double&quot;</span>, <span class="string">&quot;string&quot;</span>}:theType.name
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sClassName
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {
+            <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.classes.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#findElement">findElement</A>(sClassName) <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;unknown simple type &#39;&quot;</span> + sClassName + <span class="string">&quot;&#39;&quot;</span>);
+            <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theType.name = sClassName;
+            <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theType.isObject = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_literals">true</a>;
+        }
+        ;
+</pre><hr />
+		<div style="background-color: #eeeedd">Generated by <a href="http://www.codeworker.org/index.html"><img border=0 src="http://www.codeworker.org/CodeWorker99x38.png"/></a> v4.5.3 from <a href="CWscript2HTML.html">CWscript2HTML.cwp</a>.</div>
+	</body>
+</html>

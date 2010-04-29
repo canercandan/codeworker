@@ -1,0 +1,188 @@
+@
+if getMarkupKey() == "header" {
+@ /*********************************************************************
+  *                      Grammar of CodeWorker
+  *                           version @getVersion()@
+  *********************************************************************
+  *
+  * The grammar conforms to the extended-BNF notation of CodeWorker
+  *
+  *********************************************************************/
+@
+} else if getMarkupKey() == "predefined_function_call" {
+	foreach i in project.functionList {
+		@predefined_function_call<"@i.name@">	::=	'(' #continue@
+		local iDefaultParameters = 0;
+		foreach j in i.parameterList {
+			if j.default {
+				@ [@
+				increment(iDefaultParameters);
+				if !first(j) {
+					@','@
+				}
+			} else if !first(j) {
+				@ ','@
+			}
+			switch(j.type) {
+				case "int":
+				case "bool":
+				case "double":
+				case "string":
+				case "ulong":
+				case "ushort":
+					@ expression@
+					break;
+				case "doubleref":
+				case "boolref":
+				case "stringref":
+				case "stringlist":
+				case "tree":
+				case "treeref":
+				case "treexpr":
+					@ variable_expression@
+					break;
+				case "iterator":
+					@ #readIdentifier@
+					break;
+				case "script":
+					@ script_file_expression<"@j.type.script@">@
+					break;
+			}
+		}
+		@@repeatString("]?", iDefaultParameters)@ ')';
+@
+	}
+} else if getMarkupKey() == "predefined_method_call" {
+	local listOfMembers;
+	foreach i in project.functionList if !i.parameterList.empty() {
+		pushItem listOfMembers;
+		ref listOfMembers#back = i;
+	}
+	foreach i in project.procedureList if !i.parameterList.empty() {
+		pushItem listOfMembers;
+		ref listOfMembers#back = i;
+	}
+	foreach i in listOfMembers {
+		local sParameter = i.parameterList#front.name;
+		if i.method {
+			if project.methodList[i.method].thisParameter set sParameter = project.methodList[i.method].thisParameter;
+			if i.method != i.name {
+				@predefined_method_call<"@i.method@"> : value	::=	'(' #continue@
+				local bAtLeastOneParam;
+				foreach j in i.parameterList {
+					if j.name == sParameter continue;
+					if !bAtLeastOneParam set bAtLeastOneParam = true;
+					else {
+						@ ','@
+					}
+					switch(j.type) {
+						case "int":
+						case "bool":
+						case "double":
+						case "string":
+						case "ulong":
+						case "ushort":
+							@ expression@
+							break;
+						case "doubleref":
+						case "boolref":
+						case "stringref":
+						case "stringlist":
+						case "tree":
+						case "treeref":
+						case "treexpr":
+							@ variable_expression@
+							break;
+						case "iterator":
+							@ #readIdentifier@
+							break;
+						case "script":
+							@ script_file_expression<"@j.type.script@">@
+							break;
+					}
+				}
+				@ ')' => set predefined_method_call = "@i.name@"; ;
+@
+			}
+		}
+		@predefined_method_call<"@i.name@"> : value	::=	'(' #continue@
+		local bAtLeastOneParam;
+		foreach j in i.parameterList {
+			if j.name == sParameter continue;
+			if !bAtLeastOneParam set bAtLeastOneParam = true;
+			else {
+				@ ','@
+			}
+			switch(j.type) {
+				case "int":
+				case "bool":
+				case "double":
+				case "string":
+				case "ulong":
+				case "ushort":
+					@ expression@
+					break;
+				case "doubleref":
+				case "boolref":
+				case "stringref":
+				case "stringlist":
+				case "tree":
+				case "treeref":
+				case "treexpr":
+					@ variable_expression@
+					break;
+				case "iterator":
+					@ #readIdentifier@
+					break;
+				case "script":
+					@ script_file_expression<"@j.type.script@">@
+					break;
+			}
+		}
+		@ ')' => set predefined_method_call = "@i.name@"; ;
+@
+	}
+} else if getMarkupKey() == "predefined_procedure_call" {
+	foreach i in project.procedureList {
+		@predefined_procedure_call<"@i.name@">	::=	'(' #continue@
+		local iDefaultParameters = 0;
+		foreach j in i.parameterList {
+			if j.default {
+				@ [@
+				increment(iDefaultParameters);
+				if !first(j) {
+					@','@
+				}
+			} else if !first(j) {
+				@ ','@
+			}
+			switch(j.type) {
+				case "int":
+				case "bool":
+				case "double":
+				case "string":
+				case "ulong":
+				case "ushort":
+					@ expression@
+					break;
+				case "doubleref":
+				case "boolref":
+				case "stringref":
+				case "stringlist":
+				case "tree":
+				case "treeref":
+				case "treexpr":
+					@ variable_expression@
+					break;
+				case "iterator":
+					@ #readIdentifier@
+					break;
+				case "script":
+					@ script_file_expression<"@j.type.script@">@
+					break;
+			}
+		}
+		@@repeatString("]?", iDefaultParameters)@ ')';
+@
+	}
+}

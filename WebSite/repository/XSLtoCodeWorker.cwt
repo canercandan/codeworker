@@ -1,0 +1,137 @@
+@
+/*description:
+{
+	Walks through the AST of a XSL file parsed previously, and generates a \CodeWorker\ script
+	for producing text from the XML file as the XSL transformation could have proceed.
+
+	If you encounter some bugs, please send a mail to \email{\WebSite\ }.
+}
+*/
+
+declare function convertXSLContent(currentNode : node, env : node);
+
+function convertExpr<"name">(expr : node, env : node) {
+	@@expr.name@@
+	if !expr.is_attribute {
+		if env.mode == "select" {
+			@[]@
+		} else {
+			@#front@
+		}
+	}
+}
+
+function convertExpr<"/">(expr : node, env : node) {
+	convertExpr<expr.left.type>(expr.left, env);
+	@.@
+	convertExpr<expr.right.type>(expr.right, env);
+}
+
+function convertExpr<"root">(expr : node, env : node) {
+	@@env.root@@
+}
+
+function convertExpr<"0">(expr : node, env : node) {
+	@@expr.number@@
+}
+
+function convertExpr<"current">(expr : node, env : node) {
+	@@env.current@@
+}
+
+function convertExpr<">">(expr : node, env : node) {
+	convertExpr<expr.left.type>(expr.left, env);
+	@ > @
+	convertExpr<expr.right.type>(expr.right, env);
+}
+
+function convertSelect(expr : node, env : node) {
+	local sOldMode = env.mode;
+	insert env.mode = "select";
+	convertExpr<expr.type>(expr, env);
+	set env.mode = sOldMode;
+}
+
+function convertPath(expr : node, env : node) {
+	local sOldMode = env.mode;
+	insert env.mode = "path";
+	convertExpr<expr.type>(expr, env);
+	set env.mode = sOldMode;
+}
+
+function convertXSL<"value-of">(currentNode : node, env : node) {
+	writeText("%><%");
+	convertPath(currentNode.select, env);
+	writeText("%><%");
+}
+
+function convertCondition(expr : node, env : node) {
+	local sOldMode = env.mode;
+	insert env.mode = "condition";
+	convertExpr<expr.type>(expr, env);
+	set env.mode = sOldMode;
+}
+
+function convertXSL<"choose">(currentNode : node, env : node) {
+	@@env.indentation@if @convertCondition(currentNode.test, env)@ {
+@
+	set env.indentation += "\t";
+	convertXSLContent(currentNode.when, env);
+	set env.indentation = subString(env.indentation, 1);
+	@@env.indentation@} else {
+@
+	set env.indentation += "\t";
+	convertXSLContent(currentNode.otherwise, env);
+	set env.indentation = subString(env.indentation, 1);
+	@@env.indentation@}
+@
+}
+
+function convertXSL<"for-each">(currentNode : node, env : node) {
+	increment(env.index);
+	@@env.indentation@select i@env.index@ in @
+	convertSelect(currentNode.select, env);
+	@ {
+@
+	local sOldCurrent = env.current;
+	set env.current = "i" + env.index;
+	set env.indentation += "\t";
+	convertXSLContent(currentNode, env);
+	set env.indentation = subString(env.indentation, 1);
+	set env.current = sOldCurrent;
+	@@env.indentation@}
+@
+	decrement(env.index);
+}
+
+function convertXSL<"template">(currentNode : node, env : node) {
+	convertXSLContent(currentNode, env);
+}
+
+function convertXSL<"stylesheet">(currentNode : node, env : node) {
+	convertXSLContent(currentNode, env);
+}
+
+
+function convertXSLContent(currentNode : node, env : node) {
+	foreach i in currentNode.content {
+		if !i.type {
+			if i writeText(env.indentation + "%>" + i + "<%" + endl());
+		} else {
+			convertXSL<i.type>(i, env);
+		}
+	}
+}
+
+
+//--------------------------------
+
+writeText("<%");
+
+local env;
+insert env.indentation = "\t";
+insert env.current = "this";
+insert env.root = env.current;
+insert env.index = 0;
+
+convertXSL<this.type>(this, env);

@@ -1,0 +1,16 @@
+local a;
+pushItem a.b;
+pushItem a.b#back.c = "01";
+pushItem a.b#back.c = "02";
+pushItem a.b#back.c = "03";
+pushItem a.b;
+pushItem a.b#back.c = "11";
+pushItem a.b#back.c = "12";
+pushItem a.b#back.c = "13";
+pushItem a.b;
+pushItem a.b#back.c = "21";
+pushItem a.b#back.c = "22";
+pushItem a.b#back.c = "23";
+select i in a.b[].c[] {
+	traceLine("i = "+ i);
+}

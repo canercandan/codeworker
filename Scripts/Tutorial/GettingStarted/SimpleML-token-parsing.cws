@@ -1,0 +1,124 @@
+declare function readType(myType : node);
+
+while skipEmptyCpp() {
+	if !readIfEqualToIdentifier("class") error("'class' expected");
+	skipEmptyCpp();
+	local sClassName = readIdentifier();
+	if !sClassName error("class name expected");
+//note: about parsing, classes are modeled into node
+//note: \textbf{project.listOfClasses[}\textit{sClassName}\textbf{]}. Its attribute
+//note: \samp{name} contains the value of \textit{sClassName}.
+	insert project.listOfClasses[sClassName].name = sClassName;
+	skipEmptyCpp();
+	if readIfEqualTo(":") {
+		skipEmptyCpp();
+		local sParentName = readIdentifier();
+		if !sParentName error("parent name expected for class '" + sClassName + "'");
+//note: this class inherits from a parent, so the optional attribute \samp{parent}
+//note: of the class is populated with the value of \textit{sParentName},
+		insert project.listOfClasses[sClassName].parent = sParentName;
+		skipEmptyCpp();
+	}
+	if !readIfEqualTo("{") error("'{' expected");
+	skipEmptyCpp();
+//note: to work easier with the current class node \samp{project.listOfClasses[sClassName]},
+//note: we define a reference to it, called \samp{myClass},
+	local myClass;
+	ref myClass = project.listOfClasses[sClassName];
+	while !readIfEqualTo("}") {
+		skipEmptyCpp();
+//note: the class is populated with the characteristics of the member once 
+//note: its declaration has finished. Otherwise, it may confuse between an attribute
+//note: or a method declaration. So, we should have factorized the type declaration
+//note: and the name of the member into a common clause, for example.
+		local myType;
+		readType(myType);
+		skipEmptyCpp();
+		local sMemberName = readIdentifier();
+		if !sMemberName error("attribute or method name expected");
+		skipEmptyCpp();
+		if readIfEqualTo("(") {
+//note: about parsing, methods are modeled into node
+//note: \textbf{myClass.listOfMethods[}\textit{sMemberName}\textbf{]},
+			insert myClass.listOfMethods[sMemberName].name = sMemberName;
+//note: attribute \samp{name} is compulsory into a \textit{type} node, so if
+//note: \samp{myType.name} returns \samp{"void"}, there is no return type,
+			if myType.name != "void" {
+				setall myClass.listOfMethods[sMemberName].type = myType;
+			}
+			skipEmptyCpp();
+			if !readIfEqualTo(")") {
+//note: to work easier with the current class node \samp{myClass.listOfMethods[sMemberName]},
+//note: we define a reference to it, called \samp{myMethod},
+				local myMethod;
+				ref myMethod = myClass.listOfMethods[sMemberName];
+				do {
+					skipEmptyCpp();
+					local iPosition = getInputLocation();
+					local sMode = readIdentifier();
+					if !sMode error("parameter type or mode expected");
+					if (sMode != "in") && (sMode != "out") && (sMode != "inout") {
+						setInputLocation(iPosition);
+						set sMode = "";
+					}
+					skipEmptyCpp();
+					local myParameterType;
+					readType(myParameterType);
+					skipEmptyCpp();
+					local sParameterName = readIdentifier();
+					if !sParameterName error("parameter name expected");
+//note: about parsing, parameters are modeled into node
+//note: \textbf{myMethod.listOfParameters[}\textit{sParameterName}\textbf{]},
+					insert myMethod.listOfParameters[sParameterName].name = sParameterName;
+					setall myMethod.listOfParameters[sParameterName].type = myParameterType;
+					if sMode {
+						insert myMethod.listOfParameters[sParameterName].name = sMode;
+					}
+					skipEmptyCpp();
+				} while readIfEqualTo(",");
+				if !readIfEqualTo(")") error("')' expected");
+			}
+			skipEmptyCpp();
+		} else {
+//note: about parsing, attributes are modeled into node
+//note: \textbf{myClass.listOfAttributes[}\textit{sMemberName}\textbf{]},
+			insert myClass.listOfAttributes[sMemberName].name = sMemberName;
+//note: the type is allocated on the stack, so it is copied into branch \samp{type}
+//note: (no node reference) integrally,
+			setall myClass.listOfAttributes[sMemberName].type = myType;
+		}
+		if !readIfEqualTo(";")  error("';' expected to close an attribute, instead of '" + readChar() + "'");
+		skipEmptyCpp();
+	}
+}
+//note: once the parsing of file has achieved, a message of success is written,
+traceLine("the file has been parsed successfully");
+
+//note: function \samp{readType()} requires a node into which description of type
+//note: will be populated,
+function readType(myType : node) {
+	local sType = readIdentifier();
+	if !sType error("type modifier or name expected, instead of '" + readChar() + "'");
+	if sType == "aggregate" {
+//note: about parsing, \textbf{myType.isAggregation} contains \samp{true} if type is an array,
+		insert myType.isAggregation = true;
+		skipEmptyCpp();
+		sType = readIdentifier();
+		if !sType error("aggregated class name expected");
+	}
+//note: about parsing, \textbf{myType.name} contains the name of basic type,
+	insert myType.name = sType;
+//note: check whether the type is a basic one or a class specifier,
+	if (sType != "int") && (sType != "double") && (sType != "boolean") && (sType != "string") {
+//note: about parsing, \textbf{myType.isObject} contains \samp{true} because
+//note: we suppose that this type is a class specifier (by default: it isn't a basic type),
+		insert myType.isObject = true;
+	}
+	skipEmptyCpp();
+	if readIfEqualTo("[") {
+		skipEmptyCpp();
+		if !readIfEqualTo("]") error("']' expected to close an array declaration");
+//note: about parsing, \textbf{myType.isArray} contains \samp{true} if type is an array,
+		insert myType.isArray = true;
+	}
+}

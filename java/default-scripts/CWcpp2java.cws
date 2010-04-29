@@ -1,0 +1,36 @@
+foreach i in this.parsed_files if i == "module" {
+	if !this.classes.findElement(i.name) continue;
+	localref theClass = this.classes[i.name];
+	if !i.attributes.empty() {
+		foreach j in i.attributes {
+			if this.attributes[j.key()].external_definition.name == i.name {
+				setall theClass.attributes[j.key()] = this.attributes[j.key()];
+			} else {
+				setall theClass.attributes[j.key()] = j;
+			}
+			insert theClass.attributes[j.key()].modifiers["static"] = "static";
+			insert theClass.attributes[j.key()].access = "public";
+		}
+	}
+	if !i.functions.empty() {
+		insert theClass.parse_body = i.parse_body;
+		foreach j in i.functions {
+			setall theClass.methods[j.key()] = j;
+			foreach k in theClass.methods[j.key()] {
+				insert k.modifiers["static"] = "static";
+				insert k.access = "public";
+			}
+		}
+	}
+}
+
+foreach i in this.classes {
+	local sPackagePath = getProperty("c++2target-property");
+	if sPackagePath sPackagePath = sPackagePath.replaceString('.', '/') + '/';
+	local sJavaFile = getProperty("c++2target-path") + sPackagePath + i.name;
+	generate({@
+		#include "CWcpp2java-utils.cws"
+		generateClass(this);
+	}, i, sJavaFile + ".java");
+}
+

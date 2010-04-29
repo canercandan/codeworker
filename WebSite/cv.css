@@ -1,0 +1,323 @@
+DIV.pageformat
+{
+    page: pageformat
+}
+TABLE.cvheadertable
+{
+    PADDING-RIGHT: 0px;
+    PADDING-LEFT: 0px;
+    PADDING-BOTTOM: 0px;
+    MARGIN: 0px;
+    WIDTH: 100%;
+    PADDING-TOP: 0px
+}
+BODY
+{
+    COLOR: #000000;
+    FONT-FAMILY: "Arial";
+    BACKGROUND-COLOR: #ffffff
+}
+TABLE.jobtitle
+{
+    PADDING-RIGHT: 0px;
+    PADDING-LEFT: 0px;
+    PADDING-BOTTOM: 0px;
+    MARGIN: 0px;
+    WIDTH: 100%;
+    PADDING-TOP: 0px
+}
+TD.jobabstract
+{
+    FONT-SIZE: 10pt;
+    TEXT-ALIGN: justify
+}
+TD.jobtitletable
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 14pt;
+    TEXT-ALIGN: left
+}
+TD.date
+{
+    FONT-SIZE: 10pt;
+    FONT-STYLE: italic;
+    TEXT-ALIGN: right
+}
+TD.description
+{
+    FONT-SIZE: 10pt;
+    TEXT-ALIGN: justify
+}
+TD.period
+{
+}
+TD.companyname
+{
+    FONT-SIZE: 14pt;
+    WIDTH: 40%;
+    TEXT-ALIGN: center
+}
+TD.companyperiod
+{
+    FONT-WEIGHT: bold;
+    FONT-SIZE: 12pt;
+    WIDTH: 30%;
+    FONT-STYLE: italic;
+    TEXT-ALIGN: center
+}
+TD.companylogo
+{
+    WIDTH: 30%;
+    TEXT-ALIGN: center
+}
+TD.photo
+{
+    VERTICAL-ALIGN: text-top;
+    TEXT-ALIGN: right
+}
+SPAN.coordinatesspan
+{
+    FONT-SIZE: 10pt
+}
+TD.coordinatescell
+{
+    VERTICAL-ALIGN: text-top
+}
+SPAN.name
+{
+    FONT-SIZE: 14pt
+}
+A:link
+{
+    COLOR: #000000;
+    BACKGROUND-COLOR: #DDDDDD;
+    TEXT-DECORATION: none
+}
+A:visited
+{
+    COLOR: #000000;
+    BACKGROUND-COLOR: #DDDDDD;
+    TEXT-DECORATION: none
+}
+A:active
+{
+    COLOR: #000000;
+    BACKGROUND-COLOR: #DDDDDD;
+    TEXT-DECORATION: none
+}
+A:hover
+{
+    COLOR: #000000;
+    BACKGROUND-COLOR: #00ffff
+}
+A
+{
+    TEXT-DECORATION: none
+}
+TABLE.companytable
+{
+    BORDER-RIGHT: 0px;
+    PADDING-RIGHT: 0px;
+    BORDER-TOP: 0px;
+    PADDING-LEFT: 0px;
+    PADDING-BOTTOM: 0px;
+    MARGIN: 0px;
+    BORDER-LEFT: 0px;
+    WIDTH: 100%;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: 0px
+}
+TABLE.sections
+{
+    BORDER-RIGHT: 0px;
+    PADDING-RIGHT: 0px;
+    BORDER-TOP: 0px;
+    PADDING-LEFT: 0px;
+    PADDING-BOTTOM: 0px;
+    MARGIN: 0px;
+    BORDER-LEFT: 0px;
+    WIDTH: 100%;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: 0px
+}
+TABLE.periodtable
+{
+    PADDING-RIGHT: 0px;
+    PADDING-LEFT: 0px;
+    PADDING-BOTTOM: 0px;
+    MARGIN: 0px;
+    WIDTH: 100%;
+    BORDER-TOP-STYLE: none;
+    PADDING-TOP: 0px
+}
+TD.companyabstract
+{
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 80%;
+    TEXT-ALIGN: center
+}
+TABLE.companyheadertable
+{
+    BORDER-RIGHT: #000000 2px solid;
+    PADDING-RIGHT: 0px;
+    BORDER-TOP: #000000 2px solid;
+    PADDING-LEFT: 0px;
+    PADDING-BOTTOM: 0px;
+    MARGIN: 0px;
+    BORDER-LEFT: #000000 2px solid;
+    WIDTH: 100%;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: #000000 2px solid
+}
+TABLE.submaintitle
+{
+    BORDER-RIGHT: #000000 3px solid;
+    PADDING-RIGHT: 0.2cm;
+    BORDER-TOP: #000000 3px solid;
+    PADDING-LEFT: 0.2cm;
+    FONT-SIZE: 16pt;
+    PADDING-BOTTOM: 0.2cm;
+    BORDER-LEFT: #000000 3px solid;
+    WIDTH: 60%;
+    PADDING-TOP: 0.2cm;
+    BORDER-BOTTOM: #000000 3px solid;
+    TEXT-ALIGN: center
+}
+TABLE.maintitle
+{
+    BORDER-RIGHT: 0px;
+    PADDING-RIGHT: 0px;
+    BORDER-TOP: 0px;
+    PADDING-LEFT: 0px;
+    PADDING-BOTTOM: 0px;
+    MARGIN: 0px;
+    BORDER-LEFT: 0px;
+    WIDTH: 100%;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: 0px;
+    TEXT-ALIGN: center
+}
+TABLE.chaptertitle
+{
+    FONT-SIZE: 14pt;
+    TEXT-ALIGN: left;
+    TEXT-DECORATION: underline
+}
+TABLE.formation
+{
+    BORDER-RIGHT: 0px;
+    PADDING-RIGHT: 0px;
+    BORDER-TOP: 0px;
+    PADDING-LEFT: 0px;
+    PADDING-BOTTOM: 0px;
+    BORDER-LEFT: 0px;
+    WIDTH: 100%;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: 0px
+}
+TD.formationdate
+{
+    FONT-SIZE: 10pt;
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 20%;
+    TEXT-ALIGN: left
+}
+TD.formationcommondescription
+{
+    FONT-SIZE: 10pt;
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 80%;
+    TEXT-ALIGN: left
+}
+TD.formationcommondescription3
+{
+    FONT-SIZE: 10pt;
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 60%;
+    TEXT-ALIGN: left
+}
+TD.mainformationdescription
+{
+    FONT-SIZE: 12pt;
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 80%;
+    TEXT-ALIGN: left
+}
+TD.mainformationdescription3
+{
+    FONT-SIZE: 12pt;
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 60%;
+    TEXT-ALIGN: left
+}
+TD.formationlocation
+{
+    FONT-SIZE: 10pt;
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 20%;
+    TEXT-ALIGN: left
+}
+TABLE.languagetable
+{
+    BORDER-RIGHT: 0px;
+    PADDING-RIGHT: 0px;
+    BORDER-TOP: 0px;
+    PADDING-LEFT: 0px;
+    FONT-SIZE: 10pt;
+    PADDING-BOTTOM: 0px;
+    BORDER-LEFT: 0px;
+    WIDTH: 100%;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: 0px
+}
+TD.language
+{
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 20%;
+    TEXT-ALIGN: left
+}
+TD.languagedescription
+{
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 80%;
+    TEXT-ALIGN: left
+}
+TABLE.computertable
+{
+    BORDER-RIGHT: 0px;
+    PADDING-RIGHT: 0px;
+    BORDER-TOP: 0px;
+    PADDING-LEFT: 0px;
+    FONT-SIZE: 10pt;
+    PADDING-BOTTOM: 0px;
+    BORDER-LEFT: 0px;
+    WIDTH: 100%;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: 0px
+}
+TD.computer
+{
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 20%;
+    TEXT-ALIGN: left
+}
+TD.computerdescription
+{
+    VERTICAL-ALIGN: text-top;
+    WIDTH: 80%;
+    TEXT-ALIGN: left
+}
+TABLE.otherinterests
+{
+    BORDER-RIGHT: 0px;
+    PADDING-RIGHT: 0px;
+    BORDER-TOP: 0px;
+    PADDING-LEFT: 0px;
+    FONT-SIZE: 10pt;
+    PADDING-BOTTOM: 0px;
+    BORDER-LEFT: 0px;
+    WIDTH: 100%;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: 0px;
+    TEXT-ALIGN: left
+}

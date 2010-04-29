@@ -1,0 +1,4 @@
+package org.codeworker;
+
+@
+#include "../java/scripts/CWcpp2java.cws"

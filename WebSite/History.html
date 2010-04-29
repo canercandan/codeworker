@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<HTML>
+<HEAD>
+	<TITLE>History of CodeWorker</title>
+	<META http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+	<META name="Description" content="History of CodeWorker, a parsing tool and a source code generator that interprets a scripting language to drive the processing of parsing and source code generation. It insists on offering powerful functionalities to do intensive code generation.">
+	<META http-equiv="pragma" content="no-cache" />
+	<META http-equiv="cache-control" content="no-cache" />
+
+<LINK rel="stylesheet" type="text/css" href="CodeWorker.css" />
+
+</HEAD>
+<BODY>
+	<table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr><td width="200"><a href="index.html"><img border=0 src="CodeWorker199x77.jpg"/></a></td><td>
+	<H1>History</H1>
+	</td></tr>
+	</table>
+	<BR />
+	<BR />
+	<TABLE border="1" cellpadding="7" cellspacing="0">
+		<TR>
+			<TD width="180" class="links" valign="top">
+				<H3>CONTENT</H3>
+				<UL>
+					<LI>
+						<B>Overview</B>
+						<UL>
+							<LI><A class="left" href="index.html">Presentation</A></LI>
+							<LI>History</LI>
+<!--							<LI><A class="left" href="Maturation.html">Maturation</A></LI> -->
+						</UL>
+					</LI>
+					<LI><A class="left" href="ProjectManagement.html">Why use this tool?</A></LI>
+					<LI><A class="left" href="GettingStarted.html">Getting Started<!--##markup##"size:manual_Getting_started.html"--><!--##begin##"size:manual_Getting_started.html"--> (47kb)<!--##end##"size:manual_Getting_started.html"--></A></LI>
+					<LI><A class="left" href="Documentation.html">Documentation</A></LI>
+					<LI><A class="left" href="Tutorials.html">Tutorials</A></LI>
+					<LI><A class="left" href="http://www.codeworker.org/wiclear/index.php">Wiki</A></LI>
+					<LI><A class="left" href="ScriptsRepository.html">Repository of scripts</A></LI>
+					<LI><A class="left" href="Download.html">Download</A></LI>
+					<LI><A class="left" href="Links.html">Related links</A></LI>
+				</UL>
+			</TD>
+			<TD class="content" valign="top">
+				<H3>Why does <I class="CodeWorker">CodeWorker</I> have been developed?</H3>
+
+				The adventure of <I class="CodeWorker">CodeWorker</I> started in 1996, with
+				the wish of avoiding typing some repeatitive and tedious programming tasks.
+				It is better to focus the skills of a developer on modeling and implementing
+				code once, rather than writing kilometers of code lines.
+				<P/>
+				How to reach these points, to grant these wishes? Not by proposing a new
+				method that doesn't offer something concrete, but just reassures the staff
+				and puts back the problem further. So, you'll never heard me to tell you:
+				<I>"It concerns the development's team, we don't care about the final
+				implementation tasks, except that you must conform to the method 'XXX' and
+				all will be OK! Now, give me money!"</I>. But I can do it, if you insist.
+				<BR />
+				So, not a method to propose, but a software that does the work properly. The
+				first step is to allow acquiring data (UML, source code, personal description...),
+				stored in any kind of text files (Rational ROSE, JAVA, HTML, DTD, personal
+				format...). The second step is to organize the interesting parsed information
+				into structured types, which hold the role of a parse tree. The third step
+				is to generate code (any kind of text) or to transform existing files,
+				according to the <I>parsed data</I>.
+
+				<H3>Why use an adapted language for doing the job?</H3>
+
+				At the beginning, the intention wasn't to implement a new language, but to
+				extend a generalist language with specific components for parsing text and
+				generating code. The library was written in C++, and offered some convenient
+				functions for reading tokens and for extracting protected areas from a file,
+				for example.
+				<BR />
+				However, text to generate was written in the syntax of C++, using stream
+				operators (once the pattern to generate code has been written, it is too hard
+				to move or change some parts), and data structures were declared in	C++,
+				heavy to manipulate (quite verbose to iterate a list in C++, not flexibility
+				enough to change structures if some attributes or associations have to be
+				added or moved or changed, ...).
+				<P/>
+				This approach was acceptable on projects where the data to extract weren't
+				too complex, and were the source code generation was quite simple. But it is unusable
+				on big source code generation projects and hard on complex data structures.
+				<BR />
+				If you share the same experience, you know that it is just sufficient to
+				convince you that a fascinating world may be tackling with source code generation,
+				but that the syntax of a generalist language doesn't allow to do more than
+				touching upon this world.
+				<P/>
+				So, a new language had to be implemented, mainly (at this time) to make
+				easier the source code generation in a way that is very common today: by inlaying
+				the scripting language to interpret into the text to write. This is exploited
+				for instance by:
+				<UL>
+					<LI>the <I>JSP (Java Server Pages)</I>, where the Java code is embedded
+						between the tags <B>'&lt;%'</B> and <B>'%&gt;'</B>,</LI>
+					<LI>the HTML pages, where PHP is embedded between the tags <B>'&lt;?'</B>
+						and <B>'?&gt;'</B>,</LI>
+					<LI>the HTML pages again, where the Java Script (for example) is embedded
+						between the tags <B>'&lt;SCRIPT'</B> and <B>'/SCRIPT&gt;'</B>,</LI>
+				</UL>
+
+				<H3>Why not to exploit an existing scripting language?</H3>
+
+				This new language was an interpreted scripting language, where parsing, data
+				representation and source code generation could be developed and manipulated in
+				an homogeneous way (all in the same language), and where the syntax could be
+				adapted to facilitate as well source code generation than parsing or data handling.
+				And now, we dispose of:
+				<UL>
+					<LI>the tag <B>'@'</B> that allows swapping between text generation and
+						interpretation of scripts, but it accepts the tags <B>'&lt;%'</B> and
+						<B>'%&gt;'</B> too,</LI>
+					<LI>all interesting functions to read tokens an to ignore blanks or
+						comments,</LI>
+					<LI>writing a parsing script like a BNF (more convenient than reading
+						tokens) that allows changing the syntax independently of the parsing
+						representation,</LI>
+					<LI>structured data as trees, which are populated in a very	natural
+						way</LI>
+					<LI>a syntax looking like the one of a classical procedural language,
+						such as C++ or PASCAL (declaration of functions, iteration of lists,
+						try/catch management, ...), so not arduous at all,</LI>
+					<LI>an integrated debugger,</LI>
+					<LI>a profiling tool that measures the coverage of scripts and the time
+						consuming,</LI>
+					<LI>...</LI>
+				</UL>
+				Thanks to this approach, <!-- and as detailed into paragraph
+				<A href="Maturation.html">maturation</A>,--> it has appeared that:
+				<UL>
+					<LI><I>pattern scripts</I> (means dedicated to source code generation) were
+						reflecting the skills of developers and that these skills were
+						<B>really</B> reusable,</LI>
+					<LI>the more concepts the developer will put into the modeling, the more
+						reactive he will become and the more architectural solutions or
+						application designs he will be able to validate,</LI>
+					<LI>a good formal language for modeling allows never typing twice the
+						same code, but implementing a lot of code automatically , if it is
+						coupled to smart scripts for source code generation (remember: the skills of
+						developers, it capitalizes the IT knowledge),</LI>
+				</UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD class="bottom" valign="top" colspan="2">
+				<I class="CodeWorker">CodeWorker</I> is maintained by <A href="CurriculumVitae.html">Cedric Lemaire</A>.
+				Please send a mail to <A href="mailto:codeworker@free.fr">Submit a bug or feature</A><BR />
+			</TD>
+		</TR>
+	</TABLE>
+</BODY>
+</HTML>

@@ -1,0 +1,39 @@
+global Pi = 3.141592653589793238462643;
+
+// The square root function
+function sqrt(x : value)
+{
+	return pow(x, 0.5);
+}
+
+// The cumulative normal distribution function 
+function CND(X : value)
+{
+	local a1 = 0.31938153;
+	local a2 = -0.356563782;
+	local a3 = 1.781477937;
+	local a4 = -1.821255978;
+	local a5 = 1.330274429;
+
+	local L = isNegative(X) ? $-1*X$ : X; // fabs(X)
+	local K = $1.0 / (1.0 + 0.2316419 * L)$;
+	local w = $1.0 - 1.0 / sqrt($2 * Pi$) * exp($-0.5*L*L$) * (a1*K + a2* K*K + a3*pow(K,3) + a4*pow(K,4) + a5*pow(K,5))$;
+
+	return isNegative(X) ? $1.0 - w$ : w;
+}
+
+// The Black and Scholes (1973) Stock option formula
+function BlackScholes(CallPutFlag : value, S : value, X : value, T : value, r : value, v : value)
+{
+	local d1 = $(log($S/X$)+(r+v*v/2)*T)/(v*sqrt(T))$;
+	local d2 = $d1-v*sqrt(T)$;
+
+	if CallPutFlag == 'c'
+		return $S*CND(d1) - X*exp($-1*r*T$)*CND(d2)$;
+	if CallPutFlag == 'p'
+		return $X * exp($-1*r*T$) * CND($-1*d2$) - S * CND($-1*d1$)$;
+}
+
+//-- test --
+traceLine("BS('c', 30, 65, 0.25, 0.08, 0.3) = " + BlackScholes('c', 30, 65, 0.25, 0.08, 0.3));
+traceLine("BS('p', 30, 65, 0.25, 0.08, 0.3) = " + BlackScholes('p', 30, 65, 0.25, 0.08, 0.3));

@@ -1,0 +1,39 @@
+function getCppTargetCode<"aspect">(sScript : value) {
+	local hHandle = createVirtualTemporaryFile(sScript);
+	local sCode;
+	try {
+		generateString(hHandle, project, sCode);
+	} catch(sError) {
+		deleteVirtualFile(hHandle);
+		error(sError + "... while parsing:" + endl() + sScript);
+	}
+	deleteVirtualFile(hHandle);
+	return sCode;
+}
+
+function getCppTargetType(theType : node) {
+	local sType;
+	if theType.is_const set sType = "const ";
+	foreach i in theType.nested_names {
+		set sType += i + "::";
+	}
+	set sType += theType;
+	if !theType.template_parameters.empty() {
+		set sType += '<';
+		foreach i in theType.template_parameters {
+			if !first(i) set sType += ", ";
+			set sType += getCppTargetType(i);
+		}
+		set sType += '>';
+	}
+	foreach i in theType.suffix {
+		switch(i) {
+			case "pointer": set sType += '*';break;
+			case "reference": set sType += '&';break;
+			case "array": set sType += '[' + i.size + ']';break;
+		}
+		if i.is_const set sType += " const";
+	}
+	return sType;
+}
+

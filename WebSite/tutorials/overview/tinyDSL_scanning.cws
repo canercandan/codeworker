@@ -1,0 +1,51 @@
+//--------------------------------------------------------------
+// Extended-BNF script for scanning a tiny modeling
+// language.
+//
+// Called by "tinyDSL2HTML.cwp".
+//
+// Type:
+//    CodeWorker -parseBNF tinyDSL_scanning.cwp
+//                         <your_specification.txt>
+// to check whether a specification conforms to the syntax of
+// the DSL or not.
+//
+// Example:
+//    CodeWorker -parseBNF tinyDSL_scanning.cwp tinyDSL_spec.txt
+//--------------------------------------------------------------
+
+tinyDSL	::= #continue #ignore(C++) [class_definition]* #empty;
+
+class_definition	::=
+		CLASS #readIdentifier:sClassName
+		[':' #continue #readIdentifier:sSuperClass]?
+		'{'
+		[attribute_definition]*
+		'}'
+		;
+
+attribute_definition	::=
+		#readIdentifier:sAttributeName
+		#continue
+		':'
+		[AGGREGATE]?
+		type_specifier
+		';'
+		;
+
+type_specifier	::=
+		simple_type
+		['[' #continue ']']?
+		;
+
+simple_type	::= DOUBLE | STRING | #readIdentifier;
+
+
+//----------------------------------------------------
+//                    Lexical tokens
+//----------------------------------------------------
+
+CLASS	::= #readIdentifier:"class";
+AGGREGATE	::= #readIdentifier:"aggregate";
+DOUBLE	::= #readIdentifier:"double";
+STRING	::= #readIdentifier:"string";

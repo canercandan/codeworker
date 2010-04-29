@@ -1,0 +1,34 @@
+//command: -I Scripts/Tutorial -path .
+//command: -define DESIGN_FILE=GettingStarted/SolarSystem0.sml
+//command: -script GettingStarted/LeaderScript1.cws
+//hide:
+setProperty("DESIGN_FILE", "GettingStarted/SolarSystem0.sml");
+if !getProperty("DESIGN_FILE")
+	error("'-define DESIGN_FILE=file' expected on the command line");
+traceLine("'Simple Modeling' design file to parse = \""
+		  + getProperty("DESIGN_FILE") + "\"");
+//hide:
+clearVariable(project.listOfClasses);
+parseAsBNF("GettingStarted/SimpleML-parsing.cwp",
+		   project, getProperty("DESIGN_FILE"));
+#include "TreeDecoration.cws"
+
+//note: all useful functions for source code generation are loaded here,
+#include "SharedFunctions.cws"
+//note: all classes are iterated and their C++ header and body are generated
+foreach myClass in project.listOfClasses {
+	traceLine("generating class '" + myClass.name + "' ...");
+//note: instruction \samp{generate} is applied on a \textit{pattern} script and
+//note: its second argument expects a node that will be seen as variable \samp{'this'}
+//note: into the pattern script,
+//highlight:
+	generate("GettingStarted/CppObjectHeader.cwt", myClass,
+//note: \samp{getWorkingPath()} is worth the output path passed to the command line via
+//note: the option \samp{'-path'},
+			 getWorkingPath() + "Scripts/Tutorial/GettingStarted/Cpp/"
+			 + myClass.name + ".h");
+	generate("GettingStarted/CppObjectBody.cwt", myClass,
+			 getWorkingPath() + "Scripts/Tutorial/GettingStarted/Cpp/"
+			 + myClass.name + ".cpp");
+//normal:
+}

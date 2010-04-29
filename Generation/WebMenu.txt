@@ -1,0 +1,18 @@
+"Overview"	"index.html" {
+}
+
+"Why use this tool?"	"ProjectManagement.html";
+
+"Getting Started"	"GettingStarted.html"	size:"manual_Getting_started.html";
+
+"Documentation"	"Documentation.html" {
+}
+
+"Tutorials"	"Tutorials.html";
+
+"Repository of scripts" {
+	"<I>Parsing</I> scripts"	"ParsingScripts.html";
+	"<I>Pattern</I> scripts"	"PatternScripts.html";
+}
+
+"Download"	"Download.html";

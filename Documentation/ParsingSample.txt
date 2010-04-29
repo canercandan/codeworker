@@ -1,0 +1,15 @@
+identifier: _potatoes41$
+numbers: 42 23.45e6
+string: "a C-like string that accepts backslash-escape sequences"
+word: 1\'ecurie_1stable
+blanks: 
+	 "blanks are ignored"
+spaces:	 "spaces are ignored"
+C++: /*comment*/
+	 // other comment
+	 "blanks and C++ comments are ignored"
+HTML: <!--comment-->
+	 "blanks and HTML comments are ignored"
+LaTeX: % comment
+"blanks must be skipped explicitly"
+	 "only comments were ignored"

@@ -1,0 +1,30 @@
+<html>
+  <body>
+    <h2>My CD Collection</h2>
+    <table border="1">
+      <tr bgcolor="#9acd32">
+        <th>Title</th>
+        <th>Artist</th>
+      </tr>
+<%
+	select i1 in this.catalog[].cd[] {
+		%>
+      <tr>
+        <td><%i1.title#front%></td>
+<%
+		if i1.price#front > 10 {
+			%><td bgcolor="#ff00ff">
+<%i1.artist#front%></td>
+<%
+		} else {
+			%><td><%i1.artist#front%></td>
+<%
+		}
+		%>
+      </tr>
+<%
+	}
+	%>
+    </table>
+  </body>
+  </html>

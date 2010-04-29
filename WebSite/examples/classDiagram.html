@@ -1,0 +1,67 @@
+<HTML>
+	<BODY>
+		<H2>Please enter an object design</H2>
+		<FORM method=post action="classDiagram.cwt">
+			<B>Requirements specification:</B>
+			<BR/>
+			<TEXTAREA name="editedSpec" cols=80 rows=25>//-----------------------------------------------------
+// This sample model is inspired of the 'UML Distilled'
+// book by Martin Fowler.
+//-----------------------------------------------------
+
+package Example {
+    class Product {
+        string reference;
+        double weight;
+        double width;
+        double height;
+        double depth;
+    }
+
+    class Book extends Product {
+        string title;
+        string[] authors;
+        int pages;
+    }
+
+    class Customer {
+        string name;
+        string address;
+    }
+
+    class OrderLine {
+        Product product;
+        int quantity;
+        double amount;
+        double price;
+        string currency;
+        bool satisfied;
+    }
+
+    class Order {
+        date received;
+        bool prePaid;
+        string ID;
+        double price;
+        string currency;
+
+        Customer customer;
+        aggregate OrderLine[] orderLines;
+    }
+
+    class Corporate extends Customer {
+        string contactName;
+        double creditRating;
+        double creditLimit;
+    }
+
+    class Personal extends Customer {
+        string creditCard;
+    }
+}
+</TEXTAREA>
+			<BR/>
+			<INPUT type=submit value="generate it!"/>
+		</FORM>
+	</BODY>
+</HTML>

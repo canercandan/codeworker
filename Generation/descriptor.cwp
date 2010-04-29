@@ -1,0 +1,417 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+function checkType(sType : value) {
+	switch(sType) {
+		case "int":
+		case "bool":
+		case "double":
+		case "doubleref":
+		case "boolref":
+		case "iterator":
+		case "script":
+		case "string":
+		case "stringref":
+		case "stringlist":
+		case "treeref":
+		case "tree":
+		case "treexpr":
+		case "ulong":
+		case "ushort":
+			return "true";
+		default:
+			return "";
+	}
+}
+
+function parseType(myType : node) {
+	local sType = readIdentifier();
+	if !sType error("syntax error: type expected, instead of '" + readChar() + "'");
+	if !sType.checkType() error("unrecognized type '" + sType + "' found");
+	if sType == "script" {
+		skipEmptyCpp();
+		if !readIfEqualTo('<') error("'<' expected after 'script' type");
+		skipEmptyCpp();
+		set sType = readIdentifier();
+		switch(sType) {
+			case "BNF":
+			case "free":
+			case "pattern":
+			case "translate":
+				insert myType.script = sType;
+				break;
+			default:
+				error("'script<" + sType + ">' doesn't exist as a type");
+		}
+		skipEmptyCpp();
+		if !readIfEqualTo('>') error("'>' expected to close 'script' type");
+		set myType = "script";
+	} else {
+		set myType = sType;
+	}
+}
+
+function parseMemberDocumentation(myMember : node, sMemberName, sMemberType) {
+	nop(skipEmptyCpp());
+	if !readIfEqualTo("=") error("syntax error: '=' expected to provide documentation of " + sMemberType + " '" + sMemberName + "'");
+	nop(skipEmptyCpp());
+	local sDocumentation;
+	if !readString(sDocumentation) error("syntax error: documentation of " + sMemberType + " '" + sMemberName + "' expected between quotes");
+	local sText;
+	while skipEmptyCpp() && readString(sText) set sDocumentation += endl() + sText;
+	insert myMember.documentation = sDocumentation;
+	nop(skipEmptyCpp());
+	if !readIfEqualToIdentifier("heading") error("'heading' keyword required after the definition of '" + sMemberName + "'");
+	nop(skipEmptyCpp());
+	local sIdentifier;
+	if readString(sIdentifier) insert myMember.abstract = sIdentifier;
+	do {
+		nop(skipEmptyCpp());
+		set sIdentifier = readIdentifier();
+		if !sIdentifier error("heading name expected");
+		switch(sIdentifier) {
+			case "array":
+			case "command":
+			case "conversion":
+			case "datetime":
+			case "directory":
+			case "file":
+			case "generation":
+			case "iterator":
+			case "interpreter":
+			case "node":
+			case "numeric":
+			case "parsing":
+			case "socket":
+			case "standard":
+			case "string":
+			case "system":
+			case "unknown":
+			case "URL":
+				insert myMember.headings[sIdentifier] = sIdentifier;
+				ref project.headings[sIdentifier].members[sMemberName] = myMember;
+				insert project.headings[sIdentifier].modes[myMember.mode];
+		}
+		nop(skipEmptyCpp());
+	} while readIfEqualTo(',');
+	if readIfEqualToIdentifier("input") {
+		nop(skipEmptyCpp());
+		local sInput;
+		if !readString(sInput) error("syntax error: input of " + sMemberType + " '" + sMemberName + "' expected between quotes");
+		while skipEmptyCpp() && readString(sText) set sInput += endl() + sText;
+		insert myMember.input = sInput;
+		nop(skipEmptyCpp());
+	}
+	if readIfEqualToIdentifier("example") {
+		nop(skipEmptyCpp());
+		if readIfEqualToIdentifier("new_project") {
+			insert myMember.example.newProject = true;
+			nop(skipEmptyCpp());
+		}
+		if readIfEqualToIdentifier("expand") {
+			insert myMember.example.expand = true;
+			nop(skipEmptyCpp());
+		}
+		if readIfEqualToIdentifier("standard_input") {
+			nop(skipEmptyCpp());
+			if !readIfEqualTo("(") error("'(' expected after 'standard_input'");
+			nop(skipEmptyCpp());
+			if !readString(myMember.example.standardInput) error("'standard_input' expects the keyboard input");
+			nop(skipEmptyCpp());
+			if !readIfEqualTo(")") error("')' expected after 'standard_input'");
+			nop(skipEmptyCpp());
+		}
+		local sExample;
+		if !readString(sExample) error("syntax error: example of " + sMemberType + " '" + sMemberName + "' expected between quotes");
+		while skipEmptyCpp() && readString(sText) set sExample += endl() + sText;
+		insert myMember.example = sExample;
+		nop(skipEmptyCpp());
+	}
+	if readIfEqualToIdentifier("deprecated") {
+		nop(skipEmptyCpp());
+		local sKeyword = readIdentifier();
+		if !sKeyword error("keyword expected for 'deprecated' on " + sMemberType + " '" + sMemberName + "'");
+		nop(skipEmptyCpp());
+		local sVersion;
+		if !readString(sVersion) error("version as a constant string expected for 'deprecated' on " + sMemberType + " '" + sMemberName + "'");
+		insert myMember.deprecated.name = sKeyword;
+		insert myMember.deprecated.version = sVersion;
+		nop(skipEmptyCpp());
+	}
+	if readIfEqualToIdentifier("bugs") {
+		nop(skipEmptyCpp());
+		local sBugs;
+		if !readString(sBugs) error("syntax error: known bugs of " + sMemberType + " '" + sMemberName + "' expected between quotes");
+		while skipEmptyCpp() && readString(sText) set sBugs += endl() + sText;
+		insert myMember.bugs = sBugs;
+		nop(skipEmptyCpp());
+	}
+	if readIfEqualToIdentifier("see") {
+		do {
+			nop(skipEmptyCpp());
+			local sKeyword = readIdentifier();
+			if !sKeyword error("keyword expected for 'see also' on " + sMemberType + " '" + sMemberName + "'");
+			nop(skipEmptyCpp());
+			insert myMember.seeAlso[sKeyword] = sKeyword;
+		} while readIfEqualTo(",");
+		nop(skipEmptyCpp());
+	}
+}
+
+insert project.headings["interpreter"].description = "Function for running a \\CodeWorker\\ script";
+insert project.headings["string"].description = "Functions for handling strings";
+insert project.headings["array"].description = "Functions handling arrays";
+insert project.headings["node"].description = "Functions handling a node";
+insert project.headings["iterator"].description = "Functions handling an iterator";
+insert project.headings["file"].description = "Functions handling files";
+insert project.headings["directory"].description = "Functions handling directories";
+insert project.headings["URL"].description = "Functions working on URL transfers (HTTP,...)";
+insert project.headings["datetime"].description = "Functions handling date-time";
+insert project.headings["numeric"].description = "Functions handling numbers";
+insert project.headings["standard"].description = "Classical functions of any standard library";
+insert project.headings["conversion"].description = "Type conversion";
+insert project.headings["system"].description = "Functions relative to the operating system";
+
+insert project.headings["command"].description = "Relative to the command line";
+insert project.headings["generation"].description = "Functions relative to generation";
+insert project.headings["parsing"].description = "Functions relative to scanning/parsing";
+insert project.headings["socket"].description = "Socket operations";
+insert project.headings["unknown"].description = "Various types of function";
+
+while skipEmptyCpp() {
+	if readIfEqualTo("#") {
+		local sLine;
+		if !readLine(sLine) break;
+		continue;
+	}
+	local sIdentifier = readIdentifier();
+	if !sIdentifier error("syntax error: 'procedure' or 'function' or 'method' keyword expected, instead of '" + readChar() + "'");
+	if sIdentifier == "procedure" {
+		nop(skipEmptyCpp());
+		local sMode;
+		if readIfEqualTo("[") {
+			nop(skipEmptyCpp());
+			set sMode = readIdentifier();
+			if !sMode error("syntax error: script mode expected, instead of '" + readChar() + "'");
+			if (sMode != "generate") && (sMode != "parse") error("syntax error: 'generate' or 'parse' keyword expected, instead of identifier '" + sIdentifier + "'");
+			nop(skipEmptyCpp());
+			if !readIfEqualTo("]") error("syntax error: ']' expected after script mode '" + sMode + "'");
+			nop(skipEmptyCpp());
+		}
+		local sFunction = readIdentifier();
+		if !sFunction error("syntax error: procedure name expected, instead of '" + readChar() + "'");
+		insert project.procedureList[sFunction].name = sFunction;
+		if sMode insert project.procedureList[sFunction].mode = sMode;
+		nop(skipEmptyCpp());
+		if !readIfEqualTo("(") error("syntax error: '(' expected after 'procedure " + sFunction + "'");
+		nop(skipEmptyCpp());
+		if !readIfEqualTo(")") {
+			local bHasDefault;
+			do {
+				nop(skipEmptyCpp());
+				local sParameter = readIdentifier();
+				insert project.procedureList[sFunction].parameterList[sParameter].name = sParameter;
+				nop(skipEmptyCpp());
+				if !readIfEqualTo(":") error("syntax error: ':' expected to declare type of parameter " + sParameter + "'");
+				nop(skipEmptyCpp());
+				parseType(project.procedureList[sFunction].parameterList[sParameter].type);
+				nop(skipEmptyCpp());
+				local sDefaultValue;
+				if readIfEqualTo(":") {
+					nop(skipEmptyCpp());
+					sDefaultValue = readIdentifier();
+					if sDefaultValue {
+						if sDefaultValue == "true" sDefaultValue = "\"true\"";
+						else if sDefaultValue == "false" sDefaultValue = "\"\"";
+						else if !(sDefaultValue in {"project", "this", "null"}) {
+							error("unknown constant variable '" + sDefaultValue + "'");
+						}
+					} else {
+						if readString(sDefaultValue) sDefaultValue = '"' + sDefaultValue.composeCLikeString() + '"';
+						else if !readNumber(sDefaultValue) {
+							error("default value expected");
+						}
+					}
+					insert project.procedureList[sFunction].parameterList[sParameter].default = sDefaultValue;
+					nop(skipEmptyCpp());
+					bHasDefault = true;
+				} else if bHasDefault {
+					error("default value expected after argument " + sParameter);
+				}
+				nop(skipEmptyCpp());
+				if !readIfEqualTo("=") error("syntax error: '=' expected to provide documentation of parameter '" + sParameter + "'");
+				nop(skipEmptyCpp());
+				local sDocumentation;
+				if !readString(sDocumentation) error("syntax error: documentation of parameter '" + sParameter + "' expected between quotes");
+				insert project.procedureList[sFunction].parameterList[sParameter].documentation = sDocumentation;
+				nop(skipEmptyCpp());
+			} while readIfEqualTo(",");
+			if !readIfEqualTo(")") error("syntax error: ')' expected to close parameter declaration of procedure '" + sFunction + "'");
+		}
+		nop(skipEmptyCpp());
+		if readIfEqualTo("[") {
+			nop(skipEmptyCpp());
+			local sModifier = readIdentifier();
+			if !sModifier error("syntax error: modifier expected for procedure '" + sFunction + "'");
+			if (sModifier != "user") && (sModifier != "info") && (sModifier != "visibility") error("syntax error: unrecognized modifier '" + sModifier + "' found for procedure '" + sFunction + "'");
+			insert project.procedureList[sFunction].modifierList[sModifier] = sModifier;
+			nop(skipEmptyCpp());
+			if !readIfEqualTo("]") error("syntax error: ']' expected at the end of modifier '" + sModifier + "'");
+			nop(skipEmptyCpp());
+		}
+		parseMemberDocumentation(project.procedureList[sFunction], sFunction, "procedure");
+		if !readIfEqualTo(";") error("syntax error: ';' expected at the end of procedure '" + sFunction + "'");
+	} else if sIdentifier == "function" {
+		nop(skipEmptyCpp());
+		local sMode;
+		if readIfEqualTo("[") {
+			nop(skipEmptyCpp());
+			set sMode = readIdentifier();
+			if !sMode error("syntax error: script mode expected, instead of '" + readChar() + "'");
+			if (sMode != "generate") && (sMode != "parse") error("syntax error: 'generate' or 'parse' keyword expected, instead of identifier '" + sIdentifier + "'");
+			nop(skipEmptyCpp());
+			if !readIfEqualTo("]") error("syntax error: ']' expected after script mode '" + sMode + "'");
+			nop(skipEmptyCpp());
+		}
+		local sFunction = readIdentifier();
+		if !sFunction error("syntax error: function name expected, instead of '" + readChar() + "'");
+		insert project.functionList[sFunction].name = sFunction;
+		if sMode insert project.functionList[sFunction].mode = sMode;
+		nop(skipEmptyCpp());
+		if !readIfEqualTo("(") error("syntax error: '(' expected after 'function " + sFunction + "'");
+		nop(skipEmptyCpp());
+		if !readIfEqualTo(")") {
+			local bHasDefault;
+			do {
+				nop(skipEmptyCpp());
+				local sParameter = readIdentifier();
+				insert project.functionList[sFunction].parameterList[sParameter].name = sParameter;
+				nop(skipEmptyCpp());
+				if !readIfEqualTo(":") error("syntax error: ':' expected to declare type of parameter " + sParameter + "'");
+				nop(skipEmptyCpp());
+				parseType(project.functionList[sFunction].parameterList[sParameter].type);
+				nop(skipEmptyCpp());
+				local sDefaultValue;
+				if readIfEqualTo(":") {
+					nop(skipEmptyCpp());
+					sDefaultValue = readIdentifier();
+					if sDefaultValue {
+						if sDefaultValue == "true" sDefaultValue = "\"true\"";
+						else if sDefaultValue == "false" sDefaultValue = "\"\"";
+						else if !(sDefaultValue in {"project", "this", "null"}) {
+							error("unknown constant variable '" + sDefaultValue + "'");
+						}
+					} else {
+						if !readNumber(sDefaultValue) {
+							if !readString(sDefaultValue) error("default value expected");
+							sDefaultValue = '"' + sDefaultValue.composeCLikeString() + '"';
+						}
+					}
+					insert project.functionList[sFunction].parameterList[sParameter].default = sDefaultValue;
+					nop(skipEmptyCpp());
+					bHasDefault = true;
+				} else if bHasDefault {
+					error("default value expected after argument " + sParameter);
+				}
+				nop(skipEmptyCpp());
+				if !readIfEqualTo("=") error("syntax error: '=' expected to provide documentation of parameter '" + sParameter + "'");
+				nop(skipEmptyCpp());
+				local sDocumentation;
+				if !readString(sDocumentation) error("syntax error: documentation of parameter '" + sParameter + "' expected between quotes");
+				insert project.functionList[sFunction].parameterList[sParameter].documentation = sDocumentation;
+				nop(skipEmptyCpp());
+			} while readIfEqualTo(",");
+			if !readIfEqualTo(")") error("syntax error: ')' expected to close parameter declaration of function '" + sFunction + "'");
+		}
+		nop(skipEmptyCpp());
+		if !readIfEqualTo(":") error("syntax error: ':' expected before declaring return type of function '" + sFunction + "'");
+		nop(skipEmptyCpp());
+		parseType(project.functionList[sFunction].return_type);
+		nop(skipEmptyCpp());
+		if readIfEqualTo("[") {
+			nop(skipEmptyCpp());
+			local sModifier = readIdentifier();
+			if !sModifier error("syntax error: modifier expected for function '" + sFunction + "'");
+			if (sModifier != "user") && (sModifier != "info") error("syntax error: unrecognized modifier '" + sModifier + "' found for function '" + sFunction + "'");
+			insert project.functionList[sFunction].modifierList[sModifier] = sModifier;
+			nop(skipEmptyCpp());
+			if !readIfEqualTo("]") error("syntax error: ']' expected at the end of modifier '" + sModifier + "'");
+			nop(skipEmptyCpp());
+		}
+		parseMemberDocumentation(project.functionList[sFunction], sFunction, "function");
+		if !readIfEqualTo(";") error("syntax error: ';' expected at the end of function '" + sFunction + "'");
+	} else if sIdentifier == "method" {
+		nop(skipEmptyCpp());
+		local sMethod = readIdentifier();
+		if !sMethod error("syntax error: method identifier expected after keyword 'method'");
+		nop(skipEmptyCpp());
+		if !readIfEqualToIdentifier("is") error("syntax error: 'is' expected after the declaration of method '" + sMethod +"'");
+		nop(skipEmptyCpp());
+		local sFunction = readIdentifier();
+		if !sFunction error("syntax error: function identifier expected after declaration of method '" + sMethod + "'");
+		nop(skipEmptyCpp());
+		if !findElement(sFunction, project.functionList) error("unknown function '" + sFunction + "' while declaring method '" + sMethod + "'");
+		insert project.methodList[sMethod].function = sFunction;
+		if readIfEqualTo("(") {
+			nop(skipEmptyCpp());
+			local sThis = readIdentifier();
+			if !sThis error("syntax error: 'this' parameter expected after declaration of method '" + sMethod + "'");
+			if !findElement(sThis, project.functionList[sFunction].parameterList) error("syntax error: '" + sThis + "' isn't a parameter on function '" + sFunction + "', while declaring method '" + sMethod + "'");
+			insert project.methodList[sMethod].thisParameter = sThis;
+			nop(skipEmptyCpp());
+			if !readIfEqualTo(")") error("syntax error: ')' expected after giving the 'this' parameter of method '" + sMethod + "'");
+			nop(skipEmptyCpp());
+		}
+		if !readIfEqualTo(";") error("syntax error: ';' expected at the end of method '" + sMethod + "'");
+		insert project.functionList[sFunction].method = sMethod;
+	} else {
+		error("syntax error: 'procedure' or 'function' or 'method' keyword expected, instead of identifier '" + sIdentifier + "'");
+	}
+}
+
+foreach i in project.functionList {
+	foreach j in i.seeAlso {
+		local myMember;
+		if findElement(j, project.functionList) {
+			ref myMember = project.functionList[j];
+		} else if findElement(j, project.procedureList) {
+			ref myMember = project.procedureList[j];
+		} else {
+			error("function '" + i.name + "' asks for seeing also function/procedure '" + j + "' that doesn't exist");
+		}
+		insert myMember.seeAlso[i.name] = i.name;
+		foreach k in i.seeAlso if k != j insert myMember.seeAlso[k] = k;
+	}
+}
+foreach i in project.procedureList {
+	foreach j in i.seeAlso {
+		local myMember;
+		if findElement(j, project.functionList) {
+			ref myMember = project.functionList[j];
+		} else if findElement(j, project.procedureList) {
+			ref myMember = project.procedureList[j];
+		} else {
+			error("procedure '" + i.name + "' asks for seeing also function/procedure '" + j + "' that doesn't exist");
+		}
+		insert myMember.seeAlso[i.name] = i.name;
+		foreach k in i.seeAlso if k != j insert myMember.seeAlso[k] = k;
+	}
+}

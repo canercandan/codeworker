@@ -1,0 +1,62 @@
+//--------------------------------------------------------------
+//                     Translation script
+//
+//
+// Searches SQL markup and replaces them by a C++ equivalent
+// implementation.
+//
+// A translation script is an extended-BNF script that allows
+// generating code in the same time.
+//--------------------------------------------------------------
+
+// We want to put all scanned characters in the output
+#implicitCopy
+
+// The head of the grammar is the first production rule
+// encountered
+inlineCodeExpander	::=
+		// ignore C++ comments and whitespaces between terminals
+		// and non-terminals.
+		#ignore(C++)
+		[
+				// Jump over strings
+				#readCString
+			|
+				// Handle a SQL markup
+				'<'
+				// The script keeps the position just before '<'
+				=> local iStartPosition = $getOutputLocation() - 1$;
+				// from now, scanned tokens aren't put in the output
+				#explicitCopy
+				#readIdentifier:"SQL"
+				// The output file position stands just before '<'
+				// to erase the markup
+				=> setOutputLocation(iStartPosition);
+				// Call of a non-terminal that takes in charge of
+				// replacing the markup with C++ code
+				expandSQLMarkup
+			|
+				// If not a string and not a markup, reading of any
+				// character
+				#readChar
+		]*;
+
+// Replaces a SQL markup with the C++ corresponding code
+expandSQLMarkup	::=
+		=> {
+			@DBHandle* db_handle = db_connect();
+	DBQueryData* db_data = db_query(db_handle, "@
+		}
+		// Copy of the query in the output
+		#implicitCopy
+		[^'>']*
+		// ignore the end of the markup
+		#explicitCopy
+		'>'
+		=> {
+			@");
+	for (int record = 0; record < db_data->length; record++) {
+		// fetch and process data
+	}@
+		}
+		;

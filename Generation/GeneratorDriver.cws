@@ -1,0 +1,956 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+/*
+class Test {
+	name : value;
+	next : node<Test>;
+	[] : value;
+}
+
+class Test1 : Test {
+	time : value;
+	list : node<Test>[];
+}
+
+function f(t : node<Test>, sName : value) {
+	insert t.name = sName;
+	if sName != "t0" f(t.next, sName + '0');
+}
+
+local<Test1> t;
+f(t, 't');
+
+exit 1;
+*/
+
+//////////////////////////////////////////////////////////////////////////////////
+//                       Leader script of "CodeWorker"                          //
+//////////////////////////////////////////////////////////////////////////////////
+// The options are put in the order of their execution.
+//
+// Options:
+// --------
+//		* 'makeCode': generates the source code of "CodeWorker" that can be automatized,
+//		* 'makeLinux': gets ready the Linux version of "CodeWorker",
+//		* 'makeBinDir': makes a directory for binaries,
+//		* 'makeSrcDir': makes a directory for sources,
+//		* 'makeCSharp': generates the C# wrapper,
+//		* 'makeDoc': generates the 'LaTeX' documentation of "CodeWorker",
+//		* 'makeTutorial': generates the tutorials about 'CodeWorker',
+//		* 'makeFlat': generates the flat documentation of "CodeWorker",
+//		* 'makeChanges': generates the file 'Documentation/LastChanges.html',
+//				Facultative value: the past version up to generating the file,
+//		* 'makeRepository': generates the script repository and validates it,
+//		* 'makeHTMLDoc': generates the HTML documentation for the Web site,
+//		* 'makeJNI': generates the JNI wrapper for Java,
+//		* 'makeWeb': generates the Web site and needs 'CodeWorker.pdf',
+//      * 'removeTemp': removes all temporary files,
+//		* 'makeVersion': generates the new version whose name is the first entry of
+//				'changes.log',
+//		* 'makeZip': compresses binaries and sources of the version,
+//		* 'makeCopy': compresses sources of the version + "manual_*.html",
+//      * 'testGrammar': translates every CodeWorker's script of the site to HTML,
+//////////////////////////////////////////////////////////////////////////////////
+
+/*
+local sTemp = getEnv("TMP") + "/TagsHandler";
+changeDirectory(sTemp);
+local sArchive = "Documentation/UserManual.sxw";
+copyFile(sArchive, sArchive + ".zip");
+local sUnzipExe = replaceString('/', '\\', getWorkingPath()) + "bin\\unzip.exe";
+local sCommand = sUnzipExe + " -u " + sArchive + " -d " + sTemp;
+system(sCommand);
+changeDirectory(getWorkingPath());
+addGenerationTagsHandler("OpenOffice",
+	{
+		reader ::= command<this.execute>;
+
+		command<"find_expansion_markup"> ::=
+				->[
+					BEGIN_COMMENT "##markup##"
+					STRING:this.markup_key
+					END_COMMENT
+				];
+		command<"read_markup_script"> ::=
+				BEGIN_COMMENT "##script##" #continue END_COMMENT
+				->(:this.script)[BEGIN_COMMENT "##script##" #continue END_COMMENT]
+				;
+		command<"read_markup_data"> ::=
+				BEGIN_COMMENT "##data##" #continue END_COMMENT
+				->(:this.data)[BEGIN_COMMENT "##data##" #continue END_COMMENT]
+				;
+		command<"read_markup_begin"> ::=
+				BEGIN_COMMENT "##begin##" #continue
+				"&quot;" #readText(this.markup_key) "&quot;"
+				END_COMMENT
+				;
+		command<"locate_markup_end"> ::=
+				->[
+					=> insert this.beginning_position = getLocation();
+					BEGIN_COMMENT "##end##"
+					"&quot;" #readText(this.markup_key) "&quot;"
+					#continue
+					END_COMMENT
+				]
+				;
+		command<"find_generation_protect_begin"> ::=
+				#check(this.end_position)
+				[=> setLocation(this.end_position); |> ->read_generation_protect_begin]
+			|
+				#check(!this.end_position)
+				->read_generation_protect_begin;
+		command<"locate_generation_protect_end"> ::=
+				->[
+					=> insert this.beginning_position = getLocation();
+					BEGIN_COMMENT "##protect" #continue
+					[#check(this.property) #continue #readText(' ' + this.property)]?
+					"##&quot;" #readText(this.id) "&quot;"
+					END_COMMENT
+				]
+				;
+
+		read_generation_protect_begin ::= 
+				BEGIN_COMMENT "##protect" [' ' #readIdentifier:this.property]? "##"
+				STRING:this.id
+				END_COMMENT
+				;
+
+		BEGIN_COMMENT ::=
+				"<office:annotation office:author=" #readCString:this.author
+				" office:create-date=" #readCString:this.date "><text:p>";
+		END_COMMENT ::= "</text:p></office:annotation>";
+		STRING:value ::= "&quot;" ['\\' ['&'->';']? | ~"&quot;"]*:STRING "&quot;";
+	}, {@
+		function writeBeginComment() {
+			@<office:annotation office:author="@this.author@" office:create-date="@this.date@"><text:p>@
+		}
+
+		function writeEndComment() {
+			@</text:p></office:annotation>@
+		}
+
+		function command<"write_markup_begin">() {
+			writeBeginComment();
+			@##begin##&quot;@this.markup_key@&quot;@
+			writeEndComment();
+		}
+
+		function command<"write_markup_end">() {
+			writeBeginComment();
+			@##end##&quot;@this.markup_key@&quot;@
+			writeEndComment();
+		}
+
+		function command<"write_protect_begin">() {
+			writeBeginComment();
+			@##protect@
+			if this.property {
+				@ @this.property@@
+			}
+			@##&quot;@this.id@&quot;@
+			writeEndComment();
+		}
+
+		function command<"write_protect_end">() {
+			command<"write_protect_begin">();
+		}
+
+		command<this.execute>();
+	}
+);
+selectGenerationTagsHandler("OpenOffice");
+expand({garfield@}, this, sTemp + "/content.xml");
+break;
+*/
+
+
+setTextMode("DOS");
+setNow(leftString(getNow(), 10) + "20:42:00.500");
+
+if getProperty("makeVersion") {
+	setProperty("makeCode", true);
+	setProperty("makeDoc", true);
+	setProperty("makeChanges", getVersion());
+	setProperty("makeJNI", true);
+	setProperty("makeWeb", true);
+	setProperty("makeSrcDir", true);
+	setProperty("makeZip", true);
+	setProperty("makeLinux", true);
+}
+
+if getProperty("makeFlat") {
+//	setProperty("makeDoc", true);
+}
+
+if getProperty("makeWeb") {
+	setProperty("makeHTMLDoc", true);
+	setProperty("makeRepository", true);
+}
+
+if getProperty("makeHTMLDoc") {
+//	setProperty("makeDoc", true);
+}
+
+if getProperty("makeCode") {
+	setProperty("makeJNI", true);
+	setProperty("makeCSharp", true);
+}
+
+if getProperty("makeDoc") {
+	setProperty("makeBinDir", true);
+}
+
+if getProperty("makeZip") || getProperty("makeCopy") || getProperty("makeSrcDir") {
+	setProperty("removeTemp", true);
+}
+
+traceLine("Parsing of 'descriptor.txt'...");
+parseFree("descriptor.cwp", project, "descriptor.txt");
+expand("CWgrammar_expander.cwt", project, getWorkingPath() + "WebSite/repository/CodeWorker_grammar.cwp");
+if getProperty("makeChanges") || getProperty("makeWeb") || getProperty("makeCode") {
+	traceLine("Parsing of 'changes.log'...");
+	parseAsBNF("ChangesLogParsing.cwp", project, "changes.log");
+	if getProperty("makeVersion") && findElement("current", project.listOfVersions) {
+		error("You have forgotten to update 'changes.log': 'current' version must be replaced by a valid number");
+	}
+}
+
+
+if getProperty("makeRepository") {
+	traceLine("Parsing of 'repository.txt'...");
+	parseAsBNF("repository-parser.cwp", project, "repository.txt");
+//	if !getProperty("makeWeb") {
+		setCommentBegin("<!--");
+		setCommentEnd("-->");
+		expand("WebSite.cwt", project, getWorkingPath() + "WebSite/ScriptsRepository.html");
+		setCommentBegin("//");
+		setCommentEnd("\n");
+//	}
+	setCommentBegin(';');
+	setCommentEnd('\n');
+	autoexpand("WebSite/repository/gen-mode.el", project);
+	setCommentBegin("//");
+}
+
+function transformUnderscores(sName) {
+	if sName {
+		if startString(sName, "_") return "_" + transformUnderscores(subString(sName, 1));
+		set sName = toUpperString(leftString(sName, 1)) + subString(sName, 1);
+		local iIndex = findString(sName, "_");
+		if !isNegative(iIndex) {
+			local sNext = subString(sName, add(iIndex, 1));
+			return leftString(sName, iIndex) + transformUnderscores(sNext);
+		}
+	}
+	return sName;
+}
+
+function isBasicType(sType : value) {
+	switch(sType) {
+		case "int":
+		case "bool":
+		case "double":
+		case "string":
+		case "ulong":
+		case "ushort":
+			return "true";
+		default:
+			return "";
+	}
+}
+
+function getCppVariable(sVariable : value, sType : value) {
+	switch(sType) {
+		case "boolref":
+		case "bool": return "b" + transformUnderscores(sVariable);
+		case "doubleref":
+		case "double": return "d" + transformUnderscores(sVariable);
+		case "int": return "i" + transformUnderscores(sVariable);
+		case "stringref":
+		case "string": return "s" + transformUnderscores(sVariable);
+		case "stringlist": return "sl" + transformUnderscores(sVariable);
+		case "iterator":
+		case "treeref":
+		case "tree": return "p" + transformUnderscores(sVariable);
+		case "treexpr": return "x" + transformUnderscores(sVariable);
+		case "ulong": return "ul" + transformUnderscores(sVariable);
+		case "ushort": return "ul" + transformUnderscores(sVariable);
+	}
+}
+
+function getCppType(sType : value) {
+	switch(sType) {
+		case "bool": return "bool";
+		case "boolref": return "bool";
+		case "double": return "double";
+		case "doubleref": return "double";
+		case "int": return "int";
+		case "string": return "std::string";
+		case "stringref": return "std::string";
+		case "stringlist": return "std::list<std::string>";
+		case "iterator":
+		case "treeref":
+		case "tree": return "DtaScriptVariable*";
+		case "treexpr": return "ExprScriptVariable";
+		case "ulong": return "unsigned long";
+		case "ushort": return "unsigned short";
+	}
+}
+
+function getCppParameterType(sType : value) {
+	switch(sType) {
+		case "bool": return "bool";
+		case "boolref": return "bool&";
+		case "double": return "double";
+		case "doubleref": return "double&";
+		case "int": return "int";
+		case "string": return "const std::string&";
+		case "stringref": return "std::string&";
+		case "stringlist": return "std::list<std::string>&";
+		case "iterator":
+		case "treeref":
+		case "tree": return "DtaScriptVariable*";
+		case "treexpr": return "ExprScriptVariable&";
+		case "ulong": return "unsigned long";
+		case "ushort": return "unsigned short";
+	}
+}
+
+function getCppCWType(sType : value) {
+	local sText = getCppType(sType);
+	if sText.startString("Dta") || sText.startString("Expr") sText = "CodeWorker::" + sText;
+	return sText;
+}
+
+function getCppJNIType(sType : value) {
+	switch(sType) {
+		case "bool": return "jboolean";
+		case "boolref": return "jobject";
+		case "double": return "jdouble";
+		case "doubleref": return "jobject";
+		case "int": return "jint";
+		case "string": return "jstring";
+		case "stringref": return "jobject";
+		case "stringlist": return "jobject";
+		case "iterator":
+		case "treeref":
+		case "tree": return "jobject";
+		case "treexpr": return "jstring";
+		case "ulong": return "jlong";
+		case "ushort": return "jshort";
+	}
+}
+
+function getJavaType(sType : value) {
+	switch(sType) {
+		case "bool": return "boolean";
+		case "boolref": return "org.codeworker.BooleanRef";
+		case "double": return "double";
+		case "doubleref": return "org.codeworker.DoubleRef";
+		case "int": return "int";
+		case "string": return "java.lang.String";
+		case "stringref": return "org.codeworker.StringRef";
+		case "stringlist": return "org.codeworker.IParseTree";
+		case "iterator":
+		case "treeref":
+		case "tree": return "org.codeworker.IParseTree";
+		case "treexpr": return "java.lang.String";
+		case "ulong": return "long";
+		case "ushort": return "short";
+	}
+}
+
+function getManagedCppType(sType : value) {
+	switch(sType) {
+		case "bool": return "bool";
+		case "boolref": return "BooleanRef*";
+		case "double": return "double";
+		case "doubleref": return "DoubleRef*";
+		case "int": return "int";
+		case "string": return "System::String*";
+		case "stringref": return "System::Text::StringBuilder*";
+		case "stringlist": return "ParseTree*";
+		case "iterator":
+		case "treeref":
+		case "tree": return "ParseTree*";
+		case "treexpr": return "System::String*";
+		case "ulong": return "unsigned long";
+		case "ushort": return "unsigned short";
+	}
+}
+
+
+function copyJavaFiles(sTargetDir : value) {
+	forfile i in cascading "java/*.*" {
+		if i.endString("D.dll") || $i.findString("/bin/") >= 0$ || $i.findString("/CPP/") >= 0$ continue;
+		if i.endString(".dll") && $sTargetDir.findString("/CWsrc/") >= 0$ continue;
+		copyFile(i, sTargetDir + "/" + i);
+	}
+	if existFile("../trial.cws") system("..\\codeworker ../trial.cws " + sTargetDir);
+}
+
+function copyDotNetFiles(sTargetDir : value) {
+	forfile i in cascading "cs/*.*" {
+		if $i.findString("/tests/bin/") >= 0$ || $i.findString("/obj/") >= 0$ || $i.findString("/CPP/") >= 0$ continue;
+		if $i.findString("/release/") >= 0$ && (!i.endString(".dll") || $sTargetDir.findString("/CWsrc/") >= 0$) continue;
+		if $i.findString("/Debug/") >= 0$ && (!i.endString(".dll") || $sTargetDir.findString("/CWsrc/") >= 0$) continue;
+		if i.endString(".suo") continue;
+		copyFile(i, sTargetDir + "/" + i);
+	}
+	if existFile("../trial.cws") system("..\\codeworker ../trial.cws " + sTargetDir);
+}
+
+function copyWinBinaries() {
+	insert project.winBinaries = getEnv("TMP") + "/CWwin/CodeWorker" + replaceString('.', '_', getVersion());
+	removeDirectory(getEnv("TMP") + "/CWwin");
+	copyFile("readme.txt", project.winBinaries + "/readme.txt");
+	copyFile("GettingStarted.bat", project.winBinaries + "/GettingStarted.bat");
+	copyFile("Release/CodeWorker.exe", project.winBinaries + "/bin/CodeWorker.exe");
+	copyFile("bin/libcurl.dll", project.winBinaries + "/bin/libcurl.dll");
+	copyFile("UtlException.h", project.winBinaries + "/include/UtlException.h");
+	copyFile("CppParsingTree.h", project.winBinaries + "/include/CppParsingTree.h");
+	copyFile("CGRuntime.h", project.winBinaries + "/include/CGRuntime.h");
+	copyFile("ExternalValueNode.h", project.winBinaries + "/include/ExternalValueNode.h");
+	copyFile("CGCompiler.h", project.winBinaries + "/include/CGCompiler.h");
+	copyFile("CGExternalHandling.h", project.winBinaries + "/include/CGExternalHandling.h");
+	copyFile("DynPackage.h", project.winBinaries + "/include/DynPackage.h");
+	copyFile("CW4dl.h", project.winBinaries + "/include/CW4dl.h");
+	local theFiles;
+	if !scanFiles(theFiles, "Scripts/Tutorial/GettingStarted", "*.*", false) error("unable to scan 'Scripts/Tutorial/GettingStarted/*.*'");
+	foreach i in theFiles copyFile(i, project.winBinaries + "/" + i);
+}
+
+
+if getProperty("makeCode") {
+	traceLine("\nmakeCode:");
+	traceLine("=========");
+	expand("CGRuntime-header.cwt", project, getWorkingPath() + "CGRuntime.h");
+	copySmartFile(getWorkingPath() + "CW4dl.h", getWorkingPath() + "cpp/include/CW4dl.h");
+	copySmartFile(getWorkingPath() + "CGRuntime.h", getWorkingPath() + "cpp/include/CGRuntime.h");
+	copySmartFile(getWorkingPath() + "CppParsingTree.h", getWorkingPath() + "cpp/include/CppParsingTree.h");
+	copySmartFile(getWorkingPath() + "ExternalValueNode.h", getWorkingPath() + "cpp/include/ExternalValueNode.h");
+	copySmartFile(getWorkingPath() + "CGExternalHandling.h", getWorkingPath() + "cpp/include/CGExternalHandling.h");
+	copySmartFile(getWorkingPath() + "UtlException.h", getWorkingPath() + "cpp/include/UtlException.h");
+	copySmartFile(getWorkingPath() + "DynPackage.h", getWorkingPath() + "cpp/include/DynPackage.h");
+	expand("CGRuntime-body.cwt", project, getWorkingPath() + "CGRuntime.cpp");
+	expand("DtaScript-header.cwt", project, getWorkingPath() + "DtaScript.h");
+	expand("DtaScript-body.cwt", project, getWorkingPath() + "DtaScript.cpp");
+	expand("DtaParseFreeScript-header.cwt", project, getWorkingPath() + "DtaDesignScript.h");
+	expand("DtaParseFreeScript-body.cwt", project, getWorkingPath() + "DtaDesignScript.cpp");
+	expand("DtaPatternScript-header.cwt", project, getWorkingPath() + "DtaPatternScript.h");
+	expand("DtaPatternScript-body.cwt", project, getWorkingPath() + "DtaPatternScript.cpp");
+	expand("DtaBNFScript-header.cwt", project, getWorkingPath() + "DtaBNFScript.h");
+	expand("DtaBNFScript-body.cwt", project, getWorkingPath() + "DtaBNFScript.cpp");
+	expand("DtaTranslateScript-header.cwt", project, getWorkingPath() + "DtaTranslateScript.h");
+	expand("DtaTranslateScript-body.cwt", project, getWorkingPath() + "DtaTranslateScript.cpp");
+	expand("ExprScriptFunction-body.cwt", project, getWorkingPath() + "ExprScriptFunction.cpp");
+	autoexpand(getWorkingPath() + "Workspace.cpp", this);
+
+	foreach i in project.procedureList if !findElement("info", i.modifierList) {
+		generate("Procedure-header.cwt", i, getWorkingPath() + "Grf" + transformUnderscores(i.name) + ".h");
+		generate("Procedure-body.cwt", i, getWorkingPath() + "Grf" + transformUnderscores(i.name) + ".cpp");
+	}
+}
+
+if getProperty("makeDoc") {
+	traceLine("\nmakeDoc:");
+	traceLine("========");
+	copyWinBinaries(); // result used by 'exploreDirectory'!
+	local theDocumentation;
+	insert theDocumentation.iNotDocumentedCounter = 0;
+	insert theDocumentation.iNotDocumentedParameter = 0;
+	insert theDocumentation.iNoExampleCounter = 0;
+	insert theDocumentation.iNoSeeAlsoCounter = 0;
+	insert theDocumentation.iFunctionCounter = 0;
+	traceLine("Generating 'Documentation/CodeWorker.tex'...");
+	generate("Documentation/ParsingExamplesBuilder.cwt", theDocumentation, getWorkingPath() + "Documentation/ParsingExamples.cws");
+	generate("Documentation/GeneratingExamplesBuilder.cwt", theDocumentation, getWorkingPath() + "Documentation/GeneratingExamples.cwt");
+	setCommentBegin("%");
+	expand("TEX-manual.cwt", theDocumentation, getWorkingPath() + "Documentation/CodeWorker.tex");
+	traceLine(theDocumentation.iFunctionCounter + " functions + procedures generated");
+	setCommentBegin("//");
+
+	if !changeDirectory("Documentation") error("unable to change directory to 'Documentation'");
+	if system("doc_begin.bat") error("unable to run 'doc_begin.bat'");
+	if system("doc_end.bat") error("unable to run 'doc_end.bat'");
+	if !changeDirectory("..") error("unable to change directory to '..'");
+
+	traceLine("Generating 'GettingStarted.bat'...");
+	setCommentBegin("REM ");
+	expand("batchs.cwt", theDocumentation, getWorkingPath() + "GettingStarted.bat");
+	setCommentBegin("//");
+}
+
+if getProperty("makeTutorial") {
+	traceLine("\nmakeTutorial:");
+	traceLine("=============");
+	local sDirectory = getCurrentDirectory();
+	changeDirectory("WebSite/tutorials/DesignSpecificModeling");
+	system("../../../release/codeworker demo.cws -nologo");
+	changeDirectory(sDirectory);
+}
+
+if getProperty("makeFlat") {
+	traceLine("\nmakeFlat:");
+	traceLine("=========");
+	setCommentBegin("%");
+	translate("LaTeX2Flat.cwp", project, "Documentation/CodeWorker.tex", getWorkingPath() + "Documentation/CodeWorker.txt");
+	setCommentBegin("//");
+}
+
+if getProperty("makeChanges") {
+	traceLine("\nmakeChanges:");
+	traceLine("============");
+
+	setCommentBegin("<!--");
+	setCommentEnd("-->");
+	traceLine("Generating 'WebSite/LastChanges.html'...");
+	generate("VersionDownload.cwt", project, getWorkingPath() + "WebSite/LastChanges.html");
+	setCommentBegin("//");
+	setCommentEnd("\n");
+	traceLine("Generating 'WebSite/LastChanges.bbcode'...");
+	generate("VersionBBCode.cwt", project, getWorkingPath() + "WebSite/LastChanges.bbcode");
+	generate("PAD_FILE.cwt", project, getWorkingPath() + "WebSite/downloads/pad_file.xml");
+	generate("PAD_FILE.cwt", project, getWorkingPath() + "WebSite/codeworker.xml");
+}
+
+if getProperty("makeHTMLDoc") {
+	traceLine("\nmakeHTMLDoc:");
+	traceLine("============");
+
+	local myHTMLDoc;
+
+	insert myHTMLDoc.sParsingMode = "chapter";
+	setCommentBegin("");
+	traceLine("Generating the \"user's guide & Reference manual\" in HTML...");
+	translate("LaTeX2HTML.cwp", myHTMLDoc, "Documentation/CodeWorker.tex", getWorkingPath() + "WebSite/manual.html");
+
+	myHTMLDoc.clearVariable();
+	insert myHTMLDoc.sParsingMode = "chapter";
+	insert myHTMLDoc.sChapterName = "Getting started";
+	traceLine("Generating the chapter '" + myHTMLDoc.sChapterName + "' in HTML...");
+	translate("LaTeX2HTML.cwp", myHTMLDoc, "Documentation/CodeWorker.tex", getWorkingPath() + "WebSite/GettingStarted.html");
+
+	clearVariable(myHTMLDoc);
+	insert myHTMLDoc.sParsingMode = "chapter";
+	insert myHTMLDoc.sChapterName = "The scripting language";
+	traceLine("Generating the chapter '" + myHTMLDoc.sChapterName + "' in HTML...");
+	translate("LaTeX2HTML.cwp", myHTMLDoc, "Documentation/CodeWorker.tex", getWorkingPath() + "WebSite/ScriptLanguage.html");
+
+	clearVariable(myHTMLDoc);
+	insert myHTMLDoc.sParsingMode = "chapter";
+	insert myHTMLDoc.sChapterName = "Discovering more with an example";
+	traceLine("Generating the chapter '" + myHTMLDoc.sChapterName + "' in HTML...");
+	translate("LaTeX2HTML.cwp", myHTMLDoc, "Documentation/CodeWorker.tex", getWorkingPath() + "WebSite/DiscoveringMore.html");
+
+	clearVariable(myHTMLDoc);
+	insert myHTMLDoc.sParsingMode = "chapter";
+	insert myHTMLDoc.sChapterName = "Integrating source code generation into a project";
+	traceLine("Generating the chapter '" + myHTMLDoc.sChapterName + "' in HTML...");
+	translate("LaTeX2HTML.cwp", myHTMLDoc, "Documentation/CodeWorker.tex", getWorkingPath() + "WebSite/ProjectManagement.html");
+}
+
+if getProperty("makeJNI") {
+	expand("JNIRuntime-header.cwt", project, getWorkingPath() + "java/src/JNIRuntime.h");
+	expand("JNIRuntime-body.cwt", project, getWorkingPath() + "java/src/JNIRuntime.cpp");
+	expand("JNIRuntime-java.cwt", project, getWorkingPath() + "java/org/codeworker/jni/Runtime.java");
+	translate("WebSite/repository/DocExtractor.cwp", project, getWorkingPath() + "java/src/JNIParseTree.h", getWorkingPath() + "java/JAVAAPI.txt");
+	translate("Generation/CWcode2Codeworker.cwp", project, getWorkingPath() + "java/JAVAAPI.txt", getWorkingPath() + "java/JAVAAPI.html");
+	translate("WebSite/tutorials/DesignSpecificModeling/utils/DevCom2CW.cwp", project, getWorkingPath() + "java/JAVAAPI.html", getWorkingPath() + "java/JAVAAPI.html");
+	copySmartFile(getWorkingPath() + "java/JAVAAPI.html", getWorkingPath() + "WebSite/JAVAAPI.html");
+	deleteFile(getWorkingPath() + "java/JAVAAPI.txt");
+}
+
+if getProperty("makeCSharp") {
+	expand("CSharp-wrapper.cwt", project, getWorkingPath() + "cs/src/DOTNET.h");
+	expand("CSharp-wrapper.cwt", project, getWorkingPath() + "cs/src/DOTNET.cpp");
+	translate("WebSite/repository/DocExtractor.cwp", project, getWorkingPath() + "cs/src/DOTNET.h", getWorkingPath() + "cs/DOTNET.txt");
+	translate("Generation/CWcode2Codeworker.cwp", project, getWorkingPath() + "cs/DOTNET.txt", getWorkingPath() + "cs/DOTNET.html");
+	translate("WebSite/tutorials/DesignSpecificModeling/utils/DevCom2CW.cwp", project, getWorkingPath() + "cs/DOTNET.html", getWorkingPath() + "cs/DOTNET.html");
+	copySmartFile(getWorkingPath() + "cs/DOTNET.html", getWorkingPath() + "WebSite/DOTNET.html");
+	deleteFile(getWorkingPath() + "cs/DOTNET.txt");
+}
+
+if getProperty("makeWeb") {
+	traceLine("\nmakeWeb:");
+	traceLine("========");
+
+	local myHTMLDoc;
+
+	setCommentBegin("<!--");
+	setCommentEnd("-->");
+
+	traceLine("Updating static pages...");
+	expand("WebSite.cwt", myHTMLDoc, getWorkingPath() + "WebSite/index.html");
+	expand("WebSite.cwt", myHTMLDoc, getWorkingPath() + "WebSite/francais.html");
+	expand("WebSite.cwt", myHTMLDoc, getWorkingPath() + "WebSite/Copyright.html");
+	expand("WebSite.cwt", myHTMLDoc, getWorkingPath() + "WebSite/Documentation.html");
+	expand("WebSite.cwt", myHTMLDoc, getWorkingPath() + "WebSite/History.html");
+	expand("WebSite.cwt", project,   getWorkingPath() + "WebSite/ScriptsRepository.html");
+	expand("WebSite.cwt", myHTMLDoc, getWorkingPath() + "WebSite/Tutorials.html");
+
+	traceLine("Generating the grammar page...");
+	local sIncludePath = getIncludePath();
+	setIncludePath(sIncludePath + ';' + "WebSite/repository/");
+	translate("WebSite/repository/CWscript2HTML.cwp", myHTMLDoc, "WebSite/repository/CodeWorker_grammar.cwp", getWorkingPath() + "WebSite/CodeWorker_grammar.html");
+	translate("WebSite/repository/CWscript2HTML.cwp", myHTMLDoc, "WebSite/repository/CWscript2HTML.cwp", getWorkingPath() + "WebSite/CWscript2HTML.html");
+	setIncludePath(sIncludePath);
+
+	traceLine("\tGenerating the intermediate 'download' page...");
+	insert myHTMLDoc.checkVersion = true;
+	expand("Download.cwt", myHTMLDoc, getWorkingPath() + "WebSite/Download.html");
+	expand("Download.cwt", myHTMLDoc, getWorkingPath() + "WebSite/AllDownloads.html");
+
+	setCommentBegin("//");
+	setCommentEnd("\n");
+}
+
+if getProperty("makeLinux") {
+	traceLine("Building the Linux version...");
+	setCommentBegin("#");
+	expand({@
+		local files;
+		if !scanFiles(files, getWorkingPath(), "*.cpp", false) error("C++ files of \"CodeWorker\" not found");
+		local iPrefix = lengthString(getWorkingPath());
+		@OBJECTS =@
+		local sLine;
+		foreach i in files {
+			local sRadical = coreString(i, iPrefix, 4);
+			copySmartFile(getWorkingPath() + sRadical + ".cpp", "c:/cygwin/home/CodeWorker/" + sRadical + ".cpp");
+			if sRadical == "generator" continue;
+			if $lengthString(sLine) + lengthString(sRadical) >= 64$ {
+				@@sLine@\
+@
+				set sLine = "\t\t ";
+			}
+			set sLine += " " + sRadical + ".o";
+			if sRadical != "generator" {
+				copySmartFile(getWorkingPath() + sRadical + ".h", "c:/cygwin/home/CodeWorker/" + sRadical + ".h");
+				if sRadical == "DynPackage" {
+					copySmartFile(getWorkingPath() + "DynFunction.h", "c:/cygwin/home/CodeWorker/DynFunction.h");
+				}
+			}
+		}
+		@@sLine@
+@
+	}, project, getWorkingPath() + "Makefile");
+	setCommentBegin("//");
+	copySmartFile(getWorkingPath() + "Makefile", "c:/cygwin/home/CodeWorker/Makefile");
+	copySmartFile(getWorkingPath() + "readme.txt", "c:/cygwin/home/CodeWorker/readme.txt");
+	copySmartDirectory("Documentation", "c:/cygwin/home/CodeWorker/Documentation");
+	copySmartDirectory("Generation", "c:/cygwin/home/CodeWorker/Generation");
+	copySmartDirectory("Scripts", "c:/cygwin/home/CodeWorker/Scripts");
+}
+
+if getProperty("removeTemp") {
+	removeDirectory(getWorkingPath() + "Generation/CodeGenerator");
+	deleteFile(getWorkingPath() + "Scripts/Tutorial/SolarSystem0.xml");
+	deleteFile(getWorkingPath() + "Documentation/CodeWorker.aux");
+	deleteFile(getWorkingPath() + "Documentation/CodeWorker.dvi");
+	deleteFile(getWorkingPath() + "Documentation/CodeWorker.log");
+	deleteFile(getWorkingPath() + "Documentation/CodeWorker.idx");
+	deleteFile(getWorkingPath() + "Documentation/CodeWorker.ilg");
+	deleteFile(getWorkingPath() + "Documentation/CodeWorker.ind");
+	deleteFile(getWorkingPath() + "Documentation/CodeWorker.toc");
+}
+
+if getProperty("makeSrcDir") {
+	insert project.sources = getEnv("TMP") + "/CWsrc/CodeWorker" + replaceString('.', '_', getVersion());
+	traceLine("Creating the sources directory in '" + project.sources + "'...");
+	removeDirectory(getEnv("TMP") + "/CWsrc");
+	local theFiles;
+	// scanning source code
+	if !scanFiles(theFiles, getWorkingPath(), "*.*", false) error("unable to find source codes of \"CodeWorker\"");
+	local iPrefix = lengthString(getWorkingPath());
+	foreach i in theFiles {
+		local sFile = i.subString(iPrefix);
+		if !(sFile.rightString(4) in {".opt", ".plg", ".ncb", ".bak", ".suo", ".stt"}) && !sFile.endString('~') {
+			copySmartFile(i, project.sources + "/" + sFile);
+		}
+	}
+	// scanning interfaces with other programming languages
+	copyJavaFiles(project.sources);
+	copyDotNetFiles(project.sources);
+	// scanning documentation basis
+	if !scanFiles(theFiles, getWorkingPath() + "Documentation/", "*.*", false) error("unable to find documentation basis of \"CodeWorker\"");
+	iPrefix = $lengthString(getWorkingPath()) + 14$;
+	foreach i in theFiles {
+		local sFile = i.subString(iPrefix);
+		if !sFile.endString(".hidden") && !sFile.endString(".zip") && !sFile.endString('~') && !sFile.endString(".bak") && !sFile.endString(".pdf") {
+			copySmartFile(i, project.sources + "/Documentation/" + sFile);
+		}
+	}
+	// scanning generative programming scripts of CodeWorker
+	if !scanFiles(theFiles, getWorkingPath() + "Generation/", "*.*", false) error("unable to find generative programming scripts of \"CodeWorker\"");
+	iPrefix = $lengthString(getWorkingPath()) + 11$;
+	foreach i in theFiles {
+		local sFile = i.subString(iPrefix);
+		if !sFile.endString(".hidden") && !sFile.endString(".zip") && !sFile.endString('~') && !sFile.endString(".bak") {
+			copySmartFile(i, project.sources + "/Generation/" + sFile);
+		}
+	}
+	// scanning the tutorial scripts
+	if !scanFiles(theFiles, getWorkingPath() + "Scripts/Tutorial/", "*.*", true) error("unable to find tutorial scripts of \"CodeWorker\"");
+	iPrefix = $lengthString(getWorkingPath()) + 17$;
+	foreach i in theFiles {
+		local sFile = i.subString(iPrefix);
+		if	!sFile.endString(".hidden") && !sFile.endString(".zip") &&
+			!sFile.endString('~') && !sFile.endString(".bak") &&
+			(!sFile.startString("examples/") || !sFile.endString(".html")) {
+				copySmartFile(i, project.sources + "/Scripts/Tutorial/" + sFile);
+		}
+	}
+	// scanning the Web site
+	if !scanFiles(theFiles, getWorkingPath() + "WebSite/", "*.*", true) error("unable to find the Web site of \"CodeWorker\"");
+	iPrefix = $lengthString(getWorkingPath()) + 8$;
+	foreach i in theFiles {
+		local sFile = i.subString(iPrefix);
+		if !sFile.startString("highlighting/") && !sFile.startString("manual_") && !sFile.endString(".hidden") && !sFile.endString(".zip") && !sFile.endString('~') && !sFile.endString(".bak") && !sFile.endString(".pdf") {
+			copySmartFile(i, project.sources + "/WebSite/" + sFile);
+		}
+	}
+	// modifying the VC++ 6.0 DSP
+	traceLine("\tmodifying the VC++ 6.0 DSP...");
+	translate(
+		{
+			#implicitCopy
+			DSP ::= [->to_ignore]* ->#empty;
+			to_ignore ::= #explicitCopy
+					[
+							" /I "
+							[
+									"\"C:\\win32app\\j2sdk_nb\\j2sdk1.4.2\\include\""
+								|
+									"\"C:\\win32app\\j2sdk_nb\\j2sdk1.4.2\\include\\win32\""
+								|
+									"\"../curl\""
+							]
+						|
+							" /D "
+							[
+									"\"CODEWORKER_JNI\""
+								|
+									"\"CODEWORKER_CURL_LIB\""
+							]
+					];
+		},
+		project, project.sources + "/CodeWorker.dsp", project.sources + "/CodeWorker.dsp"
+	);
+	translate(
+		{
+			#implicitCopy
+			DSP ::= [->to_ignore]* ->#empty;
+			to_ignore ::= #explicitCopy
+					[
+							" /I "
+							[
+									"\"C:\\win32app\\j2sdk_nb\\j2sdk1.4.2\\include\""
+								|
+									"\"C:\\win32app\\j2sdk_nb\\j2sdk1.4.2\\include\\win32\""
+								|
+									"\"../curl\""
+							]
+						|
+							" ../curl/lib/"
+							[
+									"Release/libcurl.lib"
+								|
+									"Debug/libcurl.lib"
+							]
+						|
+							" /D "
+							[
+									"\"CODEWORKER_JNI\""
+								|
+									"\"CODEWORKER_CURL_LIB\""
+							]
+					];
+		},
+		project, project.sources + "/CodeWorkerEXE.dsp", project.sources + "/CodeWorkerEXE.dsp"
+	);
+	// modifying the VC++ 6.0 DSP
+	traceLine("\tmodifying the VC++ 7.1 VCPROJ...");
+	translate(
+		{
+			#implicitCopy
+			VCPROJ ::= [->to_ignore]* ->#empty;
+			to_ignore ::=
+					[
+							"AdditionalIncludeDirectories="
+							#explicitCopy
+							#readCString
+							=> {@""@}
+						|
+							"PreprocessorDefinitions="
+							#explicitCopy
+							#readCString:sPPD
+							=>{@"@sPPD.replaceString(";CODEWORKER_CURL_LIB;CODEWORKER_JNI", "")@"@}
+					];
+		},
+		project, project.sources + "/CodeWorker.vcproj", project.sources + "/CodeWorker.vcproj"
+	);
+	translate(
+		{
+			#implicitCopy
+			VCPROJ ::= [->to_ignore]* ->#empty;
+			to_ignore ::=
+					[
+							"AdditionalIncludeDirectories="
+							#explicitCopy
+							#readCString
+							=> {@""@}
+						|
+							"PreprocessorDefinitions="
+							#explicitCopy
+							#readCString:sPPD
+							=>{@"@sPPD.replaceString(";CODEWORKER_CURL_LIB;CODEWORKER_JNI", "")@"@}
+						|
+							"AdditionalDependencies="
+							#explicitCopy
+							#readCString:sADD
+							=>{
+								sADD = sADD.replaceString("../curl/lib/Debug/libcurl.lib ", "");
+								@"@sADD.replaceString("../curl/lib/Release/libcurl.lib ", "")@"@
+							}
+					];
+		},
+		project, project.sources + "/CodeWorkerEXE.vcproj", project.sources + "/CodeWorkerEXE.vcproj"
+	);
+}
+
+if getProperty("makeBinDir") {
+	// Windows binaries
+	traceLine("\tCreating directory '" + project.winBinaries + "'...");
+	copyWinBinaries();
+	if existFile("../trial.cws") system("..\\codeworker ../trial.cws " + project.winBinaries);
+
+	// JNI library
+	insert project.javaBinaries = getEnv("TMP") + "/CWjava/CodeWorker" + replaceString('.', '_', getVersion());
+	traceLine("\tCreating directory '" + project.javaBinaries + "'...");
+	removeDirectory(getEnv("TMP") + "/CWjava");
+	copyJavaFiles(project.javaBinaries);
+
+	// .NET assembly
+	insert project.netBinaries = getEnv("TMP") + "/CWnet/CodeWorker" + replaceString('.', '_', getVersion());
+	traceLine("\tCreating directory '" + project.netBinaries + "'...");
+	removeDirectory(getEnv("TMP") + "/CWnet");
+	copyDotNetFiles(project.netBinaries);
+}
+
+if getProperty("makeVersion") {
+	traceLine("Building the version " + getVersion() + "...");
+	if existFile("../trial.cws") system("..\\codeworker ../trial.cws " + project.sources);
+	if $compareDate(fileLastModification("Documentation/CodeWorker.pdf"), fileLastModification("Documentation/CodeWorker.tex")) <= 0$ error("'Documentation/CodeWorker.pdf' is too old; generate it again!");
+	local theExeDate = fileLastModification("Release/CodeWorker.exe");
+	local theFiles;
+	if !scanFiles(theFiles, getWorkingPath(), "*.cpp", false) error("unable to find sources codes of \"CodeWorker\"");
+//	foreach i in theFiles {
+//		if $compareDate(theExeDate, fileLastModification(i)) <= 0$ error("'CodeWorker.exe' must be recompiled in release ('" + i + "' more recent)");
+//	}
+}
+
+if getProperty("makeZip") {
+	traceLine("Generating the ZIP file of binaries from '" + project.winBinaries + "'...");
+	copySmartFile("Documentation/CodeWorker.pdf", getWorkingPath() + "WebSite/CodeWorker.pdf");
+	local sVersion = replaceString(".", "_", getVersion());
+	local sArchive = getEnv("TMP") + "/CWwin/CodeWorker_WIN" + sVersion + ".zip";
+	changeDirectory(getEnv("TMP") + "/CWwin");
+	deleteFile(sArchive);
+	local sZipExe = getWorkingPath() + "bin\\zip.exe";
+	local sCommand = sZipExe + " -r -q -b c:/temp " + sArchive + " .";
+	system(sCommand);
+	changeDirectory(getWorkingPath());
+	copyFile(sArchive, getWorkingPath() + "WebSite/downloads/CodeWorker_WIN" + sVersion + ".zip");
+
+	set sArchive = getEnv("TMP") + "/CWsrc/CodeWorker_SRC" + sVersion + ".zip";
+	deleteFile(sArchive);
+	changeDirectory(getEnv("TMP") + "/CWsrc");
+	traceLine("Generating the ZIP file of sources...");
+	set sCommand = sZipExe + " -r -q -b c:/temp " + sArchive + " .";
+	system(sCommand);
+	changeDirectory(getWorkingPath());
+	copyFile(sArchive, getWorkingPath() + "WebSite/downloads/CodeWorker_SRC" + sVersion + ".zip");
+
+	traceLine("Generating the ZIP file of Java binaries from '" + project.javaBinaries + "'...");
+	set sArchive = getEnv("TMP") + "/CWjava/CodeWorker_Java.zip";
+	deleteFile(sArchive);
+	changeDirectory(getEnv("TMP") + "/CWjava");
+	set sCommand = sZipExe + " -r -q -b c:/temp " + sArchive + " .";
+	system(sCommand);
+	changeDirectory(getWorkingPath());
+	copyFile(sArchive, getWorkingPath() + "WebSite/downloads/CodeWorker_Java.zip");
+
+	traceLine("Generating the ZIP file of .NET binaries from '" + project.netBinaries + "'...");
+	set sArchive = getEnv("TMP") + "/CWnet/CodeWorker_NET.zip";
+	deleteFile(sArchive);
+	changeDirectory(getEnv("TMP") + "/CWnet");
+	set sCommand = sZipExe + " -r -q -b c:/temp " + sArchive + " .";
+	system(sCommand);
+	changeDirectory(getWorkingPath());
+	copyFile(sArchive, getWorkingPath() + "WebSite/downloads/CodeWorker_NET.zip");
+
+	traceLine("Generating the GnuPG signature for both binaries and sources...");
+	system("bin\\gpg --armor --detach-sign WebSite/downloads/CodeWorker_WIN" + sVersion + ".zip");
+	system("bin\\gpg --armor --detach-sign WebSite/downloads/CodeWorker_SRC" + sVersion + ".zip");
+
+	setCommentBegin("<!--");
+	setCommentEnd("-->");
+	traceLine("\tGenerating the final 'download' page and the PAD file...");
+	local myHTMLDoc;
+	expand("Download.cwt", myHTMLDoc, getWorkingPath() + "WebSite/Download.html");
+	expand("Download.cwt", myHTMLDoc, getWorkingPath() + "WebSite/AllDownloads.html");
+	generate("PAD_FILE.cwt", project, getWorkingPath() + "WebSite/downloads/pad_file.xml");
+	generate("PAD_FILE.cwt", project, getWorkingPath() + "WebSite/codeworker.xml");
+	setCommentBegin("//");
+	setCommentEnd("\n");
+}
+
+if getProperty("makeCopy") {
+	local sVersion = replaceString(".", "_", getVersion());
+	local sArchive = getWorkingPath() + "../CodeWorker_copy" + sVersion + ".zip";
+	deleteFile(sArchive);
+	traceLine("Generating the ZIP file, copy of the project...");
+	local sCommand = "bin\\zip.exe -q -r -b c:/temp " + sArchive + " . ";
+	set sCommand += "-x *.obj -x *.exe -x *.opt -x *.plg -x Bugs/* -x Bugs/aspect/* -x Debug*/* -x Release*/* -x *.zip -x *.lib -x *.pdb -x *.ncb -x *.ilk -x *.idb -x bin/* -x WebSite/downloads/* -x WebSite/highlighting/* -x *.pdf";
+	system(sCommand);
+	traceLine("... ZIP file='" + sArchive + "'");
+}
+
+if getProperty("testGrammar") {
+	traceLine("testing the grammar...");
+	local files;
+	if scanFiles(files, "./", "*.cw?", true) {
+		foreach i in files {
+if i.startString("./Scripts/") continue;
+			local myHTMLDoc;
+			traceLine("\tfile '" + i + "'...");
+			local hHandle = createVirtualTemporaryFile("");
+			translate("WebSite/repository/CWscript2HTML.cwp", myHTMLDoc, i, hHandle);
+			deleteVirtualFile(hHandle);
+		}
+	}
+}
+
+traceLine("\n... end of execution");
+//-I C:\Projects\generator\Generation -I C:\Projects\Generator -I C:\Projects\generator\Scripts\Tutorial -path C:\Projects\generator -time -script GeneratorDriver.cws -D makeCode -D makeDoc -c++ Generation\CodeGenerator
+//-I C:\Projects\generator\Generation -I C:\Projects\Generator -I C:\Projects\generator\Scripts\Tutorial -path C:\Projects\generator -time -compile C:\Projects\generator\Scripts\Tutorial\GettingStarted\LeaderScript6.cws -c++ C:\Projects\generator\Scripts\Tutorial\GettingStarted\bin -D makeCode -D makeDoc
+//-I E:\Projects\generator\Generation -I E:\Projects\Generator -I E:\Projects\generator\Scripts\Tutorial -path E:\Projects\generator -time -compile E:\Projects\generator\Scripts\Tutorial\GettingStarted\LeaderScript6.cws -c++ E:\Projects\generator\Scripts\Tutorial\GettingStarted\bin -D makeCode -D makeDoc

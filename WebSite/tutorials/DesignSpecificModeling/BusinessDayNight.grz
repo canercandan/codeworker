@@ -1,0 +1,28 @@
+digraph SigC {
+	ranksep=2
+	node [shape=record,style=filled];
+	BusinessDayNight [style=filled, fillcolor="#A1E1FF",fontname="Arial-Narrow"];
+	BusinessDayNight_start [label="time()\n>\n(17*60\ +\ 30)*60",fontname="Arial-Narrow",shape=box];
+	BusinessDayNight -> BusinessDayNight_start [label="start",fontname="Arial-Narrow",fontcolor="red",color="red",style="bold"];
+	ranksep=4
+
+	BusinessDayNight_rule0 [label="vehicles_hour(place_opera->\"boulevard\ des\ Capucines\")\n<\n400",fontname="Arial-Narrow",shape=box];
+	BusinessDayNight -> BusinessDayNight_rule0 [color="purple",style="bold"];
+	BusinessDayNight_rule0_0 [shape=record,label="{duration|scribe-\>\"rue\ Scribe\"\n1min05/2min00}",fontname="Arial-Narrow",fillcolor=yellow];
+	BusinessDayNight_rule0 -> BusinessDayNight_rule0_0 [color="orange",style="bold"];
+
+	BusinessDayNight_rule1 [label="vehicles_hour(\"rue\ de\ la\ Paix\"->rue_paix)\n>\n300",fontname="Arial-Narrow",shape=box];
+	BusinessDayNight -> BusinessDayNight_rule1 [color="purple",style="bold"];
+	BusinessDayNight_rule1_0 [shape=record,label="{activate|RivoliLowDensity}",fontname="Arial-Narrow",fillcolor=yellow];
+	BusinessDayNight_rule1 -> BusinessDayNight_rule1_0 [color="orange",style="bold"];
+
+	BusinessDayNight_rule2 [label="vehicles_hour(auber->\"rue\ auber\")\n>\n500",fontname="Arial-Narrow",shape=box];
+	BusinessDayNight -> BusinessDayNight_rule2 [color="purple",style="bold"];
+	BusinessDayNight_rule2_0 [shape=record,label="{desactivate}",fontname="Arial-Narrow",fillcolor=yellow];
+	BusinessDayNight_rule2 -> BusinessDayNight_rule2_0 [color="orange",style="bold"];
+
+	BusinessDayNight_rule3 [label="time()\n>\n(22*60\ +\ 30)*60",fontname="Arial-Narrow",shape=box];
+	BusinessDayNight -> BusinessDayNight_rule3 [color="purple",style="bold"];
+	BusinessDayNight_rule3_0 [shape=record,label="{desactivate}",fontname="Arial-Narrow",fillcolor=yellow];
+	BusinessDayNight_rule3 -> BusinessDayNight_rule3_0 [color="orange",style="bold"];
+}

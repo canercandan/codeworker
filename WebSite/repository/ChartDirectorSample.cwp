@@ -1,0 +1,1222 @@
+//**************************************************************************
+//             Translates a C++ example to a CodeWorker script
+//
+//
+// This translation script uses parse data extracted from the C++ header
+// files of the API, but also some information about the mapping between
+// the C++ language and CodeWorker.
+// Concretely, it means that "chartdir.h" and "FinanceChart.h" must have
+// been parsed before, and that the source "CHARTcw.cpp" must have been
+// generated (cf. "ChartDirector.cwt").
+//
+// Note that the C++ grammar used for the translation is very restrictive
+// considering the whole C++ syntax. It is the minimal grammar to be able
+// to parse all the 122 C++ examples of Chart Director.
+// Don't reuse it in another context, or be prepared to improve this script
+// a lot!
+//**************************************************************************
+
+
+//--------------------------------------------------------------------------
+// Some utility functions
+//--------------------------------------------------------------------------
+
+// Given the current variable/function scope (class or namespace or root of the
+// translation unit) and a function name, look for the function prototype(s).
+// If found, it returns true and 'theFunction' points to the function
+// prototype(s).
+function getUserFunction(scope : node, sFunction : value, theFunction : reference) {
+	if scope.functions.findElement(sFunction) {
+		ref theFunction = scope.functions[sFunction];
+		return true;
+	}
+	if scope.parent.existVariable() return getUserFunction(scope.parent, sFunction, theFunction);
+	return false;
+}
+
+// Given the current variable/function scope (class or namespace or root of the
+// translation unit) and a function name, look for the function prototype(s).
+// If found, it returns true and 'theFunction' points to the function
+// prototype(s).
+function getVariable(scope : node, sVar : value, theVar : reference) {
+	if scope.variables.findElement(sVar) {
+		ref theVar = scope.variables[sVar];
+		return true;
+	}
+	if scope.parent.existVariable() return getVariable(scope.parent, sVar, theVar);
+	return false;
+}
+
+
+//--------------------------------------------------------------------------
+// Head BNF rule of the translator
+//--------------------------------------------------------------------------
+
+ChartDirSample ::=
+	// ignore whitespaces and C++ comments between BNF terminals and non-terminals
+	#ignore(C++)
+	// the rest of the sequence doesn't have the right to fail
+	#continue
+	// a C++ example of Chart Director always starts with a #include
+	"#include"
+	#readCString:{"chartdir.h", "FinanceChart.h"}
+	[
+		// we may encounter other #include, of the standard C/C++ API, but
+		// we don't care
+		'#' "include"
+		#continue
+		[
+				'<' #continue ->'>'
+			|
+				#readCString
+		]
+	]*
+	=> {
+		// the CodeWorker syntax for including a package, which is the one of
+		// Char Director here.
+		@	#use CHART
+
+@
+		// we might have to insert some global declarations at this place later
+		newFloatingLocation("global declarations");
+	}
+	// scope of the translation unit of the C++ example
+	=> local scope;
+	[
+		// Each example always starts with a function declaration, often
+		// 'main()' but not necessary.
+		// Parsing of the return type.
+		=> local theType;
+		type(scope, theType)
+		// Extraction of the function name, put into the local variable 'sFunction'
+		#readIdentifier:sFunction
+		// an opening parenthesis, to declare arguments
+		'('
+		// Here, we are interested in user function definitions only, not the 'main'
+		#check(sFunction != "main")
+		// write the function declaration in the CodeWorker syntax
+		=> { @function @sFunction@(@ }
+		// register the function declaration in the current scope
+		=> insert scope.functions[sFunction].name = sFunction;
+		[
+			// reuse of the type variable
+			=> theType.clearVariable();
+			// parsing of a parameter type
+			type(scope, theType)
+			// name of the parameter, assigned to the local variable 'sParam'
+			#readIdentifier:sParam
+			// register this new parameter in the parse tree of the function
+			=> insert scope.functions[sFunction].variables[sParam].name = sParam;
+			=> setall scope.functions[sFunction].variables[sParam].type = theType;
+			// translate it to CodeWorker, assuming that the type is a base type,
+			// with no reference (verified on all C++ examples for the moment)
+			=> {@@sParam@ : value@}
+			[
+				// same approach for the other parameters
+				',' #continue
+				=> theType.clearVariable();
+				type(scope, theType)
+				#readIdentifier:sParam
+				=> insert scope.functions[sFunction].variables[sParam].name = sParam;
+				=> setall scope.functions[sFunction].variables[sParam].type = theType;
+				=> {@, @sParam@ : value@}
+			]*
+		]?
+		// link the function to its parent scope, for both the prototype and the body
+		// scope
+		=> ref scope.functions[sFunction].parent = scope;
+		=> ref scope.functions[sFunction].body.parent = scope.functions[sFunction];
+		// end of parameters
+		')'
+		// translate it to CodeWorker
+		=> {@) {@}
+		// translate the body of the C++ function
+		block(scope.functions[sFunction].body)
+		// end of the function
+		=> {@}@}
+		// we copy all C++ comments and blanks behind the function definition,
+		// to keep out the same presentation (carriage returns and comments) in the
+		// CodeWorker script
+		#implicitCopy
+		#skipIgnore(C++)
+	]*
+	// here, we must have the declaration of the 'main()' function
+	"int" "main" '(' "int" "argc" ',' "char" '*' "argv" '[' ']' ')'
+	// translate the main code of the application
+	block(scope)
+	// re-indent the CodeWorker script correctly, using the same rules as for
+	// indenting a C++ source code (which is true for common scripts)
+	=> indentText("C++");
+	;
+
+// Translate a C++ block of instruction, which may be restricted to a single
+// instruction without brackets. The caller of this rule must manage itself
+// the enclosed parenthesis to write for the CodeWorker script.
+// Note a particularity: before calling a non-terminal the caller consumes
+// the insignificant characters (whitespaces and C++ comments here)
+// automatically. Here, we don't want, so as to retrieve correctly the
+// beginning of the instructions to copy it properly in the target script.
+// To impose that, we have added ':#!ignore' after the name of the BNF rule.
+block(scope : node):#!ignore ::=
+		// First alternative: it is a classical block of instructions,
+		// announced by a bracket: we ignore whitespaces and comments up to
+		// the opening bracket
+		#skipIgnore(C++) '{'
+		// the rest of the sequence must be valid
+		#continue
+		// create a new scope for this block, whose timelife achieves at the
+		// end of the sequence: the scope only serves to store the variable
+		// declarations locally to the block, for the time of its translation
+		=> local newScope;
+		=> ref newScope.parent = scope;
+		// translate instruction as far as it is possible
+		[instruction(newScope)]*
+		[
+			// copy traling comments up to the trailing bracket
+			#implicitCopy
+			#skipIgnore(C++)
+		]
+		'}'
+	|
+		// Second alternative: a single instruction not enclosed between
+		// brackets. We just have to translate it, not more!
+		instruction(scope)
+	;
+
+// Translate a single instruction. This rule must have been called
+// after desactivating the #ignore(C++) clause.
+instruction(scope : node) ::=
+	[
+		// copy the whitespaces and comments put before the instruction
+		#implicitCopy
+		#skipIgnore(C++)
+	]
+	// insert a floating pointer at this place, to eventually write some
+	// intermediary code, which doesn't appear in C++ (implicit code), but
+	// which must exist in the script (in-between results of a function
+	// parameter, for instance)
+	=> newFloatingLocation("declarations");
+	// we reactivate ignoring the C++ comments and whitespaces
+	#ignore(C++)
+	// Now, we have to translate the C++ instruction, following its
+	// template
+	[
+			// First general template: the instruction starts with an
+			// identifier
+			#readIdentifier:sId
+			// Now, some alternatives to find the appropriate template
+			[
+					// An object declared as a pointer
+					'*' #continue
+					// To be really rigorous, we should test whether the
+					// class name exists or not! We'll do it later.
+					// Assume that the type specifies a class
+					=> local theType = "class";
+					=> insert theType.name = sId;
+					=> insert theType.pointers = '*';
+					// translate this instruction
+					pointer_declaration(scope, theType)
+				|
+					// An object declared on the stack: the identifier
+					// designates a class
+					#check(project.classes.findElement(sId))
+					#continue
+					// look ahead: we are expecting the name of the
+					// variable to construct
+					!!#readIdentifier
+					// The type specifies a class
+					=> local theType = "class";
+					=> insert theType.name = sId;
+//					=> insert theType.pointers = '*';
+					// translate this instruction
+					pointer_declaration(scope, theType)
+				|
+					// an assignment operator
+					'=' #continue
+					=> local theType;
+					// translate the left-hand side here
+					=> { @@sId@ =@ }
+					// translate the right-hand side in 'expression'
+					=> local expr;
+					expression(scope, expr, theType)
+					// end of the assignment
+					';'
+					=>{@;@}
+				|
+					// navigate to a method
+					["->" | '.'] #continue
+					// the identifier is the name of the instance, and its
+					// description is extracted from the parse tree
+					=> local theInstance;
+					#check(getVariable(scope, sId, theInstance))
+					// delegate the translation of the method call
+					=> local theFuncType;
+					function_call(scope, sId, theInstance.type, "", theFuncType)
+					// end of the instruction
+					';'
+				|
+					// may be a call to a function belonging to the C/C++ API,
+					// where each of them has to be translated individually:
+					// the better way to implement it is by calling a generic
+					// BNF non-terminal. The generic key stands for the name of
+					// the C/C++ function, and it's very suitable to add new
+					// C functions to handle by this way.
+					'('
+					C_function_call<sId>(scope)
+				|
+					// the identifier is a keyword of the language: it
+					// announces a statement or something like that
+					keyword<sId>(scope)
+			]
+		|
+			// Second general template: the instruction starts with an
+			// opening bracket (cast of a variable, for instance)
+			'(' #continue
+			parenthesis_instruction(scope)
+	]
+	;
+
+// Translate an instruction starting with "A*" (or just "A", where
+// A is a class.
+// The variable 'theType' is a type specifier for this class name.
+pointer_declaration(scope : node, theType : node) ::=
+	// the pointer declaration is necessary followed by a variable
+	// name
+	#continue
+	#readIdentifier:sVar
+	// the new variable is registered to the scope with its type
+	=> insert scope.variables[sVar].name = sVar;
+	=> setall scope.variables[sVar].type = theType;
+	// an assignment operator is expected, followed by an identifier
+	'='
+	#readIdentifier:sId
+	[
+			// First alternative: call to the constructor, dynamically
+			// or on the stack
+			[
+					// dynamic allocation
+					#check(sId == "new")
+					#continue
+					#readText(theType.name)
+				|
+					// allocation of the instance on the stack
+					#check(sId == theType.name)
+			]
+			#continue
+			// stand just at the beginning of the constructor's parameters
+			'('
+			// The instance variable is declared before calling the function
+			// which maps the contructor in the plugin ('createA'), and is passed
+			// as the first parameter of the binding function
+			=> {
+				@local @sVar@;CHART::create@theType.name@(@sVar@@
+			}
+			// translate all parameters and keep out their types and
+			// parse trees, but not used yet (perhaps never?)
+			=> local params;
+			[
+				#pushItem(params)
+				#implicitCopy
+				#explicitCopy
+				=> {@, @}
+				expression(scope, params#back.expr, params#back.type)
+				[
+					',' #continue
+					=>{@, @}
+					=> pushItem params;
+					expression(scope, params#back.expr, params#back.type)
+				]*
+			]?
+			=> {
+				// retrieve the parse tree of the constructor; we assume, if more
+				// than one prototype, that the first one is correct! Regarding the
+				// C++ API, it seems correct for now
+				localref createFunction = project.classes[theType.name].functions[theType.name]#front;
+				local iCounter = params.size();
+				// if all arguments weren't populated, we assume that the other ones
+				// have default values: 'null' passed to the binding function
+				while $iCounter < createFunction.parameters.size()$ {
+					@, null@
+					increment(iCounter);
+				}
+			}
+			// end of the function call
+			')'
+			=> {
+				@);@
+			}
+			// perhaps do we have to navigate on the new instance?
+			[
+				["->" | '.']
+				#continue
+				=> local theFuncType;
+				function_call(scope, sVar, theType, "", theFuncType)
+			]?
+		|
+			// assign the result of a function as a pointer: we have
+			// to navigate
+			#continue
+			["->" | '.']
+			=> {
+				@local @sVar@;@
+			}
+			=> local theInstance;
+			#check(getVariable(scope, sId, theInstance))
+			=> local theFuncType;
+			function_call(scope, sId, theInstance.type, sVar, theFuncType)
+	]
+	';'
+	;
+
+function convertToStaticArray(theType : node, allowedParameterTypes : node) {
+	if theType != "base" return false;
+	if theType.pointers && theType.name != "char" return false;
+	local bConvert;
+	local sBaseType;
+	foreach i in allowedParameterTypes {
+		if i == "base" sBaseType = i.name;
+		else if i == "enum" sBaseType = "int";
+		else if i == "array" {
+			if theType.name == "int" && i.name == "IntArray" bConvert = "IntArray";
+			else if theType.name == "int" && i.name == "DoubleArray" bConvert = "DoubleArray";
+			else if theType.name == "double" && i.name == "DoubleArray" bConvert = "DoubleArray";
+			else if theType.name == "char" && i.name == "StringArray" bConvert = "StringArray";
+		}
+	}
+	if bConvert {
+		// at least one array type encountered among types the current parameter could be
+		if getBaseTypeOfArray(bConvert) == sBaseType || (bConvert == "DoubleArray" && (sBaseType == "int")) {
+			if bConvert != "DoubleArray" || !theType.is_enum insert theType.is_convertible_to_array = bConvert;
+		} else {
+			theType.clearVariable();
+			theType = "array";
+			insert theType.name = bConvert;
+		}
+	}
+	return bConvert;
+}
+
+function_call(scope : node, sInstance : value, theCallerType : node, returnedVar : value, theFuncType : node):value ::=
+	#continue
+	#readIdentifier:sFunction
+	#check(project.allFunctions.findElement(sFunction))
+	=> localref theFunction = project.allFunctions[sFunction];
+	'('
+	=> local bCalledAsExpression = !existFloatingLocation("declarations", false);
+	=> if bCalledAsExpression newFloatingLocation("declarations");
+	=> local sSuffixPosition = "suffix" + getInputLocation();
+	=> local sCallPosition = "call" + getInputLocation();
+	=> local sParamPosition = "param" + getInputLocation();
+	=> local sFinalReturnedVar;
+	=> {
+		newFloatingLocation(sCallPosition);
+		@CHART::@sFunction@@
+		newFloatingLocation(sSuffixPosition);
+		@(@sInstance@@
+	}
+	=> local params;
+	[
+		// populate all possible types, for each parameter order
+		=> local allowedParameterTypes;
+		=> {
+			foreach i in sorted theFunction.bySize {
+				if i.conflict || !i.signature continue;
+				foreach j in i.classes if j.function.existVariable() {
+					if !instanceOf(theCallerType.name, j.key()) continue;
+					local iParamOrder = 0;
+					while $iParamOrder < i.firstFunction.parameters.size()$ {
+						pushItem allowedParameterTypes[iParamOrder];
+						setall allowedParameterTypes[iParamOrder]#back = i.firstFunction.parameters#[iParamOrder].type;
+						if i.firstFunction.parameters#[iParamOrder].alternative_type {
+							pushItem allowedParameterTypes[iParamOrder];
+							setall allowedParameterTypes[iParamOrder]#back = i.firstFunction.parameters#[iParamOrder].alternative_type;
+						}
+						increment(iParamOrder);
+					}
+					break;
+				}
+			}
+		}
+		#pushItem(params)
+		#implicitCopy
+		#explicitCopy
+		=> {
+			@, @
+			newFloatingLocation(sParamPosition);
+		}
+		expression(scope, params#back.expr, params#back.type)
+		=> if convertToStaticArray(params#back.type, allowedParameterTypes#front) {
+			local sExpr = getLastWrittenChars($getOutputLocation() - getFloatingLocation(sParamPosition)$);
+			increment(scope.localVars);
+			insertTextToFloatingLocation("declarations", "local localVar" + scope.localVars + " = " + sExpr + ";");
+			setOutputLocation(getFloatingLocation(sParamPosition));
+			insert params#back.converted_to_array = true;
+			@localVar@scope.localVars@@
+		}
+		[
+			',' #continue
+			=> {
+				@, @
+				newFloatingLocation(sParamPosition);
+			}
+			=> pushItem params;
+			expression(scope, params#back.expr, params#back.type)
+			=> if convertToStaticArray(params#back.type, allowedParameterTypes#[$params.size() - 1$]) {
+				local sExpr = getLastWrittenChars($getOutputLocation() - getFloatingLocation(sParamPosition)$);
+				increment(scope.localVars);
+				insertTextToFloatingLocation("declarations", "local localVar" + scope.localVars + " = " + sExpr + ";");
+				setOutputLocation(getFloatingLocation(sParamPosition));
+				insert params#back.converted_to_array = true;
+				@localVar@scope.localVars@@
+			}
+		]*
+	]?
+	=> {
+		local iSuffix;
+		foreach i in sorted theFunction.bySize {
+			if $i.key() < params.size()$ || i.conflict || !i.signature continue;
+			foreach j in i.classes if j.function.existVariable() {
+				if !instanceOf(theCallerType.name, j.key()) continue;
+				local iCounter = 0;
+				while $iCounter < params.size()$ {
+					if params#[iCounter].type != i.firstFunction.parameters#[iCounter].type {
+						if (params#[iCounter].type.name != "int" || i.firstFunction.parameters#[iCounter].type != "enum") {
+							if (not (params#[iCounter].type.name in {"ArrayMath", "DoubleArray"}) || not (i.firstFunction.parameters#[iCounter].type.name in {"ArrayMath", "DoubleArray"})) {
+								if i.firstFunction.parameters#[iCounter].type != "array" || !params#[iCounter].type.is_convertible_to_array {
+									break;
+								}
+							}
+						}
+					} else if params#[iCounter].type == "base" &&
+					          (i.firstFunction.parameters#[iCounter].type.name != params#[iCounter].type.name) &&
+					          (i.firstFunction.parameters#[iCounter].alternative_type.name != params#[iCounter].type.name) &&
+					          (i.firstFunction.parameters#[iCounter].type.name == "char" || params#[iCounter].type.name == "char") {
+						break;
+					} else if params#[iCounter].type == "array" &&
+					          (i.firstFunction.parameters#[iCounter].type.name != params#[iCounter].type.name) {
+						break;
+					}
+					increment(iCounter);
+				}
+				if $iCounter != params.size()$ break;
+				iSuffix = i.key();
+				setall theFuncType = i.firstFunction.return_type;
+				while $iCounter < i.key()$ {
+					if !i.firstFunction.parameters#[iCounter].default.existVariable() {
+						// if the type is an array, we consider that this function
+						// replaces a more generic one, with simple data types and
+						// default parameter values
+						if (i.min_size && $i.min_size > iCounter$) || i.firstFunction.parameters#[iCounter].type != "array" break;
+					}
+					@, null@
+					increment(iCounter);
+				}
+				if $iCounter < i.key()$ {
+					iSuffix = false;
+					continue;
+				}
+				if i.firstFunction.output_param {
+					if returnedVar {
+						@, @returnedVar@@
+						sFinalReturnedVar = returnedVar;
+					} else {
+						increment(scope.localVars);
+						sFinalReturnedVar = "localVar" + scope.localVars;
+						insertTextToFloatingLocation("declarations", "local " + sFinalReturnedVar + ";");
+						@, @sFinalReturnedVar@@
+					}
+				}
+				break;
+			}
+			if iSuffix break;
+		}
+		if !iSuffix {
+			local sSignature = theCallerType.name + "::" + sFunction + '(';
+			foreach i in params {
+				if !i.first() {
+					sSignature += ", ";
+				}
+				sSignature += getCppType(i.type);
+			}
+			sSignature += ')';
+			error("unable to find the CodeWorker signature of the C++ function " + sSignature + " in CHARTcw");
+		}
+		insertTextToFloatingLocation(sSuffixPosition, iSuffix);
+	}
+	')'
+	=> {@);@}
+	[
+			["->" | '.'] #continue
+			function_call(scope, sFinalReturnedVar, theFuncType, returnedVar, theFuncType):function_call
+		|
+			=> if bCalledAsExpression && !sFinalReturnedVar {
+				increment(scope.localVars);
+				sFinalReturnedVar = "localVar" + scope.localVars;
+				insertTextToFloatingLocation(sCallPosition, "local " + sFinalReturnedVar + " = ");
+			}
+			=> function_call = sFinalReturnedVar;
+	]
+	;
+
+C_function_call<T>(scope : node) ::=
+	=> local theUserFunction;
+	#check(getUserFunction(scope, T, theUserFunction))
+	#continue
+	=> {@@T@(@}
+	#implicitCopy
+	ignore_parenthesis
+	')'
+	';'
+	;
+
+C_function_call<"sprintf">(scope : node) ::=
+	#continue
+	#readIdentifier:sVar
+	=>{@@sVar@ = @}
+	','
+	#implicitCopy
+	=> local iPercent = 0;
+	[
+		'"' #continue
+		#!ignore
+		[
+				'\\' #continue #readChar
+			|
+				#explicitCopy
+				'%' #continue
+				[
+					'.' #continue
+					['0'..'9']+
+				]?
+				#readChar
+				=> newFloatingLocation("%" + iPercent);
+				=> increment(iPercent);
+			|
+				~'"'
+		]*
+		'"'
+	]+
+	#explicitCopy
+	=> iPercent = 0;
+	[
+		',' #continue
+		=> setFloatingLocation("EOF-1", $getOutputLocation() - 1$);
+		=> local theExpr, theType;
+		expression(scope, theExpr, theType)
+		=> local iEOF = $getFloatingLocation("EOF-1") + 1$;
+		=> local sExpr = getLastWrittenChars($getOutputLocation() - iEOF$);
+		=> setOutputLocation(iEOF);
+		=> insertTextToFloatingLocation("%" + iPercent, "\" + " + sExpr + " + \"");
+		=> increment(iPercent);
+	]*
+	')'
+	';'
+	=> {@;@}
+	;
+
+parenthesis_instruction(scope : node) ::=
+	#continue
+	'(' "double" '*' ')'
+	#readIdentifier:sVar
+	'.' "data" ')' '['
+	=> {@@sVar@#[@}
+	=> local expr, theType;
+	expression(scope, expr, theType)
+	']' '='
+	=> {@] = @}
+	expression(scope, expr, theType)
+	';'
+	=> {@;@}
+	;
+
+keyword<"double">(scope : node) ::=
+	#continue
+	=> local theType = "base";
+	=> insert theType.name = "double";
+	#readIdentifier:sVar
+	[
+		'[' #continue ']'
+		=> insert theType.pointers = '*';
+	]?
+	[
+			'=' #continue
+			=> {
+				@local @sVar@ = @
+			}
+			[
+					'{' =>{@{@}
+					#continue
+					=> local theExpr, theType;
+					expression(scope, theExpr, theType)
+					[
+						[',' =>{@,@} #!ignore #implicitCopy #skipIgnore(C++)]
+						#continue expression(scope, theExpr, theType)
+					]*
+					'}' ';'
+					=>{@};@}
+				|
+					#continue
+					=> local theExpr, theType;
+					expression(scope, theExpr, theType)
+					#implicitCopy
+					';'
+			]
+		|
+			';'
+			=>{@local @sVar@;@endl()@@}
+	]
+	=> insert scope.variables[sVar].name = sVar;
+	=> setall scope.variables[sVar].type = theType;
+	;
+
+keyword<"int">(scope : node) ::=
+	#continue
+	=> local theType = "base";
+	=> insert theType.name = "int";
+	#readIdentifier:sVar
+	[
+		'[' #continue ']'
+		=> insert theType.pointers = '*';
+	]?
+	[
+			'=' #continue
+			=> {
+				@local @sVar@ = @
+			}
+			[
+					'{' =>{@{@}
+					#continue
+					=> local theExpr, theType;
+					expression(scope, theExpr, theType)
+					[
+						[',' =>{@,@} #!ignore #implicitCopy #skipIgnore(C++)]
+						#continue expression(scope, theExpr, theType)
+					]*
+					'}' ';'
+					=>{@};@}
+				|
+					#continue
+					=> local theExpr, theType;
+					expression(scope, theExpr, theType)
+					#implicitCopy
+					';'
+			]
+		|
+			';'
+			=>{@local @sVar@;@endl()@@}
+	]
+	=> insert scope.variables[sVar].name = sVar;
+	=> setall scope.variables[sVar].type = theType;
+	;
+
+keyword<"bool">(scope : node) ::=
+	#continue
+	=> local theType = "base";
+	=> insert theType.name = "bool";
+	#readIdentifier:sVar
+	[
+		'[' #continue ']'
+		=> insert theType.pointers = '*';
+	]?
+	'='
+	=> {
+		@local @sVar@ =@
+	}
+	#implicitCopy
+	->';'
+	=> insert scope.variables[sVar].name = sVar;
+	=> setall scope.variables[sVar].type = theType;
+	;
+
+keyword<"char">(scope : node) ::=
+	#continue
+	=> local theType = "base";
+	=> insert theType.name = "char";
+	#readIdentifier:sVar
+	[
+		'[' #continue [#readInteger]? ']'
+		=> insert theType.pointers = '*';
+	]?
+	=> {
+		@local @sVar@@
+	}
+	#implicitCopy
+	->';'
+	=> insert scope.variables[sVar].name = sVar;
+	=> setall scope.variables[sVar].type = theType;
+	;
+
+keyword<"const">(scope : node) ::=
+	#continue
+	=> local theType;
+	=> insert theType.const = "const";
+	"char" '*'
+	=> insert theType = "base";
+	=> insert theType.name = "char";
+	=> insert theType.pointers = '*';
+	#readIdentifier:sVar
+	[
+		'[' #continue ']'
+		=> insert theType.pointers += '*';
+	]?
+	'='
+	=> {
+		@local @sVar@ =@
+	}
+	#implicitCopy
+	->';'
+	=> insert scope.variables[sVar].name = sVar;
+	=> setall scope.variables[sVar].type = theType;
+	;
+
+keyword<"DoubleArray">(scope : node) ::=
+	#continue
+	=> local theType = "array";
+	=> insert theType.name = "DoubleArray";
+	#readIdentifier:sVar
+	'='
+	=> {
+		@localref @sVar@ = @
+	}
+	=> local theExpr, theReturnType;
+	expression(scope, theExpr, theReturnType)
+	#implicitCopy
+	';'
+	=> insert scope.variables[sVar].name = sVar;
+	=> setall scope.variables[sVar].type = theType;
+	;
+
+keyword<"delete">(scope : node) ::=
+	#continue
+	->';'
+	;
+
+keyword<"return">(scope : node) ::=
+	#continue
+	->';'
+	;
+
+keyword<"if">(scope : node) ::=
+	#continue
+	=> {@if @}
+	=> local expr, theType;
+	'(' expression(scope, expr, theType) ')'
+	=> {@ {@}
+	block(scope)
+	=> {@}@}
+	[
+		#readIdentifier:"else"
+		#continue
+		=> {@ else @}
+		[
+				!![#readIdentifier:"if"]
+				#continue
+				#skipIgnore(blanks)
+				block(scope)
+			|
+				=> {@{@}
+				#continue
+				block(scope)
+				=> {@}@}
+		]
+	]?
+	;
+
+keyword<"for">(scope : node) ::=
+	#continue
+	'('
+	#readIdentifier:sIndex
+	[
+		#check(sIndex == "int")
+		#continue
+		#readIdentifier:sIndex
+		=> insert scope.variables[sIndex].name = sIndex;
+		=> insert scope.variables[sIndex].type = "base";
+		=> insert scope.variables[sIndex].type.name = "int";
+		=>{@local @}
+	]?
+	'='
+	=> {@@sIndex@ = @}
+	=> local expr, theType;
+	expression(scope, expr, theType)
+	';'
+	=> {@;@endl()@	while @}
+	expression(scope, expr, theType)
+	';'
+	=> {@ {@endl()@	@}
+	ignore_parenthesis:sIncrementExpr
+	')'
+	block(scope)
+	#parsedString(sIncrementExpr)
+	[
+			"++" #readText(sIndex) #empty
+			=> {
+				@	increment(@sIndex@);
+@
+			}
+		|
+			#readText(sIndex) "+="
+			=> {@	@sIndex@ = $@sIndex@ +@}
+			#implicitCopy
+			->#empty
+			=>{@$;@endl()@@}
+	]
+	=> {@	}@}
+	;
+
+expression(scope : node, expr : node, theType : node) ::=
+	comparison_expression(scope, expr, theType)
+	;
+
+comparison_expression(scope : node, expr : node, theType : node) ::=
+	=> local sOp;
+	=> local sKey = "comp" + getInputLocation();
+	=> newFloatingLocation(sKey);
+	arithmetic_expression(scope, expr, theType)
+	=> local bDollar;
+	=> if getLastWrittenChars(1) == '$' {
+		setOutputLocation($getOutputLocation() - 1$);
+		bDollar = true;
+	}
+	[
+		["!=" | "==" | "<=" | ">=" | "<" !"<" | ">" !">"]:sOp
+		#continue
+		=> {@ @sOp@ @}
+		=> slideNodeContent(expr, expr.left);
+		=> expr = sOp;
+		arithmetic_expression(scope, expr.right, theType)
+	]*
+	=> if sOp {
+		if theType.name == "int" || theType.name == "double" {
+			if !bDollar insertTextToFloatingLocation(sKey, '$');
+			@$@
+		} else if bDollar {
+			@$@
+		}
+		theType.clearVariable();
+		theType = "base";
+		insert theType.name = "bool";
+	} else if bDollar {
+		@$@
+	}
+	=> removeFloatingLocation(sKey);
+	;
+
+arithmetic_expression(scope : node, expr : node, theType : node) ::=
+	sum_expression(scope, expr, theType)
+	;
+
+sum_expression(scope : node, expr : node, theType : node) ::=
+	=> local sOp;
+	=> local sKey = "sum" + getInputLocation();
+	=> newFloatingLocation(sKey);
+	mult_expression(scope, expr, theType)
+	=> local bDollar;
+	=> if getLastWrittenChars(1) == '$' {
+		setOutputLocation($getOutputLocation() - 1$);
+		bDollar = true;
+	}
+	[
+		["+" | "-"]:sOp
+		#continue
+		=> {
+			if theType.is_enum {
+				@ + '+' + @
+				sOp = '|';
+			} else {
+				@ @sOp@ @
+			}
+		}
+		=> slideNodeContent(expr, expr.left);
+		=> expr = sOp;
+		mult_expression(scope, expr.right, theType)
+	]*
+	=> if sOp && (sOp != '|') && (theType.name == "int" || theType.name == "double") {
+		if !bDollar insertTextToFloatingLocation(sKey, '$');
+		@$@
+	} else if bDollar {
+		@$@
+	}
+	=> removeFloatingLocation(sKey);
+	;
+
+mult_expression(scope : node, expr : node, theType : node) ::=
+	=> local sOp;
+	=> local sKey = "mult" + getInputLocation();
+	=> newFloatingLocation(sKey);
+	literal_expression(scope, expr, theType)
+	=> local bDollar;
+	=> if getLastWrittenChars(1) == '$' {
+		setOutputLocation($getOutputLocation() - 1$);
+		bDollar = true;
+	}
+	[
+		["*" | "/" | "%"]:sOp
+		#continue
+		=> {@ @sOp@ @}
+		=> slideNodeContent(expr, expr.left);
+		=> expr = sOp;
+		=> local theType2;
+		literal_expression(scope, expr.right, theType2)
+	]*
+	=> if sOp && (theType.name == "int" || theType.name == "double") {
+//		if (sOp == '/') && (theType.name == "int") {
+//			insertTextToFloatingLocation(sKey, "floor(");
+//		}
+		if !bDollar insertTextToFloatingLocation(sKey, '$');
+		@$@
+	} else if bDollar {
+		@$@
+	}
+//	=> if (sOp == '/') && (theType.name == "int") {
+//		@)@
+//	}
+	;
+
+literal_expression(scope : node, expr : node, theType : node) ::=
+		'(' #continue expression(scope, expr, theType) ')'
+	|
+		#readCString:expr.value
+		[#readCString:+expr.value]*
+		=> { @"@expr.value.composeCLikeString()@"@ }
+		=> theType = "base";
+		=> insert theType.name = "char";
+		=> insert theType.const = "const";
+		=> insert theType.pointers = '*';
+		=> expr = '"';
+	|
+		"0x" #continue
+		#!ignore
+		['0'..'9' | 'a'..'f' | 'A'..'F']+:expr.value
+		=> expr.value = "0x" + expr.value;
+		=> {@"@expr.value@"@}
+		=> theType = "base";
+		=> insert theType.name = "int";
+		=> expr = 'i';
+	|
+		#readNumeric:expr.value
+		=> {@@expr.value@@}
+		=> theType = "base";
+		=> insert theType.name = $expr.value.findString('.') >= 0$ ? "double" : "int";
+		=> expr = theType.name.charAt(0);
+	|
+		[
+				#readIdentifier:"Chart" #continue
+				"::"
+				#readIdentifier:expr.variable
+			|
+				#readIdentifier:"chartTime":expr.variable
+		]
+		#continue
+		[
+				#check(this.namespaces["Chart"].arrays.findElement(expr.variable))
+				=> {@CHART::@expr.variable@@}
+				=> switch(this.namespaces["Chart"].arrays[expr.variable].type.name) {
+					case "int":
+						theType = "array";
+						insert theType.name = "IntArray";
+				}
+				=> expr = 'v';
+			|
+				#check(this.namespaces["Chart"].constants.findElement(expr.variable))
+				=> {@CHART::@expr.variable@@}
+				=> setall theType = this.namespaces["Chart"].constants[expr.variable].type;
+				=> expr = 'v';
+			|
+				#check(this.namespaces["Chart"].functions.findElement(expr.variable))
+				#continue
+				'('
+				=> {@CHART::@expr.variable@(@}
+				=> local iArgsCounter = 0;
+				[
+					=> local expr, theType;
+					expression(scope, expr, theType)
+					=> increment(iArgsCounter);
+					[
+						',' #continue
+						=> {@, @}
+						expression(scope, expr, theType)
+						=> increment(iArgsCounter);
+					]*
+				]?
+				')'
+				=> while $iArgsCounter < this.namespaces["Chart"].functions[expr.variable]#front.parameters.size()$ {
+					if iArgsCounter != 0 {
+						@, @
+					}
+					@null@
+					increment(iArgsCounter);
+				}
+				=> {@)@}
+				=> setall theType = this.namespaces["Chart"].functions[expr.variable]#front.return_type;
+				=> expr = 'v';
+			|
+				=> {@"Chart::@expr.variable@"@}
+				=> theType = "base";
+				=> insert theType.name = "int";
+				=> insert theType.is_enum = true;
+				=> expr = 'i';
+		]
+	|
+		#readIdentifier:{"true", "false"}:expr.value
+		=> {@@expr.value@@}
+		=> theType = "base";
+		=> insert theType.name = "bool";
+		=> expr = 'b';
+	|
+		#readIdentifier:{"DoubleArray", "IntArray", "StringArray"}:sType
+		#continue
+		'('
+		[
+				')'
+				=> insert expr.variable = 0;
+				=> {
+					@emptyArray@
+					// this empty array must have been declared before
+					// at the location assigned to it: just once!
+					insertTextOnceToFloatingLocation("global declarations", "global emptyArray;" + endl() + endl());
+				}
+			|
+				#continue
+				[
+						#readIdentifier:expr.variable
+						=> {@@expr.variable@@}
+					|
+						'0'
+						=> insert expr.variable = 0;
+						=> {
+							@emptyArray@
+							// this empty array must have been declared before
+							// at the location assigned to it: just once!
+							insertTextOnceToFloatingLocation("global declarations", "global emptyArray;" + endl() + endl());
+						}
+				]
+				','
+				ignore_parenthesis
+				')'
+		]
+		=> theType = "array";
+		=> insert theType.name = sType;
+		=> expr = 'v';
+	|
+		#readIdentifier:"sizeof" #continue
+		'(' #readIdentifier:sVar ')' '/' "sizeof" '(' #readText(sVar) '[' '0' ']' ')'
+		=> {@@sVar@.size()@}
+		=> theType = "base";
+		=> insert theType.name = "int";
+		=> expr = 'i';
+	|
+		#readIdentifier:sClass
+		#check(this.classes.findElement(sClass))
+		#continue
+		=> increment(scope.localVars);
+		=> local sLocalVar = "localVar" + scope.localVars;
+		=> insertTextToFloatingLocation("declarations", "local " + sLocalVar + ';');
+		=> local sEOFKey = "EOF" + getInputLocation();
+		=> setFloatingLocation(sEOFKey, $getOutputLocation() - 1$);
+		=> {@CHART::create@sClass@(@sLocalVar@@}
+		'('
+		=> {@, @}
+		=> local theExpr, theExprType;
+		expression(scope, theExpr, theExprType)
+		[
+			',' #continue
+			=> {@, @}
+			expression(scope, theExpr, theExprType)
+		]*
+		')'
+		=> {@);@}
+		=> theType = "class";
+		=> insert theType.name = sClass;
+		=> expr = 'v';
+		[
+			'.' #continue
+			=> local theFuncType;
+			function_call(scope, sLocalVar, theType, "", theFuncType)
+			=> setall theType = theFuncType;
+		]?
+		=> local iEOF = $getFloatingLocation(sEOFKey) + 1$;
+		=> local sExpr = getLastWrittenChars($getOutputLocation() - iEOF$);
+		=> setOutputLocation(iEOF);
+		=> insertTextToFloatingLocation("declarations", sExpr);
+		=> {@@sLocalVar@@}
+	|
+		#readIdentifier:sVar
+		#continue
+		=> local theVar;
+		#check(getVariable(scope, sVar, theVar))
+		[
+				["->" | '.']
+				[
+						#check(theVar.type == "array")
+						#readIdentifier:"len"
+						!'('
+						=> {@@sVar@.size()@}
+					|
+						
+						=> local sText;
+						=> local sReturnedVar;
+						[
+							#generatedString(sText)
+							#continue
+							function_call(scope, sVar, theVar.type, "", theType):sReturnedVar
+						]
+						=> insertTextToFloatingLocation("declarations", sText);
+						=> {@@sReturnedVar@@}
+				]
+			|
+				=> {@@sVar@@}
+				=> setall theType = theVar.type;
+				[
+					'[' #continue
+					=> {@#[@}
+					=> local indexType;
+					expression(scope, expr, indexType)
+					']'
+					=> {@]@}
+					[
+							#check(theType == "array")
+							=> theType = "base";
+							=> switch(theType.name) {
+								case "IntArray": theType.name = "int";break;
+								case "DoubleArray": theType.name = "double";break;
+							}
+						|
+							#check(theType == "base")
+							=> theType.pointers = false;
+					]
+				]?
+		]
+	;
+
+type(scope : node, theType : node) ::=
+	[#readIdentifier:"const":theType.const]?
+	#readIdentifier:theType.name
+	[
+			#check(theType.name in {"char", "int", "double", "void", "bool"})
+			=> theType = "base";
+		|
+			#check(theType.name.endString("Internal"))
+			=> theType = "internal";
+		|
+			#check(theType.name.endString("Array"))
+			=> theType = "array";
+		|
+			=> local definedType;
+			#check(getType(scope, theType.name, definedType))
+			=> theType = "class";
+		|
+			#check(theType.name == "CHARTDIR_WIDECHAR")
+			=> theType = "base";
+			=> theType.name = "void";
+		|
+			#check(theType.name == "MemBlock")
+			=> theType = "special";
+			=> theType.name = "MemBlock";
+	]
+	[[#readIdentifier:"const":+theType.pointers]? '*':+theType.pointers]*
+	['&':theType.is_reference]?
+	;
+
+
+ignore_parenthesis ::= [#readCString | #readCChar | '(' #continue ignore_parenthesis ')' | ~')']*;

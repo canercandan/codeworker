@@ -1,0 +1,317 @@
+<project>
+	<listOfPackages>
+		<__ARRAY_ENTRY __KEY="derivatives">
+			<name __VALUE="derivatives" />
+			<sequence __VALUE="derivatives" />
+			<listOfPackages>
+				<__ARRAY_ENTRY __KEY="market_data">
+					<name __VALUE="market_data" />
+					<sequence __VALUE="derivatives.market_data" />
+					<listOfClasses>
+						<__ARRAY_ENTRY __KEY="Volatility">
+							<name __VALUE="Volatility" />
+							<listOfMethods>
+								<__ARRAY_ENTRY __KEY="getValue">
+									<isConst __VALUE="true" />
+									<name __VALUE="getValue" />
+									<listOfParameters>
+										<__ARRAY_ENTRY __KEY="0">
+											<type>
+												<name __VALUE="double" />
+											</type>
+											<name __VALUE="K" />
+										</__ARRAY_ENTRY>
+										<__ARRAY_ENTRY __KEY="1">
+											<type>
+												<name __VALUE="date" />
+											</type>
+											<name __VALUE="T" />
+										</__ARRAY_ENTRY>
+									</listOfParameters>
+									<type>
+										<name __VALUE="double" />
+									</type>
+								</__ARRAY_ENTRY>
+							</listOfMethods>
+							<sequence __VALUE="derivatives.market_data" />
+						</__ARRAY_ENTRY>
+						<__ARRAY_ENTRY __KEY="ConstantVolatility">
+							<name __VALUE="ConstantVolatility" />
+							<extendedClass />
+							<listOfAttributes>
+								<__ARRAY_ENTRY __KEY="value">
+									<name __VALUE="value" />
+									<type>
+										<name __VALUE="double" />
+									</type>
+								</__ARRAY_ENTRY>
+							</listOfAttributes>
+							<sequence __VALUE="derivatives.market_data" />
+						</__ARRAY_ENTRY>
+						<__ARRAY_ENTRY __KEY="Currency">
+							<name __VALUE="Currency" />
+							<sequence __VALUE="derivatives.market_data" />
+						</__ARRAY_ENTRY>
+						<__ARRAY_ENTRY __KEY="Instrument">
+							<name __VALUE="Instrument" />
+							<sequence __VALUE="derivatives.market_data" />
+						</__ARRAY_ENTRY>
+						<__ARRAY_ENTRY __KEY="Stock">
+							<name __VALUE="Stock" />
+							<extendedClass />
+							<listOfAttributes>
+								<__ARRAY_ENTRY __KEY="spot">
+									<name __VALUE="spot" />
+									<type>
+										<name __VALUE="double" />
+									</type>
+								</__ARRAY_ENTRY>
+								<__ARRAY_ENTRY __KEY="volatility">
+									<name __VALUE="volatility" />
+									<type>
+										<name __VALUE="Volatility" />
+										<isObject __VALUE="true" />
+										<objectClass />
+									</type>
+								</__ARRAY_ENTRY>
+								<__ARRAY_ENTRY __KEY="currency">
+									<name __VALUE="currency" />
+									<type>
+										<name __VALUE="Currency" />
+										<isObject __VALUE="true" />
+										<objectClass />
+									</type>
+								</__ARRAY_ENTRY>
+							</listOfAttributes>
+							<sequence __VALUE="derivatives.market_data" />
+						</__ARRAY_ENTRY>
+					</listOfClasses>
+				</__ARRAY_ENTRY>
+				<__ARRAY_ENTRY __KEY="products">
+					<name __VALUE="products" />
+					<sequence __VALUE="derivatives.products" />
+					<listOfClasses>
+						<__ARRAY_ENTRY __KEY="Product">
+							<name __VALUE="Product" />
+							<listOfAttributes>
+								<__ARRAY_ENTRY __KEY="underlying">
+									<name __VALUE="underlying" />
+									<type>
+										<name __VALUE="Instrument" />
+										<isObject __VALUE="true" />
+										<objectClass />
+									</type>
+								</__ARRAY_ENTRY>
+								<__ARRAY_ENTRY __KEY="lotSize">
+									<name __VALUE="lotSize" />
+									<type>
+										<name __VALUE="double" />
+									</type>
+								</__ARRAY_ENTRY>
+							</listOfAttributes>
+							<sequence __VALUE="derivatives.products" />
+						</__ARRAY_ENTRY>
+						<__ARRAY_ENTRY __KEY="Vanilla">
+							<name __VALUE="Vanilla" />
+							<extendedClass />
+							<listOfAttributes>
+								<__ARRAY_ENTRY __KEY="strike">
+									<name __VALUE="strike" />
+									<type>
+										<name __VALUE="double" />
+									</type>
+								</__ARRAY_ENTRY>
+								<__ARRAY_ENTRY __KEY="maturity">
+									<name __VALUE="maturity" />
+									<type>
+										<name __VALUE="date" />
+									</type>
+								</__ARRAY_ENTRY>
+							</listOfAttributes>
+							<sequence __VALUE="derivatives.products" />
+						</__ARRAY_ENTRY>
+						<__ARRAY_ENTRY __KEY="Trade">
+							<name __VALUE="Trade" />
+							<listOfAttributes>
+								<__ARRAY_ENTRY __KEY="product">
+									<name __VALUE="product" />
+									<type>
+										<name __VALUE="Product" />
+										<isObject __VALUE="true" />
+										<objectClass />
+									</type>
+								</__ARRAY_ENTRY>
+								<__ARRAY_ENTRY __KEY="nominal">
+									<name __VALUE="nominal" />
+									<type>
+										<name __VALUE="double" />
+									</type>
+								</__ARRAY_ENTRY>
+							</listOfAttributes>
+							<sequence __VALUE="derivatives.products" />
+						</__ARRAY_ENTRY>
+					</listOfClasses>
+				</__ARRAY_ENTRY>
+				<__ARRAY_ENTRY __KEY="pricing">
+					<name __VALUE="pricing" />
+					<sequence __VALUE="derivatives.pricing" />
+					<listOfClasses>
+						<__ARRAY_ENTRY __KEY="Result">
+							<name __VALUE="Result" />
+							<sequence __VALUE="derivatives.pricing" />
+						</__ARRAY_ENTRY>
+						<__ARRAY_ENTRY __KEY="PricingIndicator">
+							<name __VALUE="PricingIndicator" />
+							<listOfInstances>
+								<__ARRAY_ENTRY __KEY="PREMIUM" __VALUE="PREMIUM" />
+								<__ARRAY_ENTRY __KEY="DELTA" __VALUE="DELTA" />
+							</listOfInstances>
+							<sequence __VALUE="derivatives.pricing" />
+						</__ARRAY_ENTRY>
+						<__ARRAY_ENTRY __KEY="PricingResult">
+							<name __VALUE="PricingResult" />
+							<extendedClass />
+							<listOfAttributes>
+								<__ARRAY_ENTRY __KEY="numericResults">
+									<name __VALUE="numericResults" />
+									<type>
+										<name __VALUE="map" />
+										<keyType>
+											<name __VALUE="string" />
+										</keyType>
+										<elementType>
+											<name __VALUE="double" />
+										</elementType>
+									</type>
+								</__ARRAY_ENTRY>
+							</listOfAttributes>
+							<listOfMethods>
+								<__ARRAY_ENTRY __KEY="getResult">
+									<isConst __VALUE="true" />
+									<name __VALUE="getResult" />
+									<listOfParameters>
+										<__ARRAY_ENTRY __KEY="0">
+											<type>
+												<isConst __VALUE="true" />
+												<name __VALUE="Trade" />
+												<isObject __VALUE="true" />
+											</type>
+											<name __VALUE="trade" />
+										</__ARRAY_ENTRY>
+										<__ARRAY_ENTRY __KEY="1">
+											<type>
+												<isConst __VALUE="true" />
+												<name __VALUE="PricingIndicator" />
+												<isObject __VALUE="true" />
+											</type>
+											<name __VALUE="request" />
+										</__ARRAY_ENTRY>
+									</listOfParameters>
+									<type>
+										<name __VALUE="double" />
+									</type>
+								</__ARRAY_ENTRY>
+							</listOfMethods>
+							<sequence __VALUE="derivatives.pricing" />
+						</__ARRAY_ENTRY>
+					</listOfClasses>
+					<listOfServices>
+						<__ARRAY_ENTRY __KEY="Revaluation">
+							<name __VALUE="Revaluation" />
+							<listOfMethods>
+								<__ARRAY_ENTRY __KEY="price">
+									<name __VALUE="price" />
+									<listOfParameters>
+										<__ARRAY_ENTRY __KEY="0">
+											<type>
+												<elementType>
+													<isConst __VALUE="true" />
+													<name __VALUE="Trade" />
+													<isObject __VALUE="true" />
+												</elementType>
+												<isArray __VALUE="true" />
+											</type>
+											<name __VALUE="trades" />
+										</__ARRAY_ENTRY>
+										<__ARRAY_ENTRY __KEY="1">
+											<type>
+												<elementType>
+													<isConst __VALUE="true" />
+													<name __VALUE="PricingIndicator" />
+													<isObject __VALUE="true" />
+												</elementType>
+												<isArray __VALUE="true" />
+											</type>
+											<name __VALUE="requests" />
+										</__ARRAY_ENTRY>
+									</listOfParameters>
+									<type>
+										<name __VALUE="PricingResult" />
+										<isObject __VALUE="true" />
+									</type>
+								</__ARRAY_ENTRY>
+							</listOfMethods>
+						</__ARRAY_ENTRY>
+					</listOfServices>
+				</__ARRAY_ENTRY>
+			</listOfPackages>
+		</__ARRAY_ENTRY>
+	</listOfPackages>
+	<allClasses>
+		<__ARRAY_ENTRY __KEY="Volatility">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="ConstantVolatility">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="Currency">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="Instrument">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="Stock">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="Product">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="Vanilla">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="Trade">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="Result">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="PricingIndicator">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="PricingResult">
+			<packages>
+				<__ARRAY_ENTRY __KEY="0" />
+			</packages>
+		</__ARRAY_ENTRY>
+	</allClasses>
+</project>

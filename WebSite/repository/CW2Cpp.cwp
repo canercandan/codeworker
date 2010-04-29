@@ -1,0 +1,11 @@
+#include "CodeWorker_grammar.cwp"
+
+#parameters X(theEnv : node) X != "#ignore" && X != "translation_unit"
+
+#overload translation_unit	::= => local theEnv; script<this>(theEnv);
+
+#overload script<"">(theEnv : node) ::= => error("please assign the type of script in the context, amongst{\"procedural\", \"extended-BNF\", \"template-based\"}"); ;
+
+#overload script<"procedural">(theEnv : node) ::= #super::script<"procedural">
+#overload script<"template-based">(theEnv : node) ::=
+#overload script<"extended-BNF">(theEnv : node) ::=

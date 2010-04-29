@@ -1,0 +1,300 @@
+digraph structs {
+	node [shape=record,style=filled,color=red3];
+@
+
+#include "CommonTools-C++.cws"
+
+function composeGraphVizLikeString(sText) {
+	set sText = sText.replaceString(' ', "\\ ");
+	set sText = sText.replaceString('<', "\\<");
+	set sText = sText.replaceString('>', "\\>");
+	return sText;
+}
+
+function composeGraphVizIdentifier(sText) {
+	set sText = sText.replaceString('\\', '_');
+	set sText = sText.replaceString('<', '_');
+	set sText = sText.replaceString('>', '_');
+	set sText = sText.replaceString(',', '_');
+	set sText = sText.replaceString(':', '_');
+	set sText = sText.replaceString('&', '_');
+	set sText = sText.replaceString('*', '_');
+	return sText;
+}
+
+function validate(myClass : node, theProperty : node) {
+	local bSuccess;
+	foreach i in this.descriptions {
+		if myClass == i {
+			set bSuccess = true;
+			merge theProperty = i;
+		} else if i.filter {
+			executeString(myClass, "insert this.validate = " + i.filter + ";");
+			if myClass.validate {
+				set bSuccess = true;
+				merge theProperty = i;
+			}
+		}
+	}
+	return bSuccess;
+}
+
+function validateAssociation(theOrigin : node, theDestination : node, theProperty : node) {
+	local bSuccess;
+	if this.associations.empty() return true;
+	foreach i in this.associations {
+		executeString(theOrigin, "insert this.validate = " + i.origin_filter + ";");
+		if theOrigin.validate {
+			executeString(theDestination, "insert this.validate = " + i.destination_filter + ";");
+			if theDestination.validate {
+				set bSuccess = true;
+				merge theProperty = i;
+			}
+		}
+	}
+	return bSuccess;
+}
+
+function elementType(myType : node, myElementType : reference) {
+	if existVariable(myType.template_parameters) {
+		switch(myType) {
+			case "vector":
+			case "set":
+			case "map":
+				ref myElementType = myType.template_parameters#back;
+				if this.typedefs.findElement(myElementType) && !existVariable(myElementType.nested_names) {
+					ref myElementType = this.typedefs[myElementType];
+				}
+				return true;
+			default:
+				return false;
+		}
+	} else if this.typedefs.findElement(myType) && !existVariable(myType.nested_names) {
+		return this.typedefs[myType].elementType(myElementType);
+	}
+}
+
+function isObject(myType : node) {
+	if myType.is_function return false;
+	if this.typedefs.findElement(myType) && !existVariable(myType.nested_names) {
+		return this.typedefs[myType].isObject();
+	}
+	local a = myType.charAt(0);
+	if (a >= 'A') && (a <= 'Z') {
+		local sType = myType;
+		if !myType.template_parameters.empty() {
+			set sType += '<';
+			foreach i in myType.template_parameters {
+				if !first(i) set sType += ',';
+				set sType += getCppTargetType(i);
+			}
+			set sType += '>';
+		}
+		return sType;
+	}
+	local myElementType;
+	if myType.elementType(myElementType) return myElementType.isObject();
+	return false;
+}
+
+function getObject(myType : node, myClass : reference) {
+	if myType.is_function return false;
+	if this.typedefs.findElement(myType) && !existVariable(myType.nested_names) {
+		return this.typedefs[myType].getObject(myClass);
+	}
+	if this.classes.findElement(myType) {
+		local sType = myType;
+		ref myClass = this.classes[myType];
+		return true;
+	}
+	local myElementType;
+	if myType.elementType(myElementType) return myElementType.getObject(myClass);
+	return false;
+}
+
+function isArray(myType : node) {
+	if (myType == "vector") && existVariable(myType.template_parameters) return true;
+	if !myType.suffix.empty() && myType.suffix#front == "array" return true;
+	if this.typedefs.findElement(myType) && !existVariable(myType.nested_names) return this.typedefs[myType].isArray();
+}
+
+function isAggregate(myType : node) {
+	if myType.isObject() {
+		if myType.suffix.empty() || myType.suffix#front != "pointer" {
+			if this.typedefs.findElement(myType) && !existVariable(myType.nested_names) return this.typedefs[myType].isAggregate();
+			return true;
+		}
+	}
+	return false;
+}
+
+function isOptional(myType : node) {
+	if myType.isObject() {
+		if myType.suffix.empty() || myType.suffix#front != "pointer" {
+			if this.typedefs.findElement(myType) && !existVariable(myType.nested_names) return this.typedefs[myType].isOptional();
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+function serializeType(myType : node) {
+	if myType.isArray() {
+		local myElt;
+		myType.elementType(myElt);
+		return serializeType(myElt) + "[]";
+	}
+	return myType;
+}
+
+local displayed;
+local toDisplay;
+
+function generateClassBox(theClass : node, displayed : node, toDisplay : node) {
+	local theProperty;
+	local sClassIdentifier;
+	if validate(theClass, theProperty) {
+		local sClassName = theClass;
+		if !theClass.template_parameters_specializations.empty() {
+			set sClassName += "\\<";
+			foreach j in theClass.template_parameters_specializations {
+				if !first(j) set sClassName += ',';
+				set sClassName += composeGraphVizLikeString(getCppTargetType(j));
+			}
+			set sClassName += "\\>";
+		}
+		set sClassIdentifier = sClassName.composeGraphVizIdentifier();
+		insert displayed[sClassIdentifier];
+		if !theClass.template_parameters.empty() {
+			set sClassName += "\\<";
+			foreach j in theClass.template_parameters {
+				if !first(j) set sClassName += ',';
+				set sClassName += key(j);
+			}
+			set sClassName += "\\>";
+		}
+		@	@sClassIdentifier@ [shape=record,label="{@sClassName@|{@
+		local bAtLeastOne = false;
+		if theProperty.attributes {
+			foreach j in theClass.attributes {
+				if !j.type.isObject()  {
+					if !bAtLeastOne {
+						bAtLeastOne = true;
+					} else {
+						@\n@
+					}
+					@@j@\ :\ @composeGraphVizLikeString(serializeType(j.type))@@
+				}
+			}
+		}
+		if !bAtLeastOne {
+			@\n@
+		}
+		@}@
+		if theProperty.methods {
+			set bAtLeastOne = false;
+			foreach j in theClass.methods {
+				if !bAtLeastOne {
+					bAtLeastOne = true;
+					@|{@
+				} else {
+					@\n@
+				}
+				local sReturnType = composeGraphVizLikeString(j.return_type);
+				if j.is_abstract {
+					@[a] @
+				} else if j.modifiers.findElement("virtual") {
+					@[v] @
+				}
+				@@composeGraphVizLikeString(key(j))@@
+				if sReturnType {
+					@\ : \ @sReturnType@@
+				}
+			}
+			if bAtLeastOne {
+				@\n}@
+			}
+		}
+		@}",fillcolor="#FCFBA6",];
+@
+	}
+	foreach i in theClass.class_specializations if sClassIdentifier {
+		local sSpecializedIdentifier = generateClassBox(i, displayed, toDisplay);
+		if sSpecializedIdentifier {
+			@	@sSpecializedIdentifier@ -> @sClassIdentifier@ [arrowhead=normal,arrowsize=1.0,style=dashed];
+@
+		}
+	}
+	return sClassIdentifier;
+}
+
+foreach i in this.classes {
+	generateClassBox(i, displayed, toDisplay);
+}
+@
+@
+newFloatingLocation("blackboxes");
+@
+@
+local tRelationShipCounter;
+foreach i in this.classes {
+	local theProperty;
+	if validate(i, theProperty) {
+		if theProperty.inheritance {
+			foreach j in i.inheritance {
+				if !displayed.findElement(j) insert toDisplay[j] = composeGraphVizLikeString(getCppTargetType(j));
+				@	@i@ -> @j@ [arrowhead=empty,arrowsize=2.0];
+@
+			}
+		}
+		if theProperty.associations {
+			foreach j in i.attributes {
+				local sObjectName = j.type.isObject();
+				if sObjectName {
+					local theDestination;
+					j.type.getObject(theDestination);
+					local theAssociationProperty;
+					if validateAssociation(i, theDestination, theAssociationProperty) {
+						set sObjectName = composeGraphVizLikeString(sObjectName);
+						local sRoleType = sObjectName.composeGraphVizIdentifier();
+						if !theAssociationProperty.no_duplicate {
+							increment(tRelationShipCounter[sRoleType]);
+							set sRoleType += '_' + tRelationShipCounter[sRoleType];
+						}
+						if !displayed.findElement(sRoleType) insert toDisplay[sRoleType] = sObjectName;
+						@	@i@ -> @sRoleType@ [@
+						if j.type.isAggregate() {
+							@arrowtail=diamond,@
+						}
+						local sRole = j;
+						if j.type.isArray() {
+							if j.type.isOptional {
+								set sRole = "[0..*] " + sRole;
+							} else {
+								set sRole = "[1..*] " + sRole;
+							}
+						} else {
+							if j.type.isOptional() {
+								set sRole = "[0..1] " + sRole;
+							} else {
+								set sRole = "[1] " + sRole;
+							}
+						}
+						@arrowhead=normal,arrowsize=1.0,headlabel="@sRole@"];
+@
+					}
+				}
+			}
+		}
+	}
+}
+
+foreach i in toDisplay {
+	if !displayed.findElement(key(i)) {
+		insert displayed[key(i)];
+		insertTextOnce(getFloatingLocation("blackboxes"), "\t" + key(i) + " [shape=record,label=\"{" + i + "}\",fillcolor=\"#FCFBA6\",];" + endl());
+	}
+}
+
+@}

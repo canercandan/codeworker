@@ -1,0 +1,15 @@
+//command: -I Scripts/Tutorial/GettingStarted
+//command: -define DESIGN_FILE=SolarSystem0.sml -script LeaderScript0.cws
+//note: we expect the design as a file that conforms to our \textit{Simple-Modeling Language} ;
+//note: the file name is given to the definition preprocessor \samp{DESIGN_FILE} on the command
+//note: line by typing \samp{-define DESIGN_FILE=SolarSystem0.sml},
+if !getProperty("DESIGN_FILE")
+	error("'-define DESIGN_FILE=file' expected on the command line");
+traceLine("'Simple Modeling' design file to parse = \""
+		  + getProperty("DESIGN_FILE") + "\"");
+//note: the file is parsed thanks to our previous BNF script,
+parseAsBNF("SimpleML-parsing.cwp",
+		   project, getProperty("DESIGN_FILE"));
+//note: the source code for decorating tree is included here, and its content will be
+//note: executed just after the parsing,
+#include "TreeDecoration.cws"

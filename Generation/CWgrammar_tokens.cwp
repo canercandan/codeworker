@@ -1,0 +1,56 @@
+highlight	::=
+		#ignore(C++)
+		=> insert this.BNF_keywords["#catch"];
+		[
+			->[
+					#readIdentifier:sID
+					#nextStep
+					'<' #readCString:sKeyword
+					announced_keyword<sID>(sKeyword)
+				|
+					#readCString:sSymbol
+					[
+							#check(sSymbol.isIdentifier())
+							=>	if sSymbol == "evaluateVariable" insert this.preprocessors['#' + sSymbol];
+								else if sSymbol == "super" insert this.BNF_keywords['#' + sSymbol];
+								else if sSymbol == "overload" insert this.BNF_keywords['#' + sSymbol];
+								else if sSymbol != "procedural" insert this.keywords[sSymbol];
+						|
+							#check(!(sSymbol in {"/*", "//", "*/", "<%", "%>", "@"}))
+							=>	if sSymbol == "#repeat" insert this.BNF_keywords[sSymbol];
+								else if !sSymbol.startString("C++") {
+									insert this.symbols[sSymbol.length()][sSymbol];
+								}
+					]?
+				|
+					"'" ~'\\':cChar "'"
+					=> if cChar != "@" {
+						insert this.symbols[cChar.length()][cChar];
+					}
+				|
+					"=>"
+					[
+							'{' #continue skipBraces '}'
+						|
+							->[[#readCString #nextStep]? ';']
+					]
+			]
+		]*;
+announced_keyword<T>(sKeyword : value) ::= #check(true);
+announced_keyword<"BNF_directive">(sKeyword : value) ::=
+		=> insert this.BNF_keywords['#' + sKeyword];
+		;
+announced_keyword<"instruction">(sKeyword : value) ::=
+		=> insert this.keywords[sKeyword];
+		;
+announced_keyword<"predefined_procedure_call">(sKeyword : value) ::=
+		=> insert this.functions[sKeyword];
+		;
+announced_keyword<"predefined_function_call">(sKeyword : value) ::=
+		=> insert this.functions[sKeyword];
+		;
+announced_keyword<"preprocessor">(sKeyword : value) ::=
+		=> insert this.preprocessors['#' + sKeyword];
+		;
+
+skipBraces	::= ['{' #continue skipBraces '}' | #readCString | ~'}']*;

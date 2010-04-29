@@ -1,0 +1,166 @@
+/*description:
+{
+	Parses a \samp{DTD} (Document Type Description) file.
+
+	The parse tree conforms to the following logic structure:
+	\begin{itemize}
+		\item \textit{comment} (optional) holds the last comment block found into the DTD
+			before the first DTD element, if any. This comment is interpreted as an explanation on
+			what the DTD is for.
+		\item \textit{listOfElements}[] contains the list of all \samp{"<!ELEMENT"} nodes encountered:
+			\begin{itemize}
+				\item \textit{comment} (optional) holds the comment block that stands just before the element
+					description in the DTD, if any.
+				\item \textit{category} (optional) is worth \samp{"EMPTY"} or \samp{"ANY"}.
+				\item \textit{composite} (present if and only if \textit{category} doesn't exist)
+					\begin{itemize}
+						\item \textit{multiplicity} (optional) is worth \textbf{'?'} or \textbf{'*'}
+							or \textbf{'+'}
+						\item nodes put into the array (\textit{composite}[]):
+							\begin{itemize}
+								\item \textit{operator} (present on each node, except the last one) is worth
+								\textbf{','} or \textbf{'|'}
+								\item \textit{constant} (one and only one field amongst \textit{constant} and \textit{element} and \textit{composite}) is worth \textbf{"#PCDATA"}
+								\item \textit{element} name of an element
+									\begin{itemize}
+										\item \textit{multiplicity} (optional) is worth \textbf{'?'} or \textbf{'*'} or \textbf{'+'}
+									\end{itemize}
+								\item \textit{composite} recursive structure
+							\end{itemize}
+					\end{itemize}
+				\item \textit{listOfAttributes}[] contains the list of all attributes belonging
+					to the element (one and only one amongst \textit{type}, \textit{listOfEnums}
+					and \textit{constant}):
+					\begin{itemize}
+						\item \textit{type} is worth \samp{"CDATA"} or \samp{"ID"} or \samp{"IDREF"}
+							or \samp{"IDREFS"} or \samp{"NMTOKEN"} or \samp{"NMTOKENS"} or \samp{"ENTITY"}
+							or \samp{"ENTITIES"} or \samp{"NOTATION"}
+						\item \textit{listOfEnums} list of enumerated values
+						\item \textit{constant} a constant value
+						\item \textit{value} (optional, \textit{constant} must be populated) is worth
+							\samp{"#IMPLIED"} or \samp{"#REQUIRED"} or \samp{"DEFAULT"} or
+							\samp{"FIXED"}
+					\end{itemize}
+			\end{itemize}
+		\item \textit{listOfEntities}[] contains the list of all \samp{"<!ENTITY"} nodes encountered.
+			\begin{itemize}
+				\item \textit{comment} (optional) holds the comment block that stands just before
+				the entity description in the DTD, if any.
+				\item \textit{external} (optional) is worth \samp{"SYSTEM"}
+				\item \textit{constant} is the value of the entity after resolution of references
+					to other entities.
+			\end{itemize}
+	\end{itemize}
+
+	Note that the grammar doesn't handle entities correctly yet. If you need it or if you
+	encounter some bugs, please send an email to \email{\WebSite\ } and your request will be
+	taken into account as fast as possible.
+}
+*/
+
+DTDdocument ::=
+		#continue
+		#ignore(blanks)
+		[COMMENT:this.comment]?
+		["<?" #continue -> "?>"]?
+		[
+			[COMMENT:sComment]*
+			[
+				DTDelement(sComment)
+					|
+				DTDattribute(sComment)
+					|
+				DTDentity(sComment)
+			] => clearVariable(sComment);
+		]*
+		#empty;
+
+DTDelement(sComment : value)	::=	"<!ELEMENT"
+				#continue
+				IDENTIFIER:sElementName
+					=> {
+						insert this.listOfElements[sElementName] = sElementName;
+						insert this.listOfElements[sElementName].comment = sComment;
+					}
+				[
+					composite_element_content(this.listOfElements[sElementName])
+						|
+					element_category:this.listOfElements[sElementName].category
+				]
+				'>';
+element_category	::= "EMPTY" | "ANY";
+composite_element_content(myContent : node)	::= '(' #continue element_content(myContent.composite[getArraySize(myContent.composite)]) [[',' | '|']:myContent.composite[sub(getArraySize(myContent.composite), 1)].operator #continue element_content(myContent.composite[getArraySize(myContent.composite)])]* ')' ['?' | '*' | '+']?:myContent.composite.multiplicity;
+element_content(myContent : node)	::= constant_element_content:myContent.constant | IDENTIFIER:myContent.element ['?' | '*' | '+']?:myContent.element.multiplicity | composite_element_content(myContent);
+constant_element_content	::= "#PCDATA";
+
+DTDattribute(myComment : value)	::=
+		"<!ATTLIST" #continue IDENTIFIER:sElementName
+		=> insert this.listOfElements[sElementName];
+		=> localref elt = this.listOfElements[sElementName];
+		[
+			IDENTIFIER:sAttributeName
+			#continue
+			=> insert elt.listOfAttributes[sAttributeName] = sAttributeName;
+			attribute_type(elt.listOfAttributes[sAttributeName])
+			attribute_default_value(elt.listOfAttributes[sAttributeName])
+		]+
+		'>';
+attribute_type(myAttribute : node)	::=
+			#readIdentifier:{"CDATA", "ID", "IDREF", "IDREFS", "NMTOKEN", "NMTOKENS", "ENTITY", "ENTITIES", "NOTATION"}:myAttribute.type
+		|
+			attribute_enum_type(myAttribute);
+attribute_enum_type(myAttribute : node)	::=
+		'(' #continue
+		VALUE:sEnum
+		=> insert myAttribute.listOfEnums[sEnum] = sEnum;
+		[
+			'|' #continue
+			VALUE:sEnum
+			=> insert myAttribute.listOfEnums[sEnum] = sEnum;
+		]*
+		')';
+attribute_default_value(myAttribute : node)	::=
+			"#IMPLIED":myAttribute.value
+		|
+			"#REQUIRED":myAttribute.value
+		|
+			["#DEFAULT" | "#FIXED"]?:myAttribute.value
+			STRING_LITERAL:myAttribute.constant
+		;
+
+DTDentity(sComment : value)	::=
+		"<!ENTITY" #continue '%' IDENTIFIER:sEntityName
+		=> insert this.listOfEntities[sEntityName] = sEntityName;
+		=> insert this.listOfEntities[sEntityName].comment = sComment;
+		["SYSTEM":this.listOfEntities[sEntityName].external]?
+		STRING_LITERAL:sConstant
+		=> {
+			local iIndex = $findString(sConstant, "%") + 1$;
+			while $iIndex > 0$ {
+				local iSemiComma = findNextString(sConstant, ";", iIndex);
+				if $iSemiComma < 0$ error("';' expected in the value of '<!ENTITY %" + sEntityName + " \"" + sConstant + "\">'");
+				local sEmbeddedEntity = midString(sConstant, iIndex, $iSemiComma - iIndex$);
+				if !findElement(sEmbeddedEntity, this.listOfEntities) error("entity %" + sEntityName + " refers to entity '%" + sEmbeddedEntity + ";' that doesn't exist");
+				local sEmbeddedConstant = this.listOfEntities[sEmbeddedEntity].constant;
+				set sConstant = leftString(sConstant, $iIndex - 1$) + sEmbeddedConstant + subString(sConstant, $iSemiComma + 1$);
+				set iIndex = $iIndex + lengthString(sEmbeddedConstant) - 1$;
+				set iIndex = $findNextString(sConstant, "%", iIndex) + 1$;
+			}
+			insert this.listOfEntities[sEntityName].constant = sConstant;
+		}
+		'>';
+
+COMMENT : value	::= "<!--" #!ignore #continue [~"-->"]*:COMMENT "-->";
+IDENTIFIER : value	::=
+		#!ignore #readIdentifier:IDENTIFIER
+		[['-' | '.'] #readIdentifier]*:sIdentifier
+		=> set IDENTIFIER += sIdentifier;
+		;
+STRING_LITERAL:value ::= '"' #!ignore #continue ->(:STRING_LITERAL)'"' | "'" #!ignore #continue ->(:STRING_LITERAL)"'";
+VALUE ::=
+			STRING_LITERAL
+		|
+			#readNumeric
+		|
+			IDENTIFIER
+		;

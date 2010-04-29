@@ -1,0 +1,182 @@
+//Source file: hosa_mm.idl
+//For H-OSA version 1.0.2
+
+#ifndef __HOSA_MM_DEFINED
+#define __HOSA_MM_DEFINED
+
+#include "osa.idl"
+#include "mm.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			module hmm {
+				
+				
+				enum TpHosaAuthStatusIndicator {
+
+					P_HUS_AUTHENTICATED_FOR_NETWORK_ONLY,
+					P_HUS_AUTHENTICATED_FOR_NETWORK_AND_IP_SERVICES,
+					P_HUS_NOT_AUTHENTICATED					
+				};
+				
+				enum TpHosaLocationTerminalCapability {
+
+					P_HUL_GPS_CAPABILITY_UNKNOWN,
+					P_HUL_AGPS_CAPABLE,
+					P_HUL_NOT_AGPS_CAPABLE,
+					P_HUL_DGPS_CAPABLE					
+				};
+				
+				struct TpHosaLocationRequest {
+					org::csapi::mm::TpLocationRequest OSALocationRequest;
+					TpHosaLocationTerminalCapability LocationTerminalCapability;
+					org::csapi::TpInt32 MaxLocationAge;
+				};
+				
+				enum TpHosaRoamingStatus {
+
+					P_HUS_UNKNOWN_ROAMING_STATUS,
+					P_HUS_HOME_USER,
+					P_HUS_NATIONAL_ROAMING,
+					P_HUS_INTERNATIONAL_ROAMING,
+					P_HUS_H3G_ROAMING					
+				};
+				
+				enum TpHosaTechnology {
+
+					P_HUS_3G,
+					P_HUS_25G,
+					P_HUS_CSD,
+					P_HUS_WWW,
+					P_HUS_WLAN					
+				};
+				
+				struct TpHosaNetworkStatusIndicator {
+					org::csapi::TpString CountryCode;
+					org::csapi::TpString MobileNetworkCode;
+					TpHosaTechnology Technology;
+					TpHosaRoamingStatus RoamingStatus;
+				};
+				
+				struct TpHosaUserInfo {
+					org::csapi::TpString UserName;
+					org::csapi::TpString PassWord;
+				};
+				
+				enum TpHosaUserStatusIndicator {
+
+					P_HUS_REACHABLE,
+					P_HUS_NOT_REACHABLE,
+					P_HUS_BUSY,
+					P_HUS_PDPCONTEXTACTIVE					
+				};
+				
+				struct TpHosaUserStatus {
+					org::csapi::TpAddress UserID;
+					org::csapi::mm::TpMobilityError StatusCode;
+					org::csapi::mm::TpMobilityDiagnostic Diagnostic;
+					TpHosaAuthStatusIndicator AuthenticationStatus;
+					TpHosaNetworkStatusIndicator NetworkStatus;
+					TpHosaUserStatusIndicator ServiceStatus;
+					org::csapi::TpString IPAddressAllocation;
+					org::csapi::TpString UserMSISDN;
+					TpHosaUserInfo UserInfo;
+					org::csapi::mm::TpTerminalType TerminalType;
+					org::csapi::TpString HostKey;
+					org::csapi::TpString AccessPointName;
+				};
+				
+				typedef sequence <TpHosaUserStatus> TpHosaUserStatusSet;
+				
+				struct TpHosaUserLocationExtended {
+					org::csapi::mm::TpUserLocationExtended UserLocationExtended;
+					org::csapi::mm::TpMobilityDiagnostic MobilityDiagnostic;
+					org::csapi::TpInt32 Direction;
+					org::csapi::TpInt32 Speed;
+					org::csapi::TpInt32 ConfidenceLevel;
+				};
+				
+				typedef sequence <TpHosaUserLocationExtended> TpHosaUserLocationExtendedSet;
+				
+				module hus {
+					
+					
+					interface IpAppHosaUserStatus : org::csapi::mm::us::IpAppUserStatus {
+
+						void hosaStatusReportRes (
+							in org::csapi::TpSessionID assignmentId,	
+							in TpHosaUserStatusSet status	
+							);
+							
+					};
+					
+					
+					interface IpHosaUserStatus : org::csapi::mm::us::IpUserStatus {
+
+						org::csapi::TpAssignmentID hosaStatusReportReq (
+							in IpAppHosaUserStatus appStatus,	
+							in org::csapi::TpAddressSet users	
+							)							
+							raises (org::csapi::TpCommonExceptions, org::csapi::P_UNKNOWN_SUBSCRIBER, org::csapi::P_INFORMATION_NOT_AVAILABLE, org::csapi::P_APPLICATION_NOT_ACTIVATED, org::csapi::P_INVALID_INTERFACE_TYPE);
+							
+					};
+					
+				};
+				
+				module hul {
+					
+					
+					interface IpAppHosaUserLocation : org::csapi::mm::ul::IpAppUserLocation {
+
+						void hosaExtendedLocationReportRes (
+							in org::csapi::TpSessionID assignmentId,	
+							in TpHosaUserLocationExtendedSet locations	
+							);
+							
+
+						void hosaPeriodicLocationReport (
+							in org::csapi::TpSessionID assignmentId,	
+							in TpHosaUserLocationExtendedSet locations	
+							);
+							
+					};
+					
+					
+					interface IpHosaUserLocation : org::csapi::mm::ul::IpUserLocation {
+
+						org::csapi::TpSessionID hosaPeriodicLocationReportingStartReq (
+							in IpAppHosaUserLocation appLocation,	
+							in org::csapi::TpAddressSet users,	
+							in TpHosaLocationRequest request,	
+							in org::csapi::TpDuration reportingInterval,	
+							in org::csapi::TpTimeInterval timeInterval	
+							)							
+							raises (org::csapi::TpCommonExceptions, org::csapi::mm::P_INVALID_REPORTING_INTERVAL, org::csapi::mm::P_REQUESTED_ACCURACY_CANNOT_BE_DELIVERED, org::csapi::mm::P_REQUESTED_RESPONSE_TIME_CANNOT_BE_DELIVERED, org::csapi::P_UNKNOWN_SUBSCRIBER, org::csapi::P_APPLICATION_NOT_ACTIVATED, org::csapi::P_INFORMATION_NOT_AVAILABLE, org::csapi::P_INVALID_INTERFACE_TYPE);
+							
+
+						org::csapi::TpSessionID hosaExtendedLocationReportReq (
+							in IpAppHosaUserLocation appLocation,	
+							in org::csapi::TpAddressSet users,	
+							in TpHosaLocationRequest request	
+							)							
+							raises (org::csapi::TpCommonExceptions,org::csapi::P_APPLICATION_NOT_ACTIVATED,org::csapi::mm::P_REQUESTED_ACCURACY_CANNOT_BE_DELIVERED,org::csapi::mm::P_REQUESTED_RESPONSE_TIME_CANNOT_BE_DELIVERED,org::csapi::P_UNKNOWN_SUBSCRIBER,org::csapi::P_INFORMATION_NOT_AVAILABLE,org::csapi::P_INVALID_INTERFACE_TYPE);
+							
+					};
+					
+				};
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif
+
+
+

@@ -1,0 +1,87 @@
+//-----------------------------------------------------------
+// Note: don't forget to include "CommonLanguage-Scanner.cwp"
+// in the script including this one (and before).
+//-----------------------------------------------------------
+
+#parameters X(myType : node) X=="target_language_type"
+
+#overload target_language_type(myType : node) ::=
+		[CONST => insert myType.is_const = true;]?
+		[#readIdentifier:"unsigned" => insert myType.is_unsigned = true;]?
+		[#readIdentifier:"struct" => insert myType.is_struct = true;]?
+		["::" => insert myType.nested_names.root = true;]?
+		identifier:sIdentifier
+		[
+			["::" | '.'] #continue
+			=> pushItem myType.nested_names = sIdentifier;
+			identifier:sIdentifier
+		]*
+		=> insert myType = sIdentifier;
+		[
+				'<' #continue
+				=> pushItem myType.template_parameters;
+				[
+						#readIdentifier:"typename"
+						=> insert myType.template_parameters#back.is_typename = true;
+					|
+						#readIdentifier:"class"
+						=> insert myType.template_parameters#back.is_class = true;
+				]?
+				target_language_type(myType.template_parameters#back)
+				[
+					',' #continue
+					=> pushItem myType.template_parameters;
+					[
+							#readIdentifier:"typename"
+							=> insert myType.template_parameters#back.is_typename = true;
+						|
+							#readIdentifier:"class"
+							=> insert myType.template_parameters#back.is_class = true;
+					]?
+					target_language_type(myType.template_parameters#back)
+				]*
+				'>'
+				[
+					"::"
+					#continue
+					target_language_type(myType.nested_type)
+				]?
+		]?
+		[
+			[
+					"*" => pushItem myType.suffix = "pointer";
+				|
+					'&' => pushItem myType.suffix = "reference";
+				|
+					'[' #continue
+					 => pushItem myType.suffix = "array";
+					skipBrackets:myType.suffix#back.size
+					']'
+			]
+			[CONST => insert myType.suffix#back.is_const = true;]?
+		]*
+		[function_prototype_1(myType)]?
+		;
+
+function_prototype_1(myType : node) ::=
+	=> local myFunctionType;
+	'(' '*' #readIdentifier:myFunctionType
+	')' '('
+	[
+		#pushItem(myFunctionType.parameters)
+		target_language_type(myFunctionType.parameters#back.type)
+		[#readIdentifier:myFunctionType.parameters#back.name]?
+		[
+			','
+			=> pushItem myFunctionType.parameters;
+			target_language_type(myFunctionType.parameters#back.type)
+			[#readIdentifier:myFunctionType.parameters#back.name]?
+		]*
+	]?
+	')'
+	=> setall myFunctionType.return_type = myType;
+	=> setall myType = myFunctionType;
+	=> insert myFunctionType.is_function = true;
+	;
+
+skipBrackets	::= [#readCString | '[' #continue skipBrackets ']' | ~']']*;

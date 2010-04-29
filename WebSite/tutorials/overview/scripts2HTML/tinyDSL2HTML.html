@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><span class="comment">//---------------------------------------------------------</span>
+<span class="comment">//               Conversion of the DSL to HTML</span>
+<span class="comment">//</span>
+<span class="comment">//</span>
+<span class="comment">// Highlighting of DSL specifications in HTML (a feature of</span>
+<span class="comment">// the generative programming called &#39;source-to-source</span>
+<span class="comment">// translation&#39;).</span>
+<span class="comment">//</span>
+<span class="comment">// It reuses the scanning of our tiny DSL and overloads</span>
+<span class="comment">// some non-terminals to convert them to HTML.</span>
+<span class="comment">//</span>
+<span class="comment">// Type:</span>
+<span class="comment">//   CodeWorker -translate tinyDSL2HTML.cwp</span>
+<span class="comment">//       &lt;your-specification.txt&gt; &lt;your-specification.html&gt;</span>
+<span class="comment">//---------------------------------------------------------</span>
+
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_include">#include</a> <span class="string">&quot;tinyDSL_scanning.cwp&quot;</span>
+
+<span class="comment">// Function used by the implicit copy for converting characters</span>
+<span class="comment">// to HTML.</span>
+<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</a> transformText(sText : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">value</a>) {
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sText = <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#composeHTMLLikeString">composeHTMLLikeString</A>(sText);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sText = sText.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#replaceString">replaceString</A>(<span class="string">&#39;\r&#39;</span>, <span class="string">&quot;&quot;</span>);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sText = sText.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#replaceString">replaceString</A>(<span class="string">&#39; &#39;</span>, <span class="string">&quot;&amp;nbsp;&quot;</span>);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sText = sText.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#replaceString">replaceString</A>(<span class="string">&#39;\n&#39;</span>, <span class="string">&quot;&lt;br/&gt;&quot;</span> + <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#endl">endl</A>());
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sText = sText.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#replaceString">replaceString</A>(<span class="string">&#39;\t&#39;</span>, <span class="string">&quot;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&quot;</span>);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#return">return</A> sText;
+}
+
+<span class="comment">// The implicit copy will use a function to convert characters</span>
+<span class="comment">// before writing them in the output</span>
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_implicitCopy">#implicitCopy</a>(transformText)
+
+<span class="comment">// Overload the head of the grammar to write some HTML text</span>
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_overload">#overload</a> <i>tinyDSL</i>    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd&quot;&gt;
+&lt;html&gt;
+    &lt;header&gt;
+        &lt;style&gt;
+        &lt;/style&gt;
+    &lt;/header&gt;
+    &lt;body&gt;
+        &lt;kbd&gt;
+        @</span>}
+        <span class="comment">// call the overloaded non-terminal</span>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_super">#super</a>::<i>tinyDSL</i>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {<span class="raw_text">@</span><span class="raw_text">&lt;/kbd&gt;
+        &lt;hr /&gt;
+        Generated by &lt;a href=&quot;http://www.codeworker.org&quot;&gt;CodeWorker&lt;/a&gt; v@</span><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getVersion">getVersion</A>()<span class="raw_text">@</span><span class="raw_text"> from &lt;a href=&quot;@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.docURL<span class="raw_text">@</span><span class="raw_text">tinyDSL2HTML.html&quot;&gt;tinyDSL2HTML.cwp&lt;/a&gt;.
+    &lt;/body&gt;
+&lt;/html&gt;
+@</span>}
+        ;
+
+
+<span class="comment">//-------------- Some lexical tokens appearing in bold ----------------</span>
+
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_overload">#overload</a> <i>CLASS</i>    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>{<span class="raw_text">@</span><span class="raw_text">&lt;B&gt;@</span>} <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;class&quot;</span> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>{<span class="raw_text">@</span><span class="raw_text">&lt;/B&gt;@</span>};
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_overload">#overload</a> <i>AGGREGATE</i>    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>{<span class="raw_text">@</span><span class="raw_text">&lt;B&gt;@</span>} <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;aggregate&quot;</span> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>{<span class="raw_text">@</span><span class="raw_text">&lt;/B&gt;@</span>};
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_overload">#overload</a> <i>DOUBLE</i>    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>{<span class="raw_text">@</span><span class="raw_text">&lt;B&gt;@</span>} <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;double&quot;</span> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>{<span class="raw_text">@</span><span class="raw_text">&lt;/B&gt;@</span>};
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_overload">#overload</a> <i>STRING</i>    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>{<span class="raw_text">@</span><span class="raw_text">&lt;B&gt;@</span>} <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;string&quot;</span> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>{<span class="raw_text">@</span><span class="raw_text">&lt;/B&gt;@</span>};
+</pre><hr />
+		<div style="background-color: #eeeedd">Generated by <a href="http://www.codeworker.org/index.html"><img border=0 src="http://www.codeworker.org/CodeWorker99x38.png"/></a> v4.5.3 from <a href="CWscript2HTML.html">CWscript2HTML.cwp</a>.</div>
+	</body>
+</html>

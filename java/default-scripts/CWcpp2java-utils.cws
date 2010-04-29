@@ -1,0 +1,856 @@
+declare function getJavaExpression(theExpr : node);
+
+function getPackageName() {
+	return getProperty("c++2target-property");
+}
+
+function retrieveJavaType(theType : reference) {
+	if theType.java.existVariable() {
+		ref theType = theType.java;
+	}
+}
+
+function getJavaClass(theClass : node, bImpl : value = false) {
+	if theClass == "struct" {
+		if theClass.system {
+			if theClass.name == "FILE" return "java.io.InputStream";
+			traceObject(theClass);
+			error("indirect struct type not handled yet!");
+		}
+		return theClass.name;
+	} else if theClass == "class" {
+		localref theNamespace = theClass.parent;
+		if theNamespace.name == "CodeWorker" {
+			local sClass = theClass.name;
+			switch(sClass) {
+				case "CGRuntime": return "org.codeworker.jni.Runtime";
+				case "UtlException": return "org.codeworker.Exception";
+				case "UtlExitException": return "org.codeworker.ExitException";
+				case "ScpStream": return "org.codeworker.ScpStream";
+				case "CGBNFRuntimeEnvironment": sClass = "BNFRuntimeEnvironment";break;
+				case "CGBNFClauseScope": sClass = "BNFClauseScope";break;
+				case "CGBNFRuntimeResizeInput": sClass = "BNFRuntimeResizeInput";break;
+				case "CGBNFRuntimeClauseMatchingAreaValidator": sClass = "BNFRuntimeClauseMatchingAreaValidator";break;
+				case "CppParsingTree_var":
+				case "CppParsingTree_value": sClass = "ParseTree";break;
+				case "CppParsingTree_global": sClass = "GlobalParseTree";break;
+				case "CGBNFRuntimeIgnore": sClass = "BNFRuntimeIgnore";break;
+				case "CGBNFRuntimeTransformationMode": sClass = "BNFRuntimeTransformationMode";break;
+				case "DEFAULT_EXECUTE_CLAUSE":
+				case "EXECUTE_CLAUSE": sClass = "EXECUTE_CLAUSE";break;
+				case "EXECUTE_FUNCTION": sClass = "EXECUTE_FUNCTION";break;
+				default:
+			}
+			if bImpl return "org.codeworker.jni." + sClass;
+			return "org.codeworker.I" + sClass;
+		}
+		local sPackage = getPackageName();
+		if sPackage return sPackage + '.' + theClass.name;
+		return theClass.name;
+	} else if theClass == "typedef" {
+		if theClass.name == "END_STREAM_CALLBACK" return "org.codeworker.END_STREAM_CALLBACK";
+		traceObject(theClass);
+		error("indirect typedef not handled yet!");
+	} else {
+		traceObject(theClass);
+		error("indirect type '" + theClass + "' not handled yet!");
+	}
+}
+
+declare function getJavaParameterizedType(myType : node);
+
+function getJavaType(myType : node, bImpl : value = false) {
+	if myType.java.existVariable() return getJavaType(myType.java, bImpl);
+	switch(myType) {
+		case "base":
+			switch(myType.name) {
+				case "void":
+					if myType.pointers {
+						if myType.pointers == 1 return "java.lang.Object";
+						return "java.lang.Object[]";
+					}
+					return "void";
+				case "int":
+				case "double":
+				case "long":
+					if myType.pointers error(myType.name + "* not handled yet!");
+					if myType.is_unsigned return "/*unsigned*/ " + myType.name;
+					return myType.name;
+				case "bool":
+					if myType.pointers error("bool* not handled yet!");
+					return "boolean";
+				case "char":
+					local sType = (myType.is_unsigned) ? "byte" : "char";
+					if myType.pointers {
+						if myType.pointers == 1 {
+							if bImpl && myType.array_size {
+								return sType + "[" + getJavaExpression(myType.array_size) + "]";
+							}
+							return sType + "[]";
+						}
+						if myType.pointers == 2 return "String[]";
+						error("char** or more not handled yet!");
+					}
+					return sType;
+			}
+			break;
+		case "stl":
+			switch(myType.name) {
+				case "string":
+					if !myType.is_const && myType.is_reference {
+						return "org.codeworker.StringRef";
+					}
+					return "String";
+				case "map":
+					return "java.util.Map<" + getJavaParameterizedType(myType.templates#front) + "," + getJavaParameterizedType(myType.templates#back) + ">";
+				case "map::const_iterator":
+				case "map::iterator":
+					return "java.util.MapIterator<" + getJavaParameterizedType(myType.templates#front) + "," + getJavaParameterizedType(myType.templates#back) + ">";
+				case "list":
+					return "java.util.List<" + getJavaParameterizedType(myType.templates#front) + ">";
+				case "list::const_iterator":
+				case "list::iterator":
+					return "java.util.ListIterator<" + getJavaParameterizedType(myType.templates#front) + ">";
+				case "set":
+					return "java.util.Set<" + getJavaParameterizedType(myType.templates#front) + ">";
+				case "ifstream":
+					return "java.io.FileInputStream";
+				case "string::size_type":
+					return "int";
+				case "exception":
+					return "org.codeworker.Exception";
+			}
+			break;
+		case "indirect":
+			return getJavaClass(myType.indirect, bImpl);
+		case "target":
+			return myType.name;
+	}
+}
+
+function getJavaParameterizedType(myType : node) {
+	local sType = getJavaType(myType);
+	if sType == "int" sType = "java.lang.Integer";
+	return sType;
+}
+
+function getJavaExpression(theExpr : node) {
+	switch(theExpr) {
+		case "null": return "null";
+		case "bool":
+		case "double":
+			return theExpr.value;
+		case "char":
+			if !theExpr.value return "'\\0'";
+			if theExpr.value == "\a" return "'\\007'";
+			if theExpr.value == "\v" return "'\\013'";
+			if theExpr.value == "'" return "'\\''";
+			return "'" + theExpr.value.composeCLikeString() + "'";
+		case "string":
+			return '"' + theExpr.value.composeCLikeString() + '"';
+		case "&ref":
+			return getJavaExpression(theExpr.reference);
+		case "::":
+			local sExpr = getJavaClass(theExpr.scope);
+			if theExpr.next {
+				if theExpr.next == "()" && theExpr.scope.name == "CGRuntime" && theExpr.next.function.name == "entryPoint" {
+					sExpr += '.' + theExpr.next.function.name + '(';
+					foreach i in theExpr.next.params {
+						if i.first() continue;
+						sExpr += getJavaExpression(i);
+						if !i.last() sExpr += ", ";
+					}
+					return sExpr + ')';
+				} else {
+					sExpr += '.' + getJavaExpression(theExpr.next);
+				}
+			}
+			return sExpr;
+		case "var":
+			local sExternalModule = theExpr.var.external_declaration.external_definition.name;
+			if sExternalModule sExternalModule += '.';
+			local sExpr = sExternalModule + theExpr.name;
+			if theExpr.type.existVariable() {
+				localref theExprType = theExpr.type;
+				retrieveJavaType(theExprType);
+				if !theExprType.is_const && theExprType.name == "string" && theExprType == "stl" && theExprType.is_reference {
+					sExpr += ".ref_";
+				}
+			}
+			local theExprType;
+			if theExpr.var.type.existVariable() {
+				ref theExprType = theExpr.var.type;
+				retrieveJavaType(theExprType);
+			}
+			foreach i in theExpr.array {
+				if theExprType == "stl" && theExprType.name == "map" {
+					if theExpr.array.is_assigned {
+						sExpr += ".put(" + getJavaExpression(i) + ',';
+					} else {
+						sExpr += ".get(" + getJavaExpression(i) + ')';
+					}
+				} else if theExprType == "stl" && theExprType.name == "string" {
+					if theExpr.array.is_assigned {
+						error("std::string::operator[]() not translated to Java yet!");
+					} else {
+						sExpr += ".charAt(" + getJavaExpression(i) + ')';
+					}
+				} else {
+					sExpr += '[' + getJavaExpression(i) + ']';
+				}
+			}
+			if theExpr.next {
+				sExpr += '.' + getJavaExpression(theExpr.next);
+			}
+			return sExpr;
+		case "star":
+			return getJavaExpression(theExpr.star);
+		case "const_cast":
+			return getJavaExpression(theExpr.expr);
+		case "npos":
+			return "-1/*npos*/";
+		case "this":
+			return "this";
+		case "cast":
+			localref theExprType = theExpr.type;
+			retrieveJavaType(theExprType);
+			localref theExprCastType = theExpr.cast.type;
+			retrieveJavaType(theExprCastType);
+			if theExprType.name == "char" && theExprCastType.name == "char" && theExprType.pointers == 1 && theExpr.cast.array.empty() && theExprCastType.is_unsigned {
+				return "new String(" + getJavaExpression(theExpr.cast) + ')';
+			}
+			if theExprType.name == theExprCastType.name {
+				return getJavaExpression(theExpr.cast);
+			}
+			return "((" + getJavaType(theExprType) + ") " + getJavaExpression(theExpr.cast) + ')';
+		case "stack new":
+		case "new":
+			localref theExprType = theExpr.type;
+			retrieveJavaType(theExprType);
+			local sExpr = "new " + getJavaType(theExprType, true);
+			if theExpr.array.existVariable() {
+				sExpr += '[' + getJavaExpression(theExpr.array) + ']';
+			} else {
+				sExpr += '(';
+				foreach i in theExpr.params {
+					if !i.first() sExpr += ", ";
+					sExpr += getJavaExpression(i);
+				}
+				sExpr += ')';
+			}
+			return sExpr;
+		case "()":
+			local sExpr;
+			if theExpr.function.name == "strlen" {
+				sExpr = getJavaExpression(theExpr.params#front) + ".length";
+			} else if theExpr.function.name == "fopen" {
+				sExpr = "new java.io.";
+				if $theExpr.params#back.findString('r') >= 0$ {
+					sExpr += "FileInputStream";
+				} else {
+					sExpr += "FileOutputStream";
+				}
+				local sFileExpr = getJavaExpression(theExpr.params#front);
+				if sFileExpr.startString("(char[]) ") {
+					sFileExpr = sFileExpr.subString(9);
+				}
+				if sFileExpr.endString(".toCharArray()") {
+					sFileExpr = sFileExpr.rsubString(14);
+				} else {
+					sFileExpr = "new String(" + sFileExpr + ')';
+				}
+				sExpr += '(' + sFileExpr + ')';
+			} else if theExpr.function.name == "fclose" {
+				sExpr = getJavaExpression(theExpr.params#front) + ".close()";
+			} else if theExpr.function.name == "atoi" {
+				local sFileExpr = getJavaExpression(theExpr.params#front);
+				if sFileExpr.startString("((char[]) ") {
+					sFileExpr = '(' + sFileExpr.subString(10);
+				}
+				if sFileExpr.endString(".toCharArray()") {
+					sFileExpr = sFileExpr.rsubString(14);
+				} else {
+					sFileExpr = "new String(" + sFileExpr + ')';
+				}
+				sExpr = "java.lang.Integer.parseInt(" + sFileExpr + ')';
+			} else if theExpr.function.name == "atof" {
+				local sFileExpr = getJavaExpression(theExpr.params#front);
+				if sFileExpr.startString("((char[]) ") {
+					sFileExpr = '(' + sFileExpr.subString(10);
+				}
+				if sFileExpr.endString(".toCharArray()") {
+					sFileExpr = sFileExpr.rsubString(14);
+				} else {
+					sFileExpr = "new String(" + sFileExpr + ')';
+				}
+				sExpr = "java.lang.Double.parseDouble(" + sFileExpr + ')';
+			} else if theExpr.function.name == "c_str" {
+				sExpr = "toCharArray()";
+			} else if theExpr.function.name == "substr" {
+				sExpr = "substring(" + getJavaExpression(theExpr.params#front);
+				sExpr += ", " + getJavaExpression(theExpr.params#back);
+				if theExpr.params#front.value != '0' {
+					sExpr += " + " + getJavaExpression(theExpr.params#front);
+				}
+				sExpr += ')';
+			} else if theExpr.function.name == "insert" {
+				sExpr = "add(" + getJavaExpression(theExpr.params#front) + ')';
+			} else if theExpr.function.name == "empty" && theExpr#parent.var.type.name == "string" {
+				sExpr = "equals(\"\")";
+			} else {
+				sExpr = theExpr.function.name + '(';
+				foreach i in theExpr.params {
+					local theType;
+					if theExpr.function.params#[i.index()].type.existVariable() {
+						ref theType = theExpr.function.params#[i.index()].type;
+						retrieveJavaType(theType);
+					}
+					if !i.first() sExpr += ", ";
+					if theType.name == "string" && !theType.is_const && theType.is_reference && theType.array.empty() && theType == "stl" {
+						sExpr += getJavaExpression(i);
+						if sExpr.endString(".ref_") {
+							sExpr = sExpr.rsubString(5);
+						}
+					} else {
+						sExpr += getJavaExpression(i);
+					}
+				}
+				sExpr += ')';
+			}
+			if theExpr.next {
+				sExpr += '.' + getJavaExpression(theExpr.next);
+			}
+			return sExpr;
+		case "(*":
+			local sExpr = theExpr.function + ".callback(";
+			foreach i in theExpr.params {
+				if !i.first() sExpr += ", ";
+				sExpr += getJavaExpression(i);
+			}
+			return sExpr + ')';
+		case "++":
+		case "--":
+			return theExpr + getJavaExpression(theExpr.expr);
+		case "post++":
+		case "post--":
+			return getJavaExpression(theExpr.expr) + theExpr.rightString(2);
+		case '!':
+			return '!' + getJavaExpression(theExpr.expr);
+		case "?":
+			return "((" + getJavaExpression(theExpr.condition) + ") ? " + getJavaExpression(theExpr.then) + " : " + getJavaExpression(theExpr.else) + ')';
+		case '+':
+			localref theLeftType = theExpr.left.type;
+			retrieveJavaType(theLeftType);
+			localref theRightType = theExpr.right.type;
+			retrieveJavaType(theRightType);
+			if theLeftType.name == "char" && theLeftType.pointers == 1 && theRightType.name == "int" {
+				return "String.copyValueOf(" + getJavaExpression(theExpr.left) + ", " + getJavaExpression(theExpr.right) + ", " + getJavaExpression(theExpr.left) + ".length - " + getJavaExpression(theExpr.right) + ')';
+			}
+			return "(" + getJavaExpression(theExpr.left) + " " + theExpr + " " + getJavaExpression(theExpr.right) + ')';
+		case "!=":
+		case "==":
+			localref theLeftType = theExpr.left.type;
+			retrieveJavaType(theLeftType);
+			if theLeftType == "stl" && theLeftType.name == "string" && theExpr.left.array.empty() {
+				local sExpr;
+				if theExpr == "!=" sExpr = '!';
+				sExpr += getJavaExpression(theExpr.left) + ".equals(" + getJavaExpression(theExpr.right) + ')';
+				return sExpr;
+			}
+		case '-':
+		case '*':
+		case '/':
+		case '&':
+		case '|':
+		case "<=":
+		case ">=":
+		case ">":
+		case "<":
+		case "&&":
+		case "||":
+			return "(" + getJavaExpression(theExpr.left) + " " + theExpr + " " + getJavaExpression(theExpr.right) + ')';
+		case "substring":
+			return "org.codeworker.Utility.substring(" + getJavaExpression(theExpr.char_array) + ", " + getJavaExpression(theExpr.length) + ')';
+		case "target_variable":
+			return theExpr.name;
+		case "target_expression":
+			return theExpr.expr;
+		default:
+			traceObject(theExpr);
+			error("expression '" + theExpr + "' not handled yet!");
+	}
+}
+
+function generateJavaInstruction<T>(theInstr : node) {
+	traceObject(theInstr);
+	error("instruction '" + T + "' not handled yet!");
+}
+
+function generateJavaInstructions(block : node) {
+	local finallyVariables;
+	foreach i in block {
+		local sFinallyVariable;
+		if i == "declaration" && i.variable.type.indirect.name in {"CGBNFRuntimeClauseMatchingAreaValidator", "CGBNFClauseScope", "CGBNFRuntimeIgnore", "CGBNFRuntimeTransformationMode", "CGBNFRuntimeResizeInput"} {
+			sFinallyVariable = i.variable.name;
+		}
+		generateJavaInstruction<i>(i);
+		if sFinallyVariable {
+			@		try {
+@
+			incrementIndentLevel();
+			pushItem finallyVariables = sFinallyVariable;
+		}
+	}
+	foreach i in reverse finallyVariables {
+		decrementIndentLevel();
+		@		} finally {
+			@i@.terminate();
+		}
+@
+	}
+}
+
+function generateJavaInstruction<"{}">(theInstr : node) {
+	if theInstr.empty() return;
+	@		{
+@
+	incrementIndentLevel();
+	generateJavaInstructions(theInstr);
+	decrementIndentLevel();
+	@		}
+@
+}
+
+function generateJavaInstruction<"return">(theInstr : node) {
+	if theInstr.expr.existVariable() && theInstr#parent#parent.name == "main" {
+		@		System.exit(@getJavaExpression(theInstr.expr)@);
+@
+	} else {
+		@		return@
+		if theInstr.expr.existVariable() {
+			@ @getJavaExpression(theInstr.expr)@@
+		}
+		@;
+@
+	}
+}
+
+function generateJavaInstruction<"break">(theInstr : node) {
+	@		break;
+@
+}
+
+function generateJavaInstruction<"continue">(theInstr : node) {
+	@		continue;
+@
+}
+
+function generateJavaInstruction<"=">(theInstr : node) {
+	@		@getJavaExpression(theInstr.variable)@@
+	if getLastWrittenChars(1) == "," {
+		@ @getJavaExpression(theInstr.expr)@);
+@
+	} else {
+		@ = @
+		local sExpr = getJavaExpression(theInstr.expr);
+		local theExprType;
+		if theInstr.expr.type.existVariable() {
+			ref theExprType = theInstr.expr.type;
+			retrieveJavaType(theExprType);
+		}
+		if	theExprType.name == "char" && theExprType.pointers == 1
+				&&
+			((theInstr.variable.type.name == "char" && theInstr.variable.type.pointers == 1) || theInstr.variable.type.name == "string")
+				&&
+			!sExpr.startString("String.") && !sExpr.startString("new String(")
+		{
+				@new String(@sExpr@);
+@
+		} else {
+			@@sExpr@;
+@
+		}
+	}
+}
+
+function generateJavaInstruction<"+=">(theInstr : node) {
+	@		@getJavaExpression(theInstr.variable)@ += @getJavaExpression(theInstr.expr)@;
+@
+}
+
+function generateJavaInstruction<"-=">(theInstr : node) {
+	@		@getJavaExpression(theInstr.variable)@ -= @getJavaExpression(theInstr.expr)@;
+@
+}
+
+function generateJavaInstruction<"*=">(theInstr : node) {
+	@		@getJavaExpression(theInstr.variable)@ *= @getJavaExpression(theInstr.expr)@;
+@
+}
+
+function generateJavaInstruction<"target_variable=">(theInstr : node) {
+	if theInstr.variable.type.name == "StringBuffer" {
+		@		@theInstr.variable.name@.setLength(0);
+@
+		generateJavaInstruction<"target_variable+=">(theInstr);
+	} else {
+		@		@theInstr.variable.name@ = @getJavaExpression(theInstr.expr)@;
+@
+	}
+}
+
+function generateJavaInstruction<"target_variable+=">(theInstr : node) {
+	if theInstr.variable.type.name == "StringBuffer" {
+		@		@theInstr.variable.name@.append(@getJavaExpression(theInstr.expr)@);
+@
+	} else {
+		@		@theInstr.variable.name@ += @getJavaExpression(theInstr.expr)@;
+@
+	}
+}
+
+function generateJavaInstruction<"++">(theInstr : node) {
+	@		++@getJavaExpression(theInstr.variable)@;
+@
+}
+
+function generateJavaInstruction<"--">(theInstr : node) {
+	@		--@getJavaExpression(theInstr.variable)@;
+@
+}
+
+function generateJavaInstruction<"expression">(theInstr : node) {
+	@		@getJavaExpression(theInstr.expression)@;
+@
+}
+
+function generateJavaInstruction<"declaration">(theInstr : node) {
+	localref theExprType = theInstr.variable.type;
+	retrieveJavaType(theExprType);
+	@		@getJavaType(theExprType)@ @theInstr.variable.name@@
+	if theInstr.init.existVariable() {
+		@ = @getJavaExpression(theInstr.init)@@
+	} else if theInstr.constructor.existVariable() {
+		@ = new @getJavaType(theExprType, true)@(@
+		foreach i in theInstr.constructor {
+			if !i.first() {
+				@, @
+			}
+			@@getJavaExpression(i)@@
+		}
+		@)@
+	} else if theExprType == "base" && theExprType.array_size {
+		@ = new @getJavaType(theExprType, true)@@
+	} else if theExprType != "base" && theExprType.name != "string::size_type" {
+		@ = new @getJavaType(theExprType, true)@()@
+	}
+	@;
+@
+}
+
+function generateJavaInstruction<"static">(theInstr : node) {
+	@		// static variable declaration @theInstr.variable.name@, has moved as a class attribute
+@
+}
+
+function generateJavaInstruction<"if">(theInstr : node) {
+	@		if (@getJavaExpression(theInstr.condition)@)
+@
+	incrementIndentLevel();
+	generateJavaInstructions(theInstr.then);
+	decrementIndentLevel();
+	if theInstr.else.existVariable() {
+		@		else
+@
+		incrementIndentLevel();
+		generateJavaInstructions(theInstr.else);
+		decrementIndentLevel();
+	}
+}
+
+function generateJavaInstruction<"for">(theInstr : node) {
+	@		for (@
+	if theInstr.init.existVariable() {
+		if theInstr.init == "declaration" {
+			@@getJavaType(theInstr.init.type)@@
+		}
+		@ @theInstr.init.index@ = @getJavaExpression(theInstr.init.expr)@;@getJavaExpression(theInstr.condition)@;@getJavaExpression(theInstr.next)@@
+	} else {
+		@;;@
+	}
+	@)
+@
+	incrementIndentLevel();
+	generateJavaInstructions(theInstr.body);
+	decrementIndentLevel();
+}
+
+function generateJavaInstruction<"while">(theInstr : node) {
+	@		while (@getJavaExpression(theInstr.condition)@)
+@
+	incrementIndentLevel();
+	generateJavaInstructions(theInstr.body);
+	decrementIndentLevel();
+}
+
+function generateJavaInstruction<"do">(theInstr : node) {
+	@		do
+@
+	incrementIndentLevel();
+	generateJavaInstructions(theInstr.body);
+	decrementIndentLevel();
+	@		while (@getJavaExpression(theInstr.condition)@);
+@
+}
+
+function generateJavaInstruction<"switch">(theInstr : node) {
+	@		switch(@getJavaExpression(theInstr.expr)@) {
+@
+	incrementIndentLevel();
+	foreach i in theInstr.cases {
+		@		case @getJavaExpression(i.constant)@:
+@
+		incrementIndentLevel();
+		generateJavaInstructions(i.body);
+		decrementIndentLevel();
+	}
+	if theInstr.default.existVariable() {
+		@		default:
+@
+		incrementIndentLevel();
+		generateJavaInstructions(theInstr.default);
+		decrementIndentLevel();
+	}
+	decrementIndentLevel();
+	@		}
+@
+}
+
+function generateJavaInstruction<"try">(theInstr : node) {
+	@		try
+@
+	incrementIndentLevel();
+	generateJavaInstructions(theInstr.body);
+	decrementIndentLevel();
+	foreach i in theInstr.catchs {
+		@		catch(@getJavaType(i.params#front.type)@ @i.params#front.name@)
+@
+		incrementIndentLevel();
+		generateJavaInstructions(i.body);
+		decrementIndentLevel();
+	}
+}
+
+function generateJavaInstruction<"::">(theInstr : node) {
+	@		@getJavaExpression(theInstr)@;
+@
+}
+
+function generateJavaInstruction<"()">(theInstr : node) {
+	if theInstr.function.name == "fclose" {
+		@		@getJavaExpression(theInstr.params#front)@.close();
+@
+	} else {
+		@		@theInstr.function.name@(@
+		foreach i in theInstr.params {
+			if !i.first() {
+				@, @
+			}
+			@@getJavaExpression(i)@@
+		}
+		@);
+@
+	}
+}
+
+function generateJavaInstruction<"*()">(theInstr : node) {
+	@		@theInstr.function@.callback(@
+	foreach i in theInstr.params {
+		if !i.first() {
+			@, @
+		}
+		@@getJavaExpression(i)@@
+	}
+	@);
+@
+}
+
+function generateJavaInstruction<"operator<<()">(theInstr : node) {
+	@		@getJavaExpression(theInstr.instance)@.writeOperator(@
+	foreach i in theInstr.params {
+		if !i.first() {
+			@, @
+		}
+		@@getJavaExpression(i)@@
+	}
+	@);
+@
+}
+
+function generateJavaInstruction<"delete">(theInstr : node) {
+	@		@getJavaExpression(theInstr.variable)@ = null; // delete the object!
+@
+}
+
+function generateJavaInstruction<"throw">(theInstr : node) {
+	if theInstr.message.class.name {
+		@		throw @getJavaExpression(theInstr.message)@;
+@
+	} else {
+		@		throw new org.codeworker.Exception(@getJavaExpression(theInstr.message)@);
+@
+	}
+}
+
+function generateJavaInstruction<"target">(theInstr : node) {
+@		//##BEGIN_TARGET_LANGUAGE_CODE=@theInstr.lang@##script=@theInstr.file@##line=@theInstr.line@##
+		@theInstr.code@
+		//##END_TARGET_LANGUAGE_CODE=@theInstr.lang@##
+@
+}
+
+function generateClass(theClass : node) {
+	if theClass.name == this.name && getPackageName() {
+		@package @getPackageName()@;
+
+@
+	}
+	if !theClass.structs.empty() {
+		foreach i in theClass.structs {
+			generateClass(i);
+		}
+		@
+@
+	}
+	if theClass.name == this.name {
+		@public @
+	}
+	@class @theClass.name@ @
+	if theClass.inheritance {
+		@extends @getJavaType(theClass.inheritance, true)@ @
+	}
+	@{
+@
+
+	foreach i in theClass.attributes {
+		@	@i.access@ @
+		if i.modifiers.findElement("static") {@static @}
+		@@getJavaType(i.type)@ @i.name@@
+		if i.default {
+			@ = @getJavaExpression(i.default)@@
+		} else if i.reported_from {
+			if i.reported_from.init {
+				@ = new @getJavaExpression(i.reported_from.init)@()@
+			} else {
+				@ = new @getJavaType(i.type, true)@@
+				if getLastWrittenChars(1) != ']' {
+					@()@
+				}
+			}
+		} else if i.external_definition.existVariable() && i.type.indirect {
+				@ = new @getJavaType(i.type, true)@()@
+		}
+		@;
+@
+	}
+	@
+@
+	local sKey = "Java " + theClass.name + " Methods";
+	if getProtectedArea(sKey) {
+		setProtectedArea(sKey);
+		@
+@
+	}
+	foreach i in theClass.methods {
+		foreach method in i {
+			if method.name.startString('~') {
+				// destructor
+				if method.body.existVariable() {
+					// not empty
+					@	protected void finalize() {
+	}
+@
+				}
+			} else {
+				local sMethodName = method.name;
+				if startString(i.key(), "operator") {
+					switch(subString(i.key(), 8)) {
+						case "<<":
+							sMethodName = "writeOperator";
+							break;
+					}
+				}
+				@	@method.access@ @
+				if method.modifiers.findElement("static") {@static @}
+				if method.name == "main" {
+					@void @
+				} else if method.name != theClass.name {
+					// not a constructor: return type
+					@@getJavaType(method.return_type)@ @
+				}
+				@@sMethodName@(@
+				if method.name == "main" && $method.params.size() == 2$ {
+					@@getJavaType(method.params#back.type)@ @method.params#back.name@@
+				} else {
+					foreach parameter in method.params {
+						if !parameter.first() {
+							@, @
+						}
+						@@getJavaType(parameter.type)@ @parameter.name@@
+					}
+				}
+				@) {
+@
+				if method.name == "main" && $method.params.size() == 2$ {
+					@		@getJavaType(method.params#front.type)@ @method.params#front.name@ = @method.params#back.name@.length;
+		try {
+			System.loadLibrary("JNICodeWorker");
+		} catch(Exception exception) {
+			System.out.println("Unable to load the JNI wrapper of the CodeWorker API: '" + exception.toString() + "'");
+			System.exit(-2);
+		}
+@
+				}
+				if method.name == theClass.name {
+					// a constructor!
+					if method.initializers.super.existVariable() {
+						@		super(@
+						foreach j in method.initializers.super {
+							if !j.first() {
+								@, @
+							}
+							@@getJavaExpression(j)@@
+						}
+						@);
+@
+					}
+					foreach j in method.initializers {
+						if j.size() != 1 {
+							error("cannot initialize a class yet!");
+						} else if j#front != "null" {
+							@		@j.key()@ = @getJavaExpression(j#front)@;
+@
+						}
+					}
+				}
+				if theClass.parse_body {
+					local sKey = "Java " + theClass.name + "::" + method.key();
+traceLine(sKey);
+					if getProtectedArea(sKey) {
+						setProtectedArea(sKey);
+					} else {
+						generateJavaInstructions(method.body);
+					}
+				}
+				@	}
+
+@
+			}
+		}
+	}
+
+	@}
+@
+}
+
+//generateClass(this);

@@ -1,0 +1,103 @@
+/*description:
+{
+	Script that operates the transformation of a C++ source file to insert profiling code
+	in the body of functions.
+
+	Here, no parsing is processed for recognizing the signature of functions and the body.
+	So, some troubles might appear if a \samp{\#define} macro describes a part or the whole
+	of the function.
+
+	One activates the profiling by setting the preprocessor definition \textbf{RAW_PROFILING}
+	at compile-time (\samp{-D RAW_PROFILING} on the command line of the C++ compiler).
+
+	To make it simple, the header of the \textit{profiling module} is inserted after the first
+	\samp{\#include} encountered. It may cause some troubles if the first include is put in
+	a conditional preprocessing block (\samp{\#ifdef WIN32} ... \samp{\#endif}/\samp{\#else}).
+
+	The body of the function starts by incrementing its assigned counter held by the
+	\textit{profiling module} and by timing the visit of the controlled sequence.
+
+	Note that the transformation can be applied more than once: the second pass will not
+	affect the source file.
+}
+*/
+
+#implicitCopy
+
+profiling ::=
+	#ignore(C++) // ignore C++/JAVA-like comments
+	[insert_include]?
+	[
+		=> local sName1;
+		=> local sName2;
+		=> local sPrefix2;
+		=> local bNewLine;
+		->[
+			#readCompleteIdentifier:sName1
+			[
+					"::"
+					['~' => sPrefix2 = "destructor_"; | => sPrefix2 = "";]
+					#readIdentifier:sName2
+					=> set sName2 = sPrefix2 + sName2;
+				|
+					=> set sName2 = "";
+			]?
+			#check(sName2 || ((sName1 != "if") && (sName1 != "while") && (sName1 != "catch")))
+			'('
+			[parameter_token_list]?
+			')'
+			[post_function_token_decl]?
+			[':' constructor_initialization_token_list | !':']
+			'{' #!ignore ignoreLineBlanks
+			['\n' | => set bNewLine = true;]
+			!"#ifdef RAW_PROFILING"
+		] => {
+			if bNewLine {
+				@@endl()@@
+			}
+			local sKey = sName1 + "_" + sName2;
+			insert this.listOfKeys[sKey] = sKey;
+			if sName2 {
+				insert this.listOfKeys[sKey].class = sName1;
+				insert this.listOfKeys[sKey].name = sName2;
+			} else {
+				insert this.listOfKeys[sKey].name = sName1;
+			}
+			@#ifdef RAW_PROFILING
+	RawProfiling::RawProfiling::@sKey@_counter++;
+	RawProfiling::RawProfiling theProfiling(RawProfiling::RawProfiling::@sKey@_chronograph);
+#endif
+@
+		}
+	]*
+	->#empty;
+
+insert_include	::=
+		![->["#ifdef" "RAW_PROFILING" '#' "include"]]
+		->["#include" #!ignore ->'\n']
+		=> {
+			@
+#ifdef RAW_PROFILING
+#	include "RawProfiling.h"
+#endif
+
+@
+		};
+
+parameter_token_list ::= parameter_tokens [',' parameter_tokens]*;
+parameter_tokens ::=
+		[
+			#readIdentifier | '[' | ']' |
+			'.' | // JAVA only
+			#readInteger | '*' | '&' | "::" // C++ only
+		]+;
+
+post_function_token_decl ::= [#readIdentifier | '(' post_function_token_decl ')' | '.' | "::"]+;
+
+constructor_initialization_token_list	::= constructor_initialization_tokens [',' constructor_initialization_tokens]*;
+constructor_initialization_tokens	::= #readIdentifier '(' expression ')';
+
+expression	::=
+		[[~['[' | ']' '(' | ')' | '{' | '}' | ',']]+ | '[' expression ']' | '(' expression ')']+;
+
+ignoreLineBlanks : #!ignore	::= ["//" [~'\n']* | '\t' | ' ' | '\r']*;

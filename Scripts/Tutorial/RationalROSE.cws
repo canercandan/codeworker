@@ -1,0 +1,41 @@
+ROSE42	::= #ignore(blanks) #continue header design #empty;
+
+header	::= '(' #continue ignoreContent ')';
+
+design	::=
+		'('
+		#continue;
+		#readIdentifier:"object"
+		#readIdentifier:"Design"
+		classCategory
+		ignoreContent;
+
+classCategory	::=
+		=> local iBraces;
+		searchObject("Class_Category", iBraces);
+		[classCategory]*
+		[class]*
+		closeBraces(iBraces)
+		;
+
+searchObject(sObject : value, iBraces : node)	::=
+		[#readCString | '|' ->'\n' | ~['(' | ')']]*
+		'('
+		[
+			#readIdentifier:"object"
+			#readIdentifier:sName
+			#check(sName == sObject)
+		|
+			searchObject(sObject)
+		]
+		=> increment(iBraces);
+		;
+
+//---------------------------------
+// Some useful clauses as utilities
+//---------------------------------
+ignoreContent ::= ['(' #continue ignoreContent ')' | #readCString | '|' ->'\n' | ~')']*;
+closeBraces(iBraces : value)	::=
+		#check($decrement(iBraces) < 0)
+			|
+		#continue ignoreContent closeBraces(iBraces) ')';

@@ -1,0 +1,29 @@
+#implicitCopy
+
+GenBeautifier	::=
+		#continue
+		=> local bRawText = true;
+		[
+			!#empty
+			[~["<%" | '@' | #empty]]*
+			[
+					#explicitCopy
+					["<%" | '@']:sTag
+					[
+							#ignore(blanks) ["%>" | '@' | #empty]
+						|
+							#implicitCopy
+							=> {@@sTag@@}
+							[
+									"\"" ["\\\"" | ~"\""]*  "\""
+								|
+									"'" ["\\'" | ~"'"]*  "'"
+								|
+									~["%>" | '@' | #empty]
+							]*
+					]
+				|
+					#empty
+			]
+		]*
+		#empty;

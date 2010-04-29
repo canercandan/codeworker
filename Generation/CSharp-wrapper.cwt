@@ -1,0 +1,161 @@
+@
+
+function getCSharpRadical(sParam : value) {
+	return toUpperString(sParam.charAt(0)) + sParam.subString(1);
+}
+
+function getCSharpParameter(sParam : value) {
+	return 'h' + getCSharpRadical(sParam);
+}
+
+function generateFunction(theFunction : node) {
+	foreach param in theFunction.parameterList {
+		local sVarName = getCppVariable(getCSharpRadical(param.name), param.type);
+		local sParamName = getCSharpParameter(param.name);
+		if param.type == "treexpr" {
+			@		ExprScriptVariable* expr@param.name@;
+		{
+			CW_STRING_TO_CHARARRAY(@sParamName@);
+			DtaScript theEmptyScript(NULL);
+			GrfBlock* pBlock = NULL;
+			GrfBlock& myNullBlock = *pBlock;
+			ScpStream myStream(tc@sParamName@);
+			expr@param.name@ = theEmptyScript.parseVariableExpression(myNullBlock, myStream);
+			CW_FREE_CHARARRAY(@sParamName@);
+		}
+		std::auto_ptr<ExprScriptVariable> treexpr@param.name@(expr@param.name@);
+		@getCppCWType(param.type)@& @sVarName@ = *treexpr@param.name@;
+@
+		} else {
+			@		@getCppCWType(param.type)@ @sVarName@;
+@
+			switch(param.type) {
+				case "double":
+				case "int":
+				case "bool":
+				case "ulong":
+				case "ushort":
+					@		@sVarName@ = @sParamName@;
+@
+					break;
+				case "boolref":
+				case "doubleref":
+				case "stringref":
+				case "stringlist":
+					@		// NOT HANDLED YET!
+@
+					break;
+				case "string":
+					@		CW_STRING_TO_CHARARRAY(@sParamName@);
+		@sVarName@ = tc@sParamName@;
+@
+					break;
+				case "iterator":
+				case "treeref":
+				case "tree":
+					@		@sVarName@ = ((@sParamName@ == NULL) ? NULL : @sParamName@->cppInstance_);
+@
+					break;
+			}
+		}
+	}
+	@		@
+	if theFunction.return_type {
+		@@getCppType(theFunction.return_type)@ cppResult = @
+	}
+	@CGRuntime::@theFunction.name@(@
+	foreach param in theFunction.parameterList {
+		if !param.first() {
+			@, @
+		}
+		@@getCppVariable(param.name, param.type)@@
+	}
+	@);
+@
+	if theFunction.return_type {
+		switch(theFunction.return_type) {
+			case "bool":
+			case "int":
+			case "double":
+			case "ulong":
+			case "ushort":
+				@		result = cppResult;
+@
+				break;
+			case "string":
+				@		result = CW_STL_TO_STRING(cppResult);
+@
+				break;
+		}
+	}
+	foreach param in reverse theFunction.parameterList {
+		switch(param.type) {
+			case "string":
+				@		CW_FREE_CHARARRAY(@getCSharpParameter(param.name)@);
+@
+				break;
+			default:
+		}
+	}
+}
+
+
+
+if getMarkupKey() == "C++ header" {
+	foreach i in this.procedureList if !findElement("info", i.modifierList) && !findElement("visibility", i.modifierList) {
+		@			static void @i.name@(@
+		foreach j in i.parameterList {
+			if !j.first() {
+				@, @
+			}
+			@@getManagedCppType(j.type)@ @getCppVariable(j.name, j.type)@@
+		}
+		@);
+@
+	}
+	foreach i in this.functionList if !findElement("info", i.modifierList) && !findElement("user", i.modifierList) {
+		@			static @getManagedCppType(i.return_type)@ @i.name@(@
+		foreach j in i.parameterList {
+			if !j.first() {
+				@, @
+			}
+			@@getManagedCppType(j.type)@ @getCppVariable(j.name, j.type)@@
+		}
+		@);
+@
+	}
+} else if getMarkupKey() == "C++ body" {
+	foreach i in this.procedureList if !findElement("info", i.modifierList) && !findElement("visibility", i.modifierList) {
+		@	void Runtime::@i.name@(@
+		foreach j in i.parameterList {
+			if !j.first() {
+				@, @
+			}
+			@@getManagedCppType(j.type)@ @getCSharpParameter(j.name)@@
+		}
+		@) {
+@
+		generateFunction(i);
+		@	}
+
+@
+	}
+
+	foreach i in this.functionList if !findElement("info", i.modifierList) && !findElement("user", i.modifierList) {
+		@		@getManagedCppType(i.return_type)@ Runtime::@i.name@(@
+		foreach j in i.parameterList {
+			if !j.first() {
+				@, @
+			}
+			@@getManagedCppType(j.type)@ @getCSharpParameter(j.name)@@
+		}
+		@) {
+		@getManagedCppType(i.return_type)@ result;
+@
+		generateFunction(i);
+		@		return result;
+	}
+
+@
+	}
+}

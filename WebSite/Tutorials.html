@@ -1,0 +1,313 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<HTML>
+<HEAD>
+<!--##markup##"highlight scripts"--><!--##script##-->
+<!--
+	// Iterates all script files of the current directory to translate
+	// them to HTML for highlighting.
+	//
+	// Type:
+	//     CodeWorker -commentBegin "<HTML-beg-comment>" -commentEnd "<HTML-end-comment>" -autoexpand Tutorials.html
+	// to update all HTML files of scripts.
+
+	local sPath = "WebSite/tutorials/overview/";
+	forfile i in sPath + "*.cw?" {
+		traceLine("Converting \"" + i + "\" to HTML...");
+		local grammar;
+		insert grammar.docURL = "http://www.codeworker.org/";
+		local sHTMLFile = rsubString(i, 3) + "html";
+		set sHTMLFile = sPath + "scripts2HTML/" + sHTMLFile.subString(sPath.length());
+		translate("WebSite/repository/CWscript2HTML.cwp", grammar, i, sHTMLFile);
+	}
+-->
+<!--##script##--><!--##begin##"highlight scripts"--><!--##end##"highlight scripts"-->
+	<TITLE>Tutorials on CodeWorker</title>
+	<META http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+	<META name="Description" content="Tutorials of CodeWorker, a parsing tool and a code generator that interprets a scripting language to drive the processing of parsing and code generation in a quite familiar syntax for developers. It insists on offering powerful functionalities to do intensive code generation.">
+	<META http-equiv="pragma" content="no-cache" />
+	<META http-equiv="cache-control" content="no-cache" />
+
+<LINK rel="stylesheet" type="text/css" href="CodeWorker.css" />
+
+</HEAD>
+<BODY>
+	<table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr><td width="200"><a href="index.html"><img border=0 src="CodeWorker199x77.jpg"/></a></td><td>
+	<h1>Tutorials</h1>
+	</td></tr>
+	</table>
+	<BR />
+	<BR />
+	<TABLE border="1" cellpadding="7" cellspacing="0">
+		<TR>
+			<TD width="180" class="links" valign="top">
+				<H3>CONTENT</H3>
+				<UL>
+					<LI><A class="left" href="index.html">Overview</A></LI>
+					<LI><A class="left" href="ProjectManagement.html">Why use this tool?</A></LI>
+					<LI><A class="left" href="GettingStarted.html">Getting Started</A></LI>
+					<LI><A class="left" href="Documentation.html">Documentation</A></LI>
+					<LI><B>Tutorials</B></LI>
+					<LI><A class="left" href="http://www.codeworker.org/wiclear/index.php">Wiki</A></LI>
+					<LI><A class="left" href="ScriptsRepository.html">Repository of scripts</A></LI>
+					<LI><A class="left" href="Download.html">Download</A></LI>
+					<LI><A class="left" href="Links.html">Related links</A></LI>
+				</UL>
+			</TD>
+			<TD class="content" valign="top">
+				<p/>
+				<table border="1" cellpadding="7" cellspacing="0">
+					<tr>
+						<td colspan="2" class="company"><b>Complete tutorials for discovering the main functionality of CodeWorker</b></td>
+					</tr>
+					<tr>
+						<td><a href="tutorials/DesignSpecificModeling/tutorial.html"><img width="50%" border=0 src="english.jpg"/></a></td>
+						<td><a href="tutorials/DesignSpecificModeling/tutorial.html">Practice of parsing and code generation for generative programming</a> with CodeWorker</td>
+					</tr>
+					<tr>
+						<td><a href="http://cedric-lemaire.developpez.com/decouverteCW.html"><img width="50%" border=0 src="french.jpg"/></a></td>
+						<td>A <a href="http://cedric-lemaire.developpez.com/decouverteCW.html">detailed and progressive tutorial</a> written in French.</td>
+					</tr>
+				</table>
+				<h2>A few types of code generation</h2>
+				Six short examples are proposed below to illustrate some aspects of <I class="CodeWorker">CodeWorker</I> version <b>2.15</b> or more recent.
+				<p/>
+				You'll find the complete tutorial sources <a href="tutorials/overview/CodeWorker_overview.zip">here</a>.
+				<p/>
+				<table border="1" cellpadding="7" cellspacing="0">
+					<tr>
+						<td class="company"><b>Example</b></td><td class="company"><b>Description</b></td>
+					</tr>
+					<tr>
+						<td class="role"><b>1.</b> <a href="http://www.codegeneration.net/tiki-index.php?page=InlineCodeExpanderModel">Inline code expander</a></td>
+						<td>
+							Example of an <i>inline code expander</i> as proposed by
+							<a href="http://www.codegeneration.net">Jack D. Herrington</a>.
+							<p/>
+							<b>Type:</b><br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;CodeWorker <b>-translate</b> <a href="tutorials/overview/scripts2HTML/inlineCodeExpander.html">inlineCodeExpander.gen</a> <a href="tutorials/overview/inlineCodeExpander.sqlc">inlineCodeExpander.sqlc</a> <a href="tutorials/overview/inlineCodeExpander.c">inlineCodeExpander.c</a></kbd>
+							<p/>
+							It illustrates a trivial way for transforming programs : a C source
+							file embeds SQL statements to translate to C code.
+							<p/>
+							Here is the original C source embedding the SQL statement:<br/>
+						</td>
+					</tr>
+					<tr>
+						<td class="role"><b>2.</b> <a href="http://www.codegeneration.net/tiki-index.php?page=MixedCodeGeneratorModel">Mixed code generator</a></td>
+						<td>
+							Example of a <i>mixed code generator</i> as proposed by
+							<a href="http://www.codegeneration.net">Jack D. Herrington</a>.
+							<p/>
+							<b>Type:</b><br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;CodeWorker <b>-expand</b> <a href="tutorials/overview/scripts2HTML/mixedCodeGenerator.html">mixedCodeGenerator.gen</a> <a href="tutorials/overview/mixedCodeGenerator.cpp">mixedCodeGenerator.cpp</a></kbd>
+							<p/>
+							It illustrates the capability of CodeWorker to generate code by
+							expanding an existing file.<br/>
+							CodeWorker recognizes specific markups, looking like:<br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;<i>comment-begin</i> <b>"##markup##"</b> <i>key-as-string</i> <i>comment-end</i></kbd>
+							<p/>
+							The example shows how to embed a SQL statement into a CodeWorker-markup.
+							The C++ source file sees the markup as a C++ comment to ignore,
+							but CodeWorker recognizes it and generates code into.<br/>
+							For instance,<br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;<b>//##markup##"</b><i>SQL select * from users</i><b>"</b></kbd><br/>
+							becomes:<br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;<b>//##markup##"</b><i>SQL select * from users</i><b>"</b><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//##begin##"</b><i>SQL select * from users</i><b>"</b><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DBHandle* db_handle = db_connect();<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DBQueryData* db_data = db_query(db_handle, "SQL select * from users");<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for (int record = 0; record &lt; db_data-&gt;length; record++) {<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// fetch and process data<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//##end##"</b><i>SQL select * from users</i><b>"</b></kbd>
+							<p/>
+							Note: the C++ file <kbd>"mixedCodeGenerator.cpp"</kbd> will change after running the example.
+						</td>
+					</tr>
+					<tr>
+						<td class="role"><b>3.</b> Intrusive code in a source</td>
+						<td>
+							Here is the second use case for a <i>mixed code generator</i>.
+							<p/>
+							<b>Type:</b><br/>
+							  <kbd>&nbsp;&nbsp;&nbsp;&nbsp;CodeWorker <b>-expand</b> <a href="tutorials/overview/scripts2HTML/switch.html">switch.gen</a> <a href="tutorials/overview/switch.cpp">switch.cpp</a></kbd>
+							<p/>
+							After running the script and under <i>Windows</i>/<i>VC++ 6.0</i>, launch
+							<kbd>"switch.dsp"</kbd> to compile this expanded source.
+							<p/>
+							This example consists of adding 2 new features in C++:
+							<ul>
+								<li><b>switch</b> statement applied on <i>strings</i> instead of integrals (could have been done for Java as well),</li>
+								<li>conversion functions <b>enum value</b>-to-<i>string</i> / <i>string</i>-to-<b>enum value</b> implemented automatically while declaring an enum statement (could be adapted for Java, translating enum values to <kbd>public final static</kbd> integers).</li>
+							</ul>
+							<h3>Extending the <i>switch</i> statement</h3>
+							Case labels are put into single-line comments, between tags
+							<kbd><b>##data##</b></kbd>, and the string expression is put in the markup:<br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;<b>"switch("</b> <i>C++-string-expression</i> <b>")"</b></kbd>
+							<p/>
+							<b>Example (file <a href="tutorials/overview/switch.cpp">switch.cpp</a>):</b><br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;<b>//##markup##"</b><i>switch(sText)</i><b>"</b><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//##data##</b><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//</b><i>Product</i><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//</b><i>Customer</i><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//</b><i>Figurine</i><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//##data##</b></kbd><br/>
+							Click here to see the impact in <a href="tutorials/overview/switch.cpp.after">switch.cpp</a>.
+							<p>
+							Of course, the markup key is highly customizable and the precedent format
+							(data comprise) is tailor-made by/for us.<br/>
+							You can add or remove keys and run the expansion as often as desired:
+							user's code of <i>case</i> statements is preserved in protected areas.
+
+							<h3>Extending the <i>enum</i> declaration</h3>
+							Enumerated values are put into single-line comments, between tags
+							<kbd><b>##data##</b></kbd>, and the enum type is put in the markup:<br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;<b>"enum"</b> <i>enum-type-identifier</i></kbd>
+							<p/>
+							<b>Example (file <a href="tutorials/overview/switch.cpp">switch.cpp</a>):</b><br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;<b>//##markup##"</b><i>enum PET_TYPE</i><b>"</b><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//##data##</b><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//</b><i>cat</i><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//</b><i>dog</i><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//</b><i>snake</i><br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;<b>//##data##</b></kbd><br/>
+							Click here to see the impact in <a href="tutorials/overview/switch.cpp.after">switch.cpp</a>.
+							<p/>
+							It offers the same flexibility as the <kbd>switch</kbd> statement: you can
+							add or remove enumerated values as often as wished.
+						</td>
+					</tr>
+					<tr>
+						<td class="role"><b>4.</b> <a href="http://www.codegeneration.net/tiki-index.php?page=DomainLanguageModel">A DSL builder</a></td>
+						<td>
+							This tiny project demonstrates the capability of CodeWorker	to implement DSL for building
+							a software generator.
+							<p/>
+							The script <a href="tutorials/overview/scripts2HTML/tinyDSL_leader.html"><kbd>"tinyDSL_leader.gen"</kbd></a> drives the project:
+							<ul>
+								<li>parsing of the specification (see <a href="tutorials/overview/tinyDSL_spec.html"><kbd>"tinyDSL_spec.txt"</kbd></a>),</li>
+								<li>definition of some functions used in template-based scripts,</li>
+								<li>generation of C++ header/body skeletons.</li>
+							</ul>
+							<p/>
+							It calls:<br/>
+							<ul>
+								<li><a href="tutorials/overview/scripts2HTML/tinyDSL_parsing.html"><kbd>"tinyDSL_parsing.gen"</kbd></a>: extended-BNF parsing script of the DSL,</li>
+								<li><a href="tutorials/overview/scripts2HTML/tinyDSL_headerCpp.html"><kbd>"tinyDSL_headerCpp.gen"</kbd></a>: template-based script for C++ header,</li>
+								<li><a href="tutorials/overview/scripts2HTML/tinyDSL_bodyCpp.html"><kbd>"tinyDSL_bodyCpp.gen"</kbd></a>: template-based script for C++ body.</li>
+							</ul>
+							<p/>
+							<b>Type:</b><br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;CodeWorker <b>-script</b> <a href="tutorials/overview/scripts2HTML/tinyDSL_leader.html">tinyDSL_leader.gen</a></kbd>
+							<p/>
+							After running the project, all C++ classes appear in the new directory
+							<kbd>"framework/"</kbd>.<br/>
+							Under <i>Windows</i>/<i>VC++ 6.0</i>, see <kbd>"DSLbuilder.dsp"</kbd> to
+							compile the framework freshly created.
+						</td>
+					</tr>
+					<tr>
+						<td class="role"><b>5.</b> Source-to-source translation</td>
+						<td>
+							Syntax highlighting of the precedent DSL specifications to HTML (a <i>source-to-source translation</i>).
+							<p/>
+							The script <a href="tutorials/overview/scripts2HTML/tinyDSL2HTML.html"><kbd>"tinyDSL2HTML.gen"</kbd></a>
+							reuses the scanning of our tiny DSL (script <a href="tutorials/overview/scripts2HTML/tinyDSL_scanning.html"><kbd>"tinyDSL_scanning.gen"</kbd></a>)
+							and overloads some non-terminals to convert them to HTML.
+							<p/>
+							<b>Type:</b><br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;CodeWorker <b>-translate</b> <a href="tutorials/overview/scripts2HTML/tinyDSL2HTML.html">tinyDSL2HTML.gen</a> <i>your-specification.txt</i> <i>your-specification.html</i>
+							<p/>
+							<b>Example:</b><br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;CodeWorker <b>-translate</b> <a href="tutorials/overview/scripts2HTML/tinyDSL2HTML.html">tinyDSL2HTML.gen</a> tinyDSL_spec.txt <a href="tutorials/overview/tinyDSL_spec.html">tinyDSL_spec.html</a>
+							<br/>
+							generates the HTML highlighting of <kbd>"tinyDSL_spec.txt"</kbd>.
+						</td>
+					</tr>
+					<tr>
+						<td class="role"><b>6.</b> Self-contained expansion code</td>
+						<td>
+							This current HTML page has a markup that owns a dedicated
+							<i>template-based</i> script. This page needs an
+							embedded script that requires the highlighting of example scripts
+							in HTML; you'll find a sample below:<br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;&lt;html&gt;<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&lt;head&gt;<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&lt;!&#150;&#150;##markup##&quot;highlight scripts&quot;&#150;&#150;&gt;&lt;!&#150;&#150;##script##&#150;&#150;&gt;<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&lt;!&#150;&#150;<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;Iterates&nbsp;all&nbsp;script&nbsp;files&nbsp;of&nbsp;the&nbsp;current&nbsp;directory&nbsp;to&nbsp;translate</span><br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;them&nbsp;to&nbsp;HTML&nbsp;for&nbsp;highlighting.</span><br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//</span><br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;Type:</span><br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CodeWorker&nbsp;&#150;commentBegin&nbsp;&quot;&lt;HTML&#150;beg&#150;comment&gt;&quot;&nbsp;&#150;commentEnd&nbsp;&quot;&lt;HTML&#150;end&#150;comment&gt;&quot;&nbsp;&#150;autoexpand&nbsp;Tutorials.html</span><br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">//&nbsp;to&nbsp;update&nbsp;all&nbsp;HTML&nbsp;files&nbsp;of&nbsp;scripts.</span><br/>
+								<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A>&nbsp;sPath&nbsp;=&nbsp;<span class="string">&quot;WebSite/tutorials/overview/&quot;</span>;<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#forfile">forfile</A>&nbsp;i&nbsp;<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a>&nbsp;sPath&nbsp;+&nbsp;<span class="string">&quot;*.gen&quot;</span>&nbsp;{<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#traceLine">traceLine</A>(<span class="string">&quot;Converting \&quot;&quot;</span>&nbsp;+&nbsp;i&nbsp;+&nbsp;<span class="string">&quot;\&quot; to HTML...&quot;</span>);<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A>&nbsp;grammar;<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A>&nbsp;grammar.docURL&nbsp;=&nbsp;<span class="string">&quot;http://www.codeworker.org/&quot;</span>;<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A>&nbsp;sHTMLFile&nbsp;=&nbsp;<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#rsubString">rsubString</A>(i,&nbsp;<span class="numeric">3</span>)&nbsp;+&nbsp;<span class="string">&quot;html&quot;</span>;<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A>&nbsp;sHTMLFile&nbsp;=&nbsp;sPath&nbsp;+&nbsp;<span class="string">&quot;scripts2HTML/&quot;</span>&nbsp;+&nbsp;sHTMLFile.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#subString">subString</A>(sPath.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#lengthString">length</A>());<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#translate">translate</A>(<span class="string">&quot;WebSite/repository/CWscript2HTML.gen&quot;</span>,&nbsp;grammar,&nbsp;i,&nbsp;sHTMLFile);<br/>
+								&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&#150;&#150;&gt;<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&lt;!&#150;&#150;##script##&#150;&#150;&gt;&lt;!&#150;&#150;##begin##&quot;highlight scripts&quot;&#150;&#150;&gt;&lt;!&#150;&#150;##end##&quot;highlight scripts&quot;&#150;&#150;&gt;<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;&lt;title&gt;Tutorials on CodeWorker&lt;/title&gt;<br/>
+								 &nbsp;&nbsp;&nbsp;&nbsp;...</kbd>
+							<p/>
+							<b>Type:</b><br/>
+							<kbd>&nbsp;&nbsp;&nbsp;&nbsp;CodeWorker -commentBegin "&lt;!--" -commentEnd "--&gt;" <b>-autoexpand</b> Tutorials.html</kbd><br/>
+							where <kbd>"Tutorials.html"</kbd> is the current HTML page you are looking at.
+							<p/>
+							Here, the embedded script iterates all script files and convert them to HTML.
+							The corresponding HTML files are generated in <kbd>"scripts2HTML/"</kbd>.
+							<p/>
+							Note: scripts <a href="tutorials/overview/scripts2HTML/CWscript2HTML.html"><kbd>"CWscript2HTML.gen"</kbd></a>
+							and <a href="tutorials/overview/scripts2HTML/CodeWorker_grammar.html"><kbd>"CodeWorker_grammar.gen"</kbd></a>
+							take in charge the HTML translation (see the embedded script) but don't
+							belong to the examples.<br/>
+							They are downloadable on <a href="http://www.codeworker.org/ScriptsRepository.html">http://www.codeworker.org/ScriptsRepository.html</a>.
+						</td>
+					</tr>
+				</table>
+				<p/>
+				Run <b>exemples.bat</b> under Windows to execute examples.
+				<br/>
+				Note: directories <kbd>"framework/"</kbd> and <kbd>"scripts2HTML/"</kbd> are 100% generated.
+				You can remove them before executing examples.
+				<p/>
+				To learn more about <I class="CodeWorker">CodeWorker</I> via an example, click
+				on the link <A href="DiscoveringMore.html">Discovering more with an example</A>.
+			</TD>
+		</TR>
+		<TR>
+			<TD class="bottom" valign="top" colspan="2">
+				<a href="http://www.xiti.com/xiti.asp?s=134058" TARGET="_top">
+					<script language="JavaScript1.1">
+					<!--
+						hsh = new Date();
+						hsd = document;
+						hsr = hsd.referrer.replace(/[<>]/g, '');
+						hsi = '<img width="39" height="25" border=0 ';
+						hsi += 'src="http://logv24.xiti.com/hit.xiti?s=134058';
+						hsi += '&p=';
+						hsi += '&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+						if(parseFloat(navigator.appVersion)>=4)
+						{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' + Xiti_s.colorDepth;}
+						hsd.writeln(hsi + '&ref=' + hsr.replace(/&/g, '$') + '" title="Mesurez votre audience"><\!--');
+						//-->
+					</script>
+					<noscript>
+						<img width="39" height="25" border=0 src="http://logv24.xiti.com/hit.xiti?s=134058&p=&" title="Mesurez votre audience">
+					</noscript>
+					<!--//-->
+				</a>
+				&nbsp;<I class="CodeWorker">CodeWorker</I> is maintained by <A href="CurriculumVitae.html">Cedric Lemaire</A>.
+				Please send a mail to <A href="mailto:codeworker@free.fr">Submit a bug or feature</A><BR />
+			</TD>
+		</TR>
+	</TABLE>
+</BODY>
+</HTML>

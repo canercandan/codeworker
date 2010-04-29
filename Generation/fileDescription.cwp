@@ -1,0 +1,89 @@
+fileDescription	::=
+	description
+	#ignore(blanks)
+	[input | file | output]*
+	[
+		#check(this.parseAll)
+		[!#empty content]*
+	]?
+	;
+
+startComment	::= "//" | "/*" | "<!--" | '#';
+endComment	::= "*/" | "-->";
+
+description	::=
+		['@' | "<%"]?
+		startComment
+		#readIdentifier:"description"
+		#ignore(blanks)
+		':'
+		#continue
+		'{'
+		description1:this.description
+		'}'
+		[endComment]?;
+
+description1	::= #!ignore ['\\' #readChar | '{' description1 #continue '}' | ~'}']*;
+
+
+input	::=
+		#readIdentifier:"input"
+		#continue
+		=> pushItem this.input;
+		#readCString:this.input#back
+		[
+			',' #continue
+			=> pushItem this.input;
+			#readCString:this.input#back
+		]*
+		';';
+
+
+file	::=
+		#readIdentifier:"file"
+		#continue
+		=> pushItem this.file;
+		#readCString:this.file#back
+		[
+			',' #continue
+			=> pushItem this.file;
+			#readCString:this.file#back
+		]*
+		';';
+
+
+output	::=
+		#readIdentifier:"output"
+		#continue
+		=> pushItem this.output;
+		#readCString:this.output#back
+		[
+			',' #continue
+			=> pushItem this.output;
+			#readCString:this.output#back
+		]*
+		';';
+
+content	::=
+		=> pushItem this.content;
+		=> localref theContent = this.content#back;
+		[
+				startComment
+				#readIdentifier:{"paragraph", "section"}:sTitle
+				#ignore(blanks)
+				=> insert theContent.type = sTitle;
+				[
+					#check(sTitle == "section")
+					#continue
+					#readCString:theContent.title
+				]?
+				#continue
+				':'
+				'{'
+				description1:theContent.description
+				'}'
+				[endComment]?
+			|
+				->['\n' | #empty]:theContent.description
+		]
+		;

@@ -1,0 +1,40 @@
+@
+writeText("@");
+@switch(this.function) {
+@
+foreach i in project.procedureList if i.mode == "generate" && i.example {
+	@	case "@i.name@":
+		{
+@
+	writeText("\t\t\t@");
+	local lines;
+	cutString(replaceString("\r", "", i.example), "\n", lines);
+	foreach j in lines {
+		@@j@
+@
+	}
+	@
+		}
+		break;
+@
+}
+foreach i in project.functionList if i.mode == "generate" && i.example {
+	@	case "@i.name@":
+		{
+@
+	writeText("\t\t\t@");
+	local lines;
+	cutString(replaceString("\r", "", i.example), "\n", lines);
+	foreach j in lines {
+		if !first(j) {
+			@			@
+		}
+		@@j@
+@
+	}
+	@
+		}
+		break;
+@
+}
+@}

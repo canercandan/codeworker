@@ -1,0 +1,9 @@
+parseAsBNF("SDLparser.cwp", project, _ARGS#front);
+
+local sPath = _ARGS#front;
+sPath = sPath.replaceString('\\', '/');
+local iIndex = sPath.findLastString("/include/");
+if $iIndex <= 0$ error("\"SDL.h\" expected in a \"include/\" directory!");
+sPath = sPath.leftString($iIndex + 1$);
+
+generate("SDLpackage.cwt", project, sPath + "plugins/CodeWorker/SDLcw.cpp");

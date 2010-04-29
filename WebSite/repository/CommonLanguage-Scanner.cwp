@@ -1,0 +1,27 @@
+target_language_type	::=
+		[CONST]?
+		[#readIdentifier:"unsigned"]
+		["::"]? identifier [["::" | '.'] identifier]*
+		[
+				'<' #continue
+				target_language_type
+				[',' #continue target_language_type]*
+				'>'
+		]?
+		[
+				"\\*"
+			|
+				'&'
+			|
+				'[' #continue [#readInteger | #readIdentifier]? ']'
+			[CONST]?
+		]*
+		;
+
+identifier	::= #readCompleteIdentifier:sIdentifier !keyword<sIdentifier>;
+
+
+//--------------------------------------------------
+//  Keywords used in types of the target language
+
+CONST	::= #readCompleteIdentifier:"const";

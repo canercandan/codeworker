@@ -1,0 +1,17 @@
+@
+/*description:
+{
+	This script is intended to expand the declaration of the profiling module with the
+	counter and the chronograph of each function encountered.
+
+	The file to expand is \samp{"RawProfiling.h"} and will be put in \samp{RAW_PROFILING_DIR}.
+}
+*/
+
+if getMarkupKey() == "header declarations" {
+	foreach i in this.listOfKeys {
+		@			static int @i@_counter;
+			static Chronograph @i@_chronograph;
+@
+	}
+}

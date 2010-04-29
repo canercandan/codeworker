@@ -1,0 +1,629 @@
+translation_unit ::=
+		#ignore(C++)
+		#continue
+		#readIdentifier:sType
+		[
+			#check(sType == "package")
+			#continue
+			object_type_path
+			';'
+			#readIdentifier:sType
+		]?
+		object_type<sType>(this)
+		[post_processing]?
+		;
+
+object_type<"class">(parent : node) ::=
+		#continue
+		object_type_path:sObjectName
+		=> insert parent.classes[sObjectName];
+		[template_clause_decl]?
+		object_type_body<"class">(parent.classes[sObjectName])
+		;
+
+template_clause_decl ::=
+		'<'
+		#continue
+		template_parameter_decl
+		[
+			','
+			#continue
+			template_parameter_decl
+		]*
+		'>'
+		;
+
+template_parameter_decl ::=
+		identifier
+		[
+			#readIdentifier:"conforms"
+			#continue
+			object_type_path
+		]?
+		;
+		
+object_type<"interface">(parent : node) ::=
+		#continue
+		=> local objectTypeName;
+		object_type_path:sObjectName
+		=> insert parent.interfaces[sObjectName];
+		object_type_body<"interface">(parent.interfaces[sObjectName])
+		;
+
+object_type_body<sObjectType>(object : node) ::=
+		#continue
+		'{'
+		=> local env;
+		[
+			access_mode<sObjectType>:env.access_mode
+			[declarator<sObjectType>(object, env)]*
+		]*
+		'}'
+		;
+
+declarator<sObjectType>(object : node, env : node) ::=
+		constructor<sObjectType>(object, env)
+	|
+		destructor<sObjectType>(object, env)
+	|
+		=> local declQualifiers;
+		[
+			declarator_qualifier:sQual
+			=> insert declQualifiers[sQual];
+		]*
+		=> local typeSpec;
+		type_specifier(typeSpec)
+		#continue
+		identifier:sMemberName
+		[
+				!!'('
+				#continue
+				method_declaration<((declQualifiers.findElement("abstract")) ? "interface" : sObjectType)>(declQualifiers, typeSpec, sMemberName, object, env)
+			|
+				attribute_declaration<sObjectType>(declQualifiers, typeSpec, sMemberName, object, env)
+		]
+	;
+
+constructor<"class">(object : node, env : node) ::=
+		#readIdentifier:"constructor"
+		#continue
+		method_parameters
+		[
+			':'
+			#continue
+			constructor_attribute_initialization
+			[',' #continue constructor_attribute_initialization]*
+		]?
+		method_body<"class">
+		;
+
+constructor_attribute_initialization ::=
+		#continue
+		identifier
+		'('
+		constant_initializer
+		')'
+		;
+
+constant_initializer ::=
+		#readIdentifier:"new"
+		#continue
+		object_type_path
+		'('
+		[
+			=> local expr;
+			constant_expression(expr)
+			[
+				',' #continue
+				=> local expr;
+				constant_expression(expr)
+			]*
+		]?
+		')'
+	|
+		=> local expr;
+		constant_expression(expr)
+	;
+
+destructor<"class">(object : node, env : node) ::=
+		#readIdentifier:"destructor"
+		#continue
+		'(' ')'
+		method_body<"class">
+		;
+
+declarator_qualifier:value ::= #readIdentifier:{"abstract", "virtual", "final", "static", "weak"}:declarator_qualifier;
+
+type_specifier(typeSpec : node) ::=
+		[
+				#readIdentifier:{"void", "char", "short", "int", "long", "float", "double", "signed", "unsigned"}:typeSpec.name
+				=> typeSpec = "base";
+			|
+				
+				object_type_path:typeSpec.name
+				[template_clause]?
+				=> typeSpec = "object";
+		]
+		[
+			'['
+			#continue
+			=> pushItem typeSpec.array;
+			array_size(typeSpec.array)
+			[
+				',' #continue
+				=> pushItem typeSpec.array;
+				array_size(typeSpec.array)
+			]*
+			']'
+		]?
+		;
+
+template_clause ::=
+		'<'
+		#continue
+		=> local typeSpec;
+		type_specifier(typeSpec)
+		[
+			','
+			#continue
+			type_specifier(typeSpec)
+		]*
+		'>'
+		;
+
+method_declaration<sObjectType>(declQualifiers : node, typeSpec : node, sMemberName : value, object : node, env : node) ::=
+		#continue
+		method_parameters
+		[
+			#readIdentifier:"throws"
+			object_type_path [',' object_type_path]*
+		]?
+		method_body<sObjectType>
+		;
+
+method_parameters ::=
+		'('
+		[parameter_declaration [',' parameter_declaration]*]?
+		')'
+		;
+
+parameter_declaration ::=
+		[parameter_mode]?
+		=> local typeSpec;
+		type_specifier(typeSpec)
+		[identifier]?
+		;
+
+parameter_mode ::= #readIdentifier:{"in", "inout", "out"};
+
+method_body<"interface"> ::= #continue ';';
+method_body<"class"> ::=
+		#continue
+		=> local theStatement; /*TO DO*/
+		compound_statement(theStatement)
+		;
+
+attribute_declaration<"interface">(declQualifiers : node, typeSpec : node, sMemberName : value, object : node, env : node) ::=
+		=> error("an interface admits method declarations only");
+		;
+
+attribute_declaration<"class">(declQualifiers : node, typeSpec : node, sMemberName : value, object : node, env : node) ::=
+		[attribute_specifier]*
+		#continue
+		';'
+		;
+
+attribute_specifier ::=
+		[
+				'=' constant_initializer
+			|
+				#readIdentifier:sSpecifier attribute_specifier<sSpecifier>
+		];
+
+attribute_specifier<"getter"> ::= #continue method_body<"class">;
+attribute_specifier<"setter"> ::=
+		#continue
+		'(' identifier ')'
+		method_body<"class">;
+
+
+post_processing ::=
+		'#' #readIdentifier:"CodeWorker" #continue
+		->(:sScript)['#' #readIdentifier:"CodeWorker"]
+		=> executeString(this, sScript);
+		;
+
+object_type_path : value ::=
+		[
+			identifier:sId
+			'.'
+			=> object_type_path += sId + '.';
+		]*
+		identifier:object_type_path
+		;
+
+
+
+//----------------------------------------------------------------------------
+//                            E X P R E S S I O N S
+//----------------------------------------------------------------------------
+
+constant_expression(expr : node) ::= conditional_expression<"constant">(expr);
+
+conditional_expression<T>(expr : node) ::=
+		logical_or_expression<T>(expr)
+		[
+			'?' #continue
+			=> slideNodeContent(expr, condition);
+			=> insert expr.operator = '?';
+			expression<T>(expr.then) ':' conditional_expression<T>(expr.else)
+		]?
+		;
+logical_or_expression<T>(expr : node) ::=
+		logical_and_expression<T>(expr)
+		[
+			"||" #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = "||";
+			logical_and_expression<T>(expr.right)
+		]*
+		;
+logical_and_expression<T>(expr : node) ::=
+		inclusive_or_expression<T>(expr)
+		[
+			"&&" #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = "&&";
+			inclusive_or_expression<T>(expr.right)
+		]*
+		;
+inclusive_or_expression<T>(expr : node) ::=
+		exclusive_or_expression<T>(expr)
+		[
+			['|' #!ignore !'|'] #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = '|';
+			exclusive_or_expression<T>(expr.right)
+		]*
+		;
+exclusive_or_expression<T>(expr : node) ::=
+		and_expression<T>(expr)
+		[
+			'^' #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = '^';
+			and_expression<T>(expr.right)
+		]*
+		;
+and_expression<T>(expr : node) ::=
+		equality_expression<T>(expr)
+		[
+			['&' #!ignore !'&'] #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = '&';
+			equality_expression<T>(expr.right)
+		]*
+		;
+equality_expression<T>(expr : node) ::=
+		relational_expression<T>(expr)
+		[
+			["==" | "!="]:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = sOperator;
+			relational_expression<T>(expr.right)
+		]*
+		;
+relational_expression<T>(expr : node) ::=
+		shift_expression<T>(expr)
+		[
+			['<' #!ignore !'<' | '>' #!ignore !'>' | "<=" | ">="]:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = sOperator;
+			shift_expression<T>(expr.right)
+		]*
+		;
+shift_expression<T>(expr : node) ::=
+		additive_expression<T>(expr)
+		[
+			["<<" | ">>"]:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = sOperator;
+			additive_expression<T>(expr.right)
+		]*
+		;
+additive_expression<T>(expr : node) ::=
+		multiplicative_expression<T>(expr)
+		[
+			['+' | '-']:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = sOperator;
+			multiplicative_expression<T>(expr.right)
+		]*
+		;
+multiplicative_expression<T>(expr : node) ::=
+		cast_expression<T>(expr)
+		[
+			['*' | '/' | '%']:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> insert expr.operator = sOperator;
+			cast_expression<T>(expr.right)
+		]*
+		;
+
+cast_expression<T>(expr : node) ::=
+			'(' type_name(theType) ')' cast_expression<T>(theCast)
+			=> insert expr.operator = "cast";
+			=> setall expr.cast = theType;
+			=> setall expr.expr = theCast;
+		|
+			unary_expression<T>(expr)
+		;
+
+unary_expression<T>(expr : node) ::=
+			postfix_expression<T>(expr)
+		|
+			["++" | "--"]:expr.operator #continue unary_expression<T>(expr.expr)
+		|
+			unary_operator:expr.operator #continue cast_expression<T>(expr.expr)
+		|
+			#readIdentifier:"sizeof":expr.operator
+			#continue
+			[
+					unary_expression<T>(sExpr)
+				|
+					type_name(theType)
+			]
+		;
+
+postfix_expression<T>(expr : node) ::=
+		primary_expression<T>(expr)
+		[
+				'[' #continue expression<T>(expr.post.array) ']'
+				=> insert expr.post.operator = "[]";
+			|
+				#check(T != "constant")
+				'(' /*[assignment_expression]* replaced by ->*/ [function_call_parameter_list(expr.post.parameters)]? ')'
+				=> insert expr.post.operator = "()";
+				=> ref expr = expr.post;
+			|
+				'.':expr.post.operator
+				#continue
+				identifier:expr.post.id
+				=> ref expr = expr.post;
+			|
+				"->":expr.post.operator
+				#continue
+				identifier:expr.post.id
+				=> ref expr = expr.post;
+			|
+				["++" | "--"]:expr.post.operator
+				=> ref expr = expr.post;
+		]*;
+
+// added by CL
+function_call_parameter_list(expr : node) ::=
+		#pushItem(expr)
+		assignment_expression<"">(expr#back)
+		[
+			',' #continue
+			=> pushItem expr;
+			assignment_expression<"">(expr#back)
+		]*
+		;
+		
+primary_expression<T>(expr : node) ::=
+			identifier:expr.value
+			=> insert expr.operator = "id";
+		|
+			constant:expr.value
+			=> insert expr.operator = "const";
+		|
+			'(' expression(expr) ')'
+		;
+
+primary_expression<"constant">(expr : node) ::=
+			constant:expr.value
+			=> insert expr.operator = "const";
+		|
+			'(' expression<"constant">(expr) ')'
+		;
+
+constant ::= #readNumeric /*| integer_constant*/ | #readCString | #readCChar | enumeration_constant;
+enumeration_constant ::= identifier;
+
+expression<T>(expr : node) ::= assignment_expression<T>(expr);
+
+assignment_expression<T>(expr : node) ::=
+			=> local theExpr;
+			unary_expression<T>(theExpr)
+			assignment_operator:expr.operator
+			#continue
+			=> setall expr.right = theExpr;
+			assignment_expression<T>(expr.left)
+		|
+			conditional_expression<T>(expr)
+			;
+
+assignment_operator ::= '=' #!ignore !'=' | "*=" | "/=" | "%=" | "+=" | "-=" | "<<=" | ">>=" | "&=" | "^=" | "|=";
+unary_operator ::= '&' #!ignore !'&' | '*' | '+' #!ignore !'+' | '-' #!ignore !'-' | '~' | '!';
+
+
+//----------------------------------------------------------------------------
+//                              S T A T E M E N T S
+//----------------------------------------------------------------------------
+
+compound_statement(theStatement : node) ::=
+		'{' #continue
+		=> insert theStatement.type = "{}";
+		[statement(theStatement)]*
+		'}'
+		;
+
+statement(theStatement : node) ::=
+		#pushItem(theStatement)
+		[
+				#readIdentifier:sKeyword statement<sKeyword>(theStatement#back)
+			|
+				compound_statement(theStatement#back)
+				=> ref theStatement#back.parent = theStatement;
+			|
+				declaration_statement(theStatement#back)
+			|
+				expression_statement(theStatement#back)
+		]
+		;
+
+declaration_statement(theStatement : node) ::=
+		=> local declQualifiers;
+		[
+			declarator_qualifier:sQual
+			=> insert declQualifiers[sQual];
+		]*
+		=> local typeSpec;
+		type_specifier(typeSpec)
+		identifier:sAttribute
+		#continue
+		=> insert theStatement.type = "decl";
+		=> insert theStatement.name = sAttribute;
+		=> setall theStatement.qualifiers = declQualifiers;
+		=> setall theStatement.type_specifier = typeSpec;
+		[
+				'(' #continue
+				[
+					=> local expr;
+					expression<"">(expr)
+					[
+						',' #continue
+						expression<"">(expr)
+					]*
+				]?
+				')'
+			|
+				'='
+				#continue
+				expression<"">(expr)
+		]?
+		';'
+		;
+
+statement<sKeyword>(theStatement : node) ::=
+		':' #continue
+		=> insert theStatement.type = "label";
+		=> insert theStatement.label = sKeyword;
+		statement(theStatement.block)
+		;
+
+statement<"case">(theStatement : node) ::=
+		#continue
+		=> insert theStatement.type = "case";
+		constant_expression(theStatement.case) ':' statement(theStatement.block)
+		;
+
+statement<"default">(theStatement : node) ::=
+		#continue
+		=> insert theStatement.type = "default";
+		':' statement(theStatement.block)
+		;
+
+expression_statement(theStatement : node) ::=
+		[
+			expression<"">(theStatement.expr)
+			=> insert theStatement.type = "expr";
+		]?
+		';'
+		;
+
+statement<"if">(theStatement : node) ::=
+		#continue
+		=> insert theStatement.type = "if";
+		'(' expression<"">(theStatement.condition) ')' statement(theStatement.then)
+		[#readIdentifier:"else" #continue statement(theStatement.else)]?
+		;
+
+statement<"switch">(theStatement : node) ::=
+		#continue
+		=> insert theStatement.type = "switch";
+		'(' expression<"">(theStatement.condition) ')' statement(theStatement.block)
+		;
+
+statement<"while">(theStatement : node) ::=
+		#continue
+		=> insert theStatement.type = "while";
+		'(' expression<"">(theStatement.condition) ')' statement(theStatement.block)
+		;
+
+statement<"do">(theStatement : node) ::=
+		#continue
+		=> insert theStatement.type = "do";
+		statement(theStatement.block)
+		"while" '(' expression<"">(theStatement.condition) ')' ';'
+		;
+
+statement<"for">(theStatement : node) ::=
+		#continue
+		=> insert theStatement.type = "for";
+		'('
+		[
+				#insert(theStatement.init_declaration)
+				declaration_statement(theStatement.init_declaration)
+			|
+				expression<"">(theStatement.init) ';'
+		]
+		expression<"">(theStatement.condition) ';' expression<"">(theStatement.increment) ')'
+		statement(theStatement.block)
+		;
+
+statement<"goto">(theStatement : node) ::=
+		#continue
+		=> insert theStatement.type = "goto";
+		identifier:theStatement.label ';'
+		;
+
+statement<"continue">(theStatement : node) ::= #continue => insert theStatement.type = "continue"; ';';
+
+statement<"return">(theStatement : node) ::=
+		#continue
+		=> insert theStatement.type = "return";
+		[expression<"">(theStatement.expr)]?
+		';'
+		;
+
+
+//---------------------------------------------------------------------------------
+
+access_mode<"class"> : value ::= #readIdentifier:{"public", "protected", "private"}:access_mode #continue ':';
+access_mode<"interface"> : value ::= #readIdentifier:{"public", "protected"}:access_mode #continue ':';
+
+identifier:value ::=
+		#readIdentifier:sId
+		#check(!(sId in {
+//##markup##"keywords"
+//##script##
+//local keywords;
+//parseAsBNF({
+//	keywords ::=
+//		#ignore(C++)
+//		[
+//			->[
+//					'"'
+//					#!ignore
+//					#readIdentifier:sText
+//					'"'
+//					=> insert this[sText];
+//				|
+//					#readCString
+//			]
+//		]*;
+//}, keywords, "opalin_grammar.cwp");
+//foreach i in keywords {
+//	if !i.first() {@, @}
+//	@"@i.key()@"@
+//}
+//@
+//@
+//##script##
+//##begin##"keywords"
+"class", "interface", "constructor", "destructor", "abstract", "virtual", "final", "static", "weak", "void", "char", "short", "int", "long", "float", "double", "signed", "unsigned", "base", "object", "throws", "in", "inout", "out", "getter", "setter", "CodeWorker", "public", "protected", "private"
+//##end##"keywords"
+		}))
+		;

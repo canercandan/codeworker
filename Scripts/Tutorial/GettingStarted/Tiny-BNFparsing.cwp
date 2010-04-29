@@ -1,0 +1,42 @@
+TinyBNF ::=	#ignore(JAVA) [classDeclaration]* #empty
+	=> { traceLine("this file has been parsed successfully"); };
+classDeclaration ::=
+	IDENT:"class"
+//note: the name of the class is put into the local variable \samp{sName}. Note that the first
+//note: time a variable is encountered after a token, it is declared as local automatically.
+	IDENT:sName
+//note: we populate the parse tree as we have proceeded manually,
+	=> insert project.listOfClasses[sName].name = sName;
+	[
+		':'
+//note: the name of the parent class is put into the local variable \samp{sParent},
+		IDENT:sParent
+		=> {
+//note: the parent class must have been declared before: the item is searched into the list
+//note: of classes,
+			if !findElement(sParent, project.listOfClasses)
+				error("class '" + sParent + "' should have been declared before");
+//note: we populate the parse tree as we have proceeded manually,
+			ref project.listOfClasses[sName].parent = project.listOfClasses[sParent];
+		}
+	]?
+//note: clauses may accept parameters; here, the current class is passed to \samp{classBody}
+//note: that will populate it with attributes,
+	classBody(project.listOfClasses[sName]);
+//note: the clause \samp{classBody} expects a parameter as a node; a parameter may be passed
+//note: as \samp{value} or \samp{node} or \samp{reference},
+classBody(myClass : node) ::=
+	'{' [attributeDeclaration(myClass)]* '}';
+//note: little exercise: complete the clause \samp{attributeDeclaration} that takes in charge
+//note: of parsing an attribute of the class given to the argument \textit{myClass},
+attributeDeclaration(myClass : node) ::=
+//note: remember that you must parse the class name of the association here (attribute
+//note: \textit{myClass.listOfAttributes\#back.class} refers to the associated class),
+	IDENT
+//note: remember that you must parse the multiplicity of the association here (attribute
+//note: \textit{myClass.listOfAttributes\#back.isArray} is worth \samp{true} if \textbf{'[]'} is present),
+	['[' ']']?
+//note: remember that you must parse the name of the association here (to put into attribute
+//note: \textit{myClass.listOfAttributes\#back.name}),
+	IDENT;
+IDENT ::= #!ignore ['a'..'z'|'A'..'Z']+;

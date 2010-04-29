@@ -1,0 +1,100 @@
+repository	::= #ignore(C++) #continue [theme | working]* #empty;
+
+theme	::=
+		#readIdentifier:"theme"
+		#continue
+		#readCString:sName
+		=> insert this.theme[sName] = sName;
+		=> localref theTheme = this.theme[sName];
+		'{'
+		[description:theTheme.description]?
+		[subject(theTheme)]*
+		'}';
+
+working	::=
+		#readIdentifier:"working"
+		#continue
+		#readCString:sName
+		=> insert this.working[sName] = sName;
+		=> localref theWorking = this.working[sName];
+		'{'
+		[description:theWorking.description]?
+		[state:theWorking.state]?
+		'}';
+
+description	: value	::=
+		#readIdentifier:"description"
+		#continue
+		'{'
+		#!ignore
+		description1:description
+		'}';
+
+description1	::= ['\\' #readChar | '{' description1 #continue '}' | ~'}']*;
+
+
+subject(theTheme : node)	::=
+		#readIdentifier:"subject"
+		#continue
+		#readCString:sName
+		=> insert theTheme.subject[sName] = sName;
+		=> localref theSubject = theTheme.subject[sName];
+		'{'
+		[description:theSubject.description]?
+		[state:theSubject.state]?
+		[#insert(theSubject.script) script(theSubject.script)]?
+		[#insert(theSubject.file) file(theSubject.file)]?
+		[#insert(theSubject.example) example(theSubject.example)]?
+		'}';
+
+
+state : value	::=
+		#readIdentifier:"state" [':']?
+		#continue
+		#readIdentifier:{"pending", "progress", "complete"}:state
+		';';
+
+
+script(theScript : node)	::=
+		#readIdentifier:"script"
+		#continue
+		=> pushItem theScript;
+		["link":theScript#back.link]?
+		#readCString:theScript#back
+		[
+			',' #continue
+			=> pushItem theScript;
+			["link":theScript#back.link]?
+			#readCString:theScript#back
+		]*
+		';';
+
+
+file(theFile : node)	::=
+		#readIdentifier:"file"
+		#continue
+		=> pushItem theFile;
+		["link":theFile#back.link]?
+		#readCString:theFile#back
+		[
+			',' #continue
+			=> pushItem theFile;
+			["link":theFile#back.link]?
+			#readCString:theFile#back
+		]*
+		';';
+
+
+example(theExample : node)	::=
+		#readIdentifier:"example"
+		#continue
+		=> pushItem theExample;
+		["link":theExample#back.link]?
+		#readCString:theExample#back
+		[
+			',' #continue
+			=> pushItem theExample;
+			["link":theExample#back.link]?
+			#readCString:theExample#back
+		]*
+		';';

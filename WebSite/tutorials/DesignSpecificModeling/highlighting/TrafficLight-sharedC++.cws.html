@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A>&nbsp;writeAction&lt;<span class="string">&quot;duration&quot;</span>&gt;(theAction&nbsp;:&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>,&nbsp;sLanguage&nbsp;:&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">value</a>)&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#localref">localref</A>&nbsp;theEntry&nbsp;=&nbsp;theAction.crossroad_entry;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
+@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#switch">switch</A>(sLanguage)&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#switch">case</a>&nbsp;<span class="string">&quot;C++&quot;</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;durations[]&nbsp;=&nbsp;{@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#switch">case</a>&nbsp;<span class="string">&quot;Java&quot;</span>:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int[]&nbsp;durations&nbsp;=&nbsp;{@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A>&nbsp;i&nbsp;<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a>&nbsp;theAction.durations&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A>&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a>i.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#first">first</A>()&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">,&nbsp;@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">@</span>i<span class="raw_text">@</span><span class="raw_text">@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">,&nbsp;-1};<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setDuration(&quot;@</span>theEntry.street<span class="raw_text">@</span><span class="raw_text">&quot;,&nbsp;&quot;@</span>theEntry.crossroad<span class="raw_text">@</span><span class="raw_text">&quot;,&nbsp;&quot;@</span>theEntry.direction<span class="raw_text">@</span><span class="raw_text">&quot;,&nbsp;durations);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+@</span><br/>
+}<br/>
+<br/>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A>&nbsp;writeAction&lt;<span class="string">&quot;activate&quot;</span>&gt;(theAction&nbsp;:&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>,&nbsp;sLanguage&nbsp;:&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">value</a>)&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">&nbsp;&nbsp;&nbsp;&nbsp;activateStrategy(&quot;@</span>theAction.strategy<span class="raw_text">@</span><span class="raw_text">&quot;);<br/>
+@</span><br/>
+}<br/>
+<br/>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A>&nbsp;writeAction&lt;<span class="string">&quot;desactivate&quot;</span>&gt;(theAction&nbsp;:&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>,&nbsp;sLanguage&nbsp;:&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">value</a>)&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">&nbsp;&nbsp;&nbsp;&nbsp;bActive_&nbsp;=&nbsp;false;<br/>
+@</span><br/>
+}<br/>
+<br/>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A>&nbsp;convertAntecedent2Cpp(sAntecedent&nbsp;:&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">value</a>)&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#return">return</A>&nbsp;<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#translateString">translateString</A>({<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_implicitCopy">#implicitCopy</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>antecedent</i>&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sId<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_check">#check</a>(sId&nbsp;==&nbsp;<span class="string">&quot;vehicles_hour&quot;</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">&#39;(&#39;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_explicitCopy">#explicitCopy</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A>&nbsp;theSegment;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>street_segment</i>(theSegment)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">&#39;)&#39;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">&quot;@</span>theSegment.street<span class="raw_text">@</span><span class="raw_text">&quot;,&nbsp;&quot;@</span>theSegment.crossroad<span class="raw_text">@</span><span class="raw_text">&quot;,&nbsp;&quot;@</span>theSegment.direction<span class="raw_text">@</span><span class="raw_text">&quot;)@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token"><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]?</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_complementary">~</a><a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_empty">#empty</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>street_segment</i>(theSegment&nbsp;:&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>)&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:theSegment.crossroad<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>&nbsp;<span class="string">&quot;-&gt;&quot;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A>&nbsp;theSegment.direction&nbsp;=&nbsp;<span class="string">&quot;c-&gt;s&quot;</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a>:theSegment.street<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a>:theSegment.street<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>&nbsp;<span class="string">&quot;-&gt;&quot;</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a>&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A>&nbsp;theSegment.direction&nbsp;=&nbsp;<span class="string">&quot;s-&gt;c&quot;</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:theSegment.crossroad<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},&nbsp;<a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>,&nbsp;sAntecedent)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;;<br/>
+}<br/>
+<br/>
+<hr />
+		Generated by <I class="CodeWorker">CodeWorker</I> v3.10.3 from <a href="http://www.codeworker.org/CWscript2HTML.html">CWscript2HTML.cwp</a>.
+	</body>
+</html>

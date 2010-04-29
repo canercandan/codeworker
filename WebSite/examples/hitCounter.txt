@@ -1,0 +1,12 @@
+host "pantagruel" {
+	18apr2003	4
+	19apr2003	3
+	21apr2003	5
+	22apr2003	4
+}
+host "gargantua" {
+	18apr2003	2
+	20apr2003	6
+	21apr2003	8
+	22apr2003	15
+}

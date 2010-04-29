@@ -1,0 +1,21 @@
+/*description:
+{
+	Parses a XSL file and generates the corresponding \textit{template-based} script. Then,
+	it executes the script on the XML file for transforming it in a HTML file.
+
+	This example works on a \textit{CD catalog}, which is copied from \samp{W3School} integrally.
+}
+
+input "examples/cdcatalog.xsl", "examples/cdcatalog.xml";
+output "examples/cdcatalog.cwt", "examples/cdcatalog.html";
+*/
+
+local theXSLTree;
+parseAsBNF("repository/XSLParser.cwp", theXSLTree, "examples/cdcatalog.xsl");
+generate("repository/XSLtoCodeWorker.cwt", theXSLTree, getWorkingPath() + "examples/cdcatalog.cwt");
+
+//note: pretty-printing of the generated script
+translate("repository/GenBeautifier.cwp", project, "examples/cdcatalog.cwt", getWorkingPath() + "examples/cdcatalog.cwt");
+
+parseAsBNF("repository/XMLparser.cwp", project, "examples/cdcatalog.xml");
+generate("examples/cdcatalog.cwt", project, getWorkingPath() + "examples/cdcatalog.html");

@@ -1,0 +1,17 @@
+//---------------------------------------------------------
+// Example of an 'inline code expander' as proposed by
+// Jack D. Herrington.
+//
+// Type:
+//   CodeWorker -translate inlineCodeExpander.cwp
+//       inlineCodeExpander.sqlc inlineCodeExpander.c
+//---------------------------------------------------------
+
+#include "db.h" 
+
+int main( int argc, char *argv[] ) 
+{
+	// '< SQL select * from users >' is replaced by C code
+	< SQL select * from users >
+	return 0;
+}

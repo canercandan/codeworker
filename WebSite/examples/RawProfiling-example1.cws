@@ -1,0 +1,28 @@
+/*description:
+{
+	To illustrate the profiling intrusion of code, one distinguish the C++ sources
+	before and after the transformation.
+
+	C++ source files before transformation are postfixed by "_before.*".
+	C++ source files after transformation are postfixed by "_after.*".
+
+	In the real life, this distinction has no sense and one modifies the C++ source
+	files directly. But in all cases, the file \samp{"repository/RawProfiling.h"}
+	must be copied in the directory used for the \textit{profiling module}.
+
+	The file \samp{"examples/RawProfiling_main.cpp"} computes the Towers of Hanoi.
+	Then, it writes the results of the profiling in a HTML file.
+}
+
+input  "examples/RawProfiling_before.cpp";
+file   "examples/RawProfiling_example1.h", "examples/RawProfiling_main.cpp";
+output "examples/RawProfiling_after.cpp", "examples/RawProfiling.html";
+*/
+
+copyFile("examples/RawProfiling_before.cpp", getWorkingPath() + "examples/RawProfiling_after.cpp");
+copyFile("repository/RawProfiling.h", getWorkingPath() + "examples/RawProfiling.h");
+
+setProperty("SOURCES", getWorkingPath() + "examples/RawProfiling_after.*");
+setProperty("RAW_PROFILING_DIR", getWorkingPath() + "examples/");
+
+#include "repository/RawProfilingLeader.cws"

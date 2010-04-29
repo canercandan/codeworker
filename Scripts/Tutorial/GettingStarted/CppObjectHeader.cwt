@@ -1,0 +1,123 @@
+#ifndef _@
+//note: the value of attribute \samp{\textit{this.}name} is written to the output file, where
+//note: \samp{\textit{this}} points to a node that describes the current class. Note that
+//note: \samp{\textit{this}} is facultative, and is assigned by the caller of procedure
+//note: \samp{generate} that runs this script.
+//merge:
+this.name@_h_
+#define _@this.name@_h_
+
+@
+//note: put one anchor for including all files that we'll encounter as compulsory, while
+//note: iterating attributes or methods. Example: if an attribute is an array, we'll need
+//note: to include the STL header \textit{vector} at this position of the file:
+//note: \textit{\#include <vector>}. This insertion point is called \samp{"include files"}.
+newFloatingLocation("include files");
+//note: to avoid that the two floating locations \samp{"include files"} and \samp{"class declarations"}
+//note: (described just below) point to the same file position, an empty line is added,
+@
+// this line separates the two insertion points, so as to distinguish them!
+@
+//note: put one anchor for announcing all classes that we'll encounter as referenced, while
+//note: iterating attributes or methods. Example: if an attribute is an object
+//note: \textit{Planet}, we'll need to write \textit{class Planet;} at this position of
+//note: the file. This insertion point is called \samp{"class declarations"}.
+newFloatingLocation("class declarations");
+
+//note: this function is called on every type encountered while iterating attributes and methods.
+//note: Its role is to populate the \samp{"include files"} and \samp{"class declarations"} areas.
+function populateHeaderDeclarations(myType : node) {
+//note: the type of an object must be declared at the beginning of the header, otherwise
+//note: the compiler will not recognize it : the class is declared \textbf{once only} in
+//note: the insertion point called \samp{"class declarations"}. Use of function \samp{insertTextOnce}
+//note: assures that if this class has already been inserted before, it will not be twice.
+	if myType.isObject insertTextOnce(getFloatingLocation("class declarations"), "class " + myType.name + ";" + endl());
+//note: this type is an array, so the declaration of \samp{std::vector} must be included
+//note: to the insertion point called \samp{"include files"},
+	if myType.isArray insertTextOnce(getFloatingLocation("include files"), "#include <vector>" + endl());
+//note: this type is a string, so the declaration of \samp{std::string} must be included
+//note: to the insertion point called \samp{"include files"},
+	if myType.name insertTextOnce(getFloatingLocation("include files"), "#include <string>" + endl());
+}
+
+@
+class @this.name@ @
+//note: if the class inherits from a parent class, this relationship must be written,
+if existVariable(this.parent) {
+//note: the parent class must be declared,
+	insertTextOnce(getFloatingLocation("include files"), "#include \"" + this.parent.name +".h\"" + endl());
+	@: public @this.parent.name@ @
+}
+@{
+	private:
+@
+//note: declaration of all attributes,
+foreach i in this.listOfAttributes {
+//note: does the type of the attribute need some backward declarations?
+	populateHeaderDeclarations(i.type);
+	@		@getType<"C++">(i.type)@ _@getVariableName(i.name, i.type)@;
+@
+}
+@
+	public:
+		@this.name@();
+		~@this.name@();
+
+		// accessors:
+@
+//note: accessors to each attribute,
+foreach i in this.listOfAttributes {
+	local sVariableName = getVariableName(i.name, i.type);
+//note: there are two symbols to swap between writing a sequence of characters and
+//note: interpreting script ; we have used the symbol \textbf{'@'}, and now we illustrate
+//note: the use of tags \textbf{'<\%} and \textbf{'\%>},
+	%>		inline <%getType<"C++">(i.type)%> get<%normalizeIdentifier (i.name)%>() const { return _<%sVariableName%>; }
+		inline void set<%
+//note: you can melt the two swapping symbol, but it is more difficult to read, so not
+//note: very interesting!
+//merge:
+normalizeIdentifier(i.name)@(<%getType <"C++">(i.type)%> <%sVariableName@) { _<%sVariableName%> = <%sVariableName%>; }
+@
+}
+@
+		// methods:
+@
+//note: declaration of all methods,
+foreach i in this.listOfMethods {
+//note: each method might be overloaded by subclasses,
+	@		virtual @
+//note: the return type of the method is translated to C++,
+	if existVariable(i.type) {
+//note: does the return type of the method need some backward declarations?
+		populateHeaderDeclarations(i.type);
+//note: expression \samp{getType<"C++">(i.type)} to evaluate is embedded between double
+//note: \textbf{'@'}. The first one allow swapping to the \textit{sequence of characters}
+//note: mode, but there is no characters to write. The second one allows swapping to the
+//note: \textit{script} mode, which is reduced just to evaluate the expression. The two
+//note: final \textbf{'@'} take the same role as seen before.
+		@@getType<"C++">(i.type)@@
+	} else {
+		@void@
+	}
+	@ @i.name@(@
+//note: parameters of the method are iterated to be written in C++
+	foreach j in i.listOfParameters {
+//note: if iterator \samp{j} doesn't point to the first parameter, a comma makes a
+//note: separation with the precedent,
+		if !first(j) {
+			@, @
+		}
+//note: does the type of the parameter need some backward declarations?
+		populateHeaderDeclarations(j.type);
+		@@getParameterType<"C++">(j.type, j.mode)@ @getVariableName(j.name, j.type)@@
+	}
+	@);
+@
+}
+@
+	private:
+		@this.name@(const @this.name@&);
+		@this.name@& operator =(const @this.name@&);
+};
+
+#endif

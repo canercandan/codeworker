@@ -1,0 +1,86 @@
+<HTML>
+	<HEAD>
+		<TITLE>Solar System</TITLE>
+	</HEAD>
+	<BODY>
+		<H1>Design of a solar system</H1>
+We dispose of some classes both in C++ and JAVA that allow building applications working on
+notions of planets, stars and solar systems.
+<!--##markup##"classes presentation"--><!--##begin##"classes presentation"-->
+		<H2><A href="#Planet">Planet</A></H2>
+<!--##protect##"Planet:presentation"-->
+This class represents the characteristics of a planet.
+<!--##protect##"Planet:presentation"-->
+		<TABLE border="1" cellpadding="3" cellspacing="0" width="100%">
+			<TR BGCOLOR="#CCCCFF">
+				<TD><B>Type</B></TD>
+				<TD><B>Attribute name</B></TD>
+				<TD><B>Description</B></TD>
+			</TR>
+			<TR>
+				<TD>double</TD>
+				<TD>diameter</TD>
+				<TD>
+<!--##protect##"Planet::diameter:description"-->
+the average diameter of the planet
+<!--##protect##"Planet::diameter:description"-->
+				</TD>
+			</TR>
+		</TABLE>
+
+		<UL>
+			<LI>function double <B>getDistanceToSun</B>(int <I>iDay</I>, int <I>iMonth</I>, int <I>iYear</I>)
+				<BR>
+<!--##protect##"Planet::getDistanceToSun.int.int.int:description"-->
+This function returns the distance to the sun at a given trivial earthly date. This function
+reclaims more attributes for the planet, but we'll see it later (I'm afraid not!).
+<!--##protect##"Planet::getDistanceToSun.int.int.int:description"-->
+			</LI>
+		</UL>
+
+		<H2><A href="#Earth">Earth</A></H2>
+<!--##protect##"Earth:presentation"-->
+This class represents our planet, for instantiating our particular solar system for instance,
+and working on geopolitical data perhaps!
+<!--##protect##"Earth:presentation"-->
+		<TABLE border="1" cellpadding="3" cellspacing="0" width="100%">
+			<TR BGCOLOR="#CCCCFF">
+				<TD><B>Type</B></TD>
+				<TD><B>Attribute name</B></TD>
+				<TD><B>Description</B></TD>
+			</TR>
+			<TR>
+				<TD>std::vector&lt;std::string&gt;</TD>
+				<TD>countryNames</TD>
+				<TD>
+<!--##protect##"Earth::countryNames:description"-->
+the name of all countries are put into
+<!--##protect##"Earth::countryNames:description"-->
+				</TD>
+			</TR>
+		</TABLE>
+
+		<H2><A href="#SolarSystem">SolarSystem</A></H2>
+<!--##protect##"SolarSystem:presentation"-->
+This class represents the solar system, with its constituents, the sun excluded for the
+moment.
+<!--##protect##"SolarSystem:presentation"-->
+		<TABLE border="1" cellpadding="3" cellspacing="0" width="100%">
+			<TR BGCOLOR="#CCCCFF">
+				<TD><B>Type</B></TD>
+				<TD><B>Attribute name</B></TD>
+				<TD><B>Description</B></TD>
+			</TR>
+			<TR>
+				<TD>std::vector&lt;Planet*&gt;</TD>
+				<TD>planets</TD>
+				<TD>
+<!--##protect##"SolarSystem::planets:description"-->
+the planets that compose the solar system.
+<!--##protect##"SolarSystem::planets:description"-->
+				</TD>
+			</TR>
+		</TABLE>
+<!--##end##"classes presentation"-->
+	</BODY>
+</HTML>

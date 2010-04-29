@@ -1,0 +1,18 @@
+@/*description:
+{
+	Saves the parse tree conforming to the syntax presented in the \textit{BNF-parsing} script
+	\samp{"hitCounterParser.cwp"}.
+}
+*/
+
+foreach i in this.hosts {
+	@host "@key(i)@" {
+@
+	foreach j in i.dates {
+		@	@key(j)@	@j.hits@
+@
+	}
+@}
+@
+}
+@

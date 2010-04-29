@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+	<title>CodeWorker: a parsing tool and a source code generator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+	<meta name="Description" content="CodeWorker is a parsing tool and a source code generator. It interprets scripts that drive the processing of parsing and source code generation. It insists on offering powerful functionalities to do intensive code generation.">
+	<meta http-equiv="pragma" content="no-cache" />
+	<meta http-equiv="cache-control" content="no-cache" />
+
+	<link rel="stylesheet" type="text/css" href="CodeWorker.css" />
+
+</head>
+<body>
+	<table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr><td width="200"><a href="index.html"><img border=0 src="CodeWorker199x77.jpg"/></a></td><td>
+	<h1>Syntax Highlighting with <a href="http://www.jedit.org">JEdit</a></h1>
+	<h2>From Patrick Brannan</h2>
+	</td></tr>
+	</table>
+	
+	Are you familiar with JEdit? It is a very nice, and popular editor
+	written in Java. It  has code folding and all sorts of plugins.
+	It is quite easy to write new edit modes, though there are some limitations.
+	The limitations are syntactical constructs that JEdit can't easily highlight.
+	<br/>
+	<a href="http://www.jedit.org">http://www.jedit.org</a>.
+	<p/>
+	To install the edit mode you must first install <b>JEdit</b>. After that you
+	should find a <kbd><b>jedit/modes</b></kbd> directory under your home directory. In that
+	directory, drop the <a href="repository/JEdit/CodeWorkerScript.zip">attached files</a> (to unzip).
+	<p/>
+	<b>NOTE:</b> <i>If you already use JEdit and have some custom modes, you will not
+	want to overwrite your catalog file. Instead, copy the entries from this
+	catalog file into the existing catalog file.</i>
+	<p/>
+	It is also possible to drop the mode files in the global <kbd><b>JEdit/modes</b></kbd>
+	directory and add the new mode declarations to the global JEdit <kbd>catalog</kbd>
+	file.
+	<p/>
+	The modes assume three different types of CodeWorker files:
+	<table border="1" cellpadding="7" cellspacing="0">
+		<tr>
+			<td class="company" valign="top">Extension</td><td class="company" valign="top">Description</td>
+		</tr>
+		<tr>
+			<td class="content" valign="top"><B><KBD><I>&quot;.cwt&quot;</I></KBD></B></td>
+			<td class="content" valign="top">Highlights <I>template-based</I> scripts, nested in <kbd>&lt;% %&gt;</kbd> or <kbd>@ @</kbd></td>
+		</tr>
+		<tr>
+			<td class="content" valign="top"><B><KBD><I>&quot;.cwp&quot;</I></KBD></B></td>
+			<td class="content" valign="top">Highlights <I>extended-BNF</I> parse scripts</td>
+		</tr>
+		<tr>
+			<td class="content" valign="top"><B><KBD><I>&quot;.cws&quot;</I></KBD></B></td>
+			<td class="content" valign="top"><I>common</I> script files, none of the precedent</td>
+		</tr>
+	</table>
+	<br/>
+	<br/>
+	<b>Contact:</b> <i>brannan</i> <kbd>at</kbd> <i>cs-express</i> <kbd>dot</kbd> <i>net</i>
+</body>
+

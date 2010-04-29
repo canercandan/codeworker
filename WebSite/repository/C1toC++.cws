@@ -1,0 +1,83 @@
+traceLine("Properties:");
+traceLine("\t-\"C1_FILE\" is worth the path of the C1 source file to process,");
+traceLine("\t-\"PURE_CPP\" means no '#line' in the C++ source code,");
+traceLine("\t-\"PRECOMPILED_HEADER\" name of a (precompiled) header file to include");
+traceLine("\t  at the beginning of C++ bodies");
+
+function getProjectName(sC1File : value) {
+	set sC1File = sC1File.resolveFilePath();
+	local sFile = canonizePath(sC1File);
+	local iIndex = sFile.findLastString("/c1/");
+	if $iIndex < 0$ error("C1 file '" + sC1File + "' is misplaced in the file tree");
+	set sFile = sFile.subString($iIndex + 4$);
+	set iIndex = sFile.findString('/');
+	if $iIndex < 0$ error("C1 file '" + sC1File + "' is misplaced in the file tree");
+	return sFile.leftString(iIndex);
+}
+
+function getCompleteC1Filename(sC1File : value) {
+	set sC1File = sC1File.resolveFilePath();
+	local sFile = canonizePath(sC1File);
+	local iIndex = sFile.findLastString("/c1/");
+	if $iIndex < 0$ error("C1 file '" + sC1File + "' is misplaced in the file tree");
+	return sFile;
+}
+
+function getCompleteHeaderFilename(sC1File : value) {
+	set sC1File = sC1File.resolveFilePath();
+	local sFile = canonizePath(sC1File);
+	local iIndex = sFile.findLastString("/c1/");
+	if $iIndex < 0$ error("C1 file '" + sC1File + "' is misplaced in the file tree");
+	set sFile = sFile.leftString(iIndex) + "/include/"+ sFile.subString($iIndex + 4$);
+	set iIndex = sFile.findLastString('.');
+	if $iIndex >= 0$ set sFile = sFile.leftString(iIndex);
+	return sFile + ".h";
+}
+
+function getCompleteInlineFilename(sC1File : value) {
+	set sC1File = sC1File.resolveFilePath();
+	local sFile = canonizePath(sC1File);
+	local iIndex = sFile.findLastString("/c1/");
+	if $iIndex < 0$ error("C1 file '" + sC1File + "' is misplaced in the file tree");
+	set sFile = sFile.leftString(iIndex) + "/include/"+ sFile.subString($iIndex + 4$);
+	set iIndex = sFile.findLastString('.');
+	if $iIndex >= 0$ set sFile = sFile.leftString(iIndex);
+	set iIndex = sFile.findLastString('/');
+	set sFile = sFile.leftString(iIndex) + ".private" + sFile.subString(iIndex);
+	return sFile + ".inl";
+}
+
+function getCompleteBodyFilename(sC1File : value) {
+	set sC1File = sC1File.resolveFilePath();
+	local sFile = canonizePath(sC1File);
+	local iC1Index = sFile.findLastString("/c1/");
+	if $iC1Index < 0$ error("C1 file '" + sC1File + "' is misplaced in the file tree");
+	local iIndex = sFile.findLastString('.');
+	if $iIndex >= 0$ set sFile = sFile.leftString(iIndex);
+	local iIndex = sFile.findLastString('/');
+	set sFile = sFile.leftString(iC1Index) + "/src" + sFile.subString(iIndex);
+	return sFile + ".cpp";
+}
+
+
+local sC1File = getProperty("C1_FILE");
+if !sC1File error("property 'C1_FILE' must contain the name of the C1 source file to process");
+set sC1File = getCompleteC1Filename(sC1File);
+
+traceLine("project = '" + getProjectName(sC1File) + "'");
+traceLine(".c1 = '" + sC1File + "'");
+traceLine(".h  = '" + getCompleteHeaderFilename(sC1File) + "'");
+traceLine(".inl= '" + getCompleteInlineFilename(sC1File) + "'");
+traceLine(".cpp= '" + getCompleteBodyFilename(sC1File) + "'");
+
+local myTranslationContext;
+insert myTranslationContext.precompilerPrefix = replaceString('.', '_', toUpperString(getProjectName(sC1File)));
+translate("C1-header.cwp", myTranslationContext, sC1File, getCompleteHeaderFilename(sC1File));
+
+clearVariable(myTranslationContext);
+insert myTranslationContext.precompilerPrefix = replaceString('.', '_', toUpperString(getProjectName(sC1File)));
+translate("C1-inline.cwp", myTranslationContext, sC1File, getCompleteInlineFilename(sC1File));
+
+clearVariable(myTranslationContext);
+insert myTranslationContext.precompilerPrefix = replaceString('.', '_', toUpperString(getProjectName(sC1File)));
+translate("C1-body.cwp", myTranslationContext, sC1File, getCompleteBodyFilename(sC1File));

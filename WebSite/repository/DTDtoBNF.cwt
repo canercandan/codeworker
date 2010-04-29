@@ -1,0 +1,246 @@
+/*description:
+{
+	Walks through the AST of a DTD file parsed previously, and generates a \CodeWorker\ script
+	for parsing and validating any XML file that conforms to the DTD.
+
+	If you encounter some bugs, please send a mail to \email{\WebSite\ }.
+}
+*/
+
+function normalizeClauseName(sClauseName) {
+	return replaceString("-", "_", sClauseName);
+}
+
+@
+function normalizeClauseName(sClauseName) {
+	return replaceString("-", "_", sClauseName);
+}
+
+function generateCompositeElementContent(myComposite : node, sIndentation : value) {
+	if myComposite#front.operator == "|" || myComposite.multiplicity {
+		@@sIndentation@[
+@
+	}
+	foreach i in myComposite {
+		if i.constant == "#PCDATA" {
+			@@sIndentation@		PCDATA_LITERAL@
+			if !getProperty("SCANNER_ONLY") {@:myCurrentNode@}
+			@
+@
+		} else if i.element {
+			if i.element.multiplicity {
+				@@sIndentation@		[@
+				if !getProperty("SCANNER_ONLY") {@#pushItem(myCurrentNode.@normalizeClauseName(i.element)@) @}
+				@@normalizeClauseName(i.element)@(myCurrentNode@
+				if !getProperty("SCANNER_ONLY") {@.@normalizeClauseName(i.element)@#back@}
+				@)]@i.element.multiplicity@
+@
+			} else {
+				@@sIndentation@		@normalizeClauseName(i.element)@(myCurrentNode@
+				if !getProperty("SCANNER_ONLY") {@.@normalizeClauseName(i.element)@@}
+				@)
+@
+			}
+		} else if existVariable(i.composite) {
+			generateCompositeElementContent(i.composite, sIndentation + "\t\t");
+		}
+		if i.operator == "," {
+			// nothing to do: sequence to the next line
+		} else if i.operator == "|" {
+			@@sIndentation@	|
+@
+		}
+	}
+	if myComposite#front.operator == "|" || myComposite.multiplicity {
+		@@sIndentation@]@myComposite.multiplicity@
+@
+	}
+}
+
+function generateAttributes(myElement : node) {
+	if existVariable(myElement.listOfAttributes) {
+		@		#continue
+		[
+@
+		foreach i in myElement.listOfAttributes {
+			if !first(i) {
+				@			|
+@
+			}
+			@				IDENTIFIER:"@i@" #continue '=' STRING_LITERAL@
+			if i.value == "#FIXED" {
+				@:"@composeCLikeString(i.constant)@"@
+			} else if !i.listOfEnums.empty() {
+				@:{@
+				foreach j in i.listOfEnums {
+					if !j.first() {
+						@, @
+					}
+					@"@j.composeCLikeString()@"@
+				}
+				@}@
+			}
+			if !getProperty("SCANNER_ONLY") {@:myCurrentNode.@normalizeClauseName(i)@@}
+			@
+@
+		}
+		if getArraySize(myElement.listOfAttributes) == "1" {
+			@		]?
+@
+		} else {
+			@		]*
+@
+		}
+		foreach i in myElement.listOfAttributes {
+			if i.constant && (i.value != "#FIXED") && !getProperty("SCANNER_ONLY") {
+				@		=> if !existVariable(myCurrentNode.@normalizeClauseName(i)@) insert myCurrentNode.@normalizeClauseName(i)@ = "@composeCLikeString(i.constant)@";
+@
+			}
+		}
+	}
+}
+
+function generateElement(myElement : node) {
+	if myElement.comment {
+		@/**@myElement.comment@**/
+@
+	}
+	@@normalizeClauseName(myElement)@(myCurrentNode : node)	::=
+		'<' IDENTIFIER:"@myElement@"
+@
+	if (myElement.category == "EMPTY") || (myElement.category == "ANY") {
+		if myElement.category == "ANY" {
+			@		"/>"
+	|
+		"<@myElement@" #continue ANY_ATTRIBUTES(myCurrentNode)
+		["/>" | '>' #continue ELEMENT_VALUE@
+		if !getProperty("SCANNER_ONLY") {@:myCurrentNode@}
+		@ '/' "@myElement@" '>']
+@
+		} else { // EMPTY
+			generateAttributes(myElement);
+			@		"/>"
+@
+		}
+	} else {
+		if existVariable(myElement.listOfAttributes) {
+			generateAttributes(myElement);
+			if existVariable(myElement.composite) {
+				@		'>'
+@
+				generateCompositeElementContent(myElement.composite, "");
+				@		"</@myElement@>"
+@
+			} else {
+				@		"/>"
+@
+			}
+		} else {
+			if existVariable(myElement.composite) {
+				@		#continue
+		[
+				"/>"
+			|
+				#continue '>'
+@
+				generateCompositeElementContent(myElement.composite, "\t\t");
+				@				"</@myElement@>"
+		]
+@
+			} else {
+				@		#continue ["/>" | ELEMENT_VALUE@
+				if !getProperty("SCANNER_ONLY") {@:myCurrentNode@}
+				@ '/' "@myElement@" '>']
+@
+			}
+		}
+	}
+	@		;
+
+@
+}
+
+if this.comment {
+	@/**@this.comment@**/
+
+@
+}
+
+@XML_DOCUMENT	::=
+		#ignore(XML)
+		[
+			"<?xml" #continue
+			"version" '=' STRING_LITERAL
+			["encoding" #continue '=' STRING_LITERAL]?
+			"?>"
+		]?
+		[
+			"<!DOCTYPE" #continue
+			IDENTIFIER EXTERNAL_DOCTYPE
+			[STRING_LITERAL]*
+			[
+				'['
+				["<!" ->'>']+
+				']'
+			]?
+			'>'
+		]?
+		@
+if !isEmpty(this.listOfElements) {
+	@#continue @normalizeClauseName(this.listOfElements#front)@(this) #empty@
+}
+@;
+
+@
+
+foreach i in this.listOfElements {
+	generateElement(i);
+}
+
+@
+
+ANY_ATTRIBUTES(myCurrentNode : node)	::=
+		[
+			IDENTIFIER:sAttribute
+			#continue '='
+			STRING_LITERAL:sValue
+@
+			if !getProperty("SCANNER_ONLY") {
+				@			=> insert #evaluateVariable("myCurrentNode." + normalizeClauseName(sAttribute)) = sValue;
+@
+			}
+@		]*;
+ANY_ELEMENTS(myCurrentNode : node)	::=
+		[
+			'<'
+			IDENTIFIER:sOpenElement
+			#continue
+@
+			if !getProperty("SCANNER_ONLY") {
+@			=> local sVariable = "myCurrentNode." + normalizeClauseName(sOpenElement);
+			=> pushItem #evaluateVariable(sVariable);
+			=> localref myElement = #evaluateVariable(sVariable + "#back");
+@
+			} else {
+				@			=> local myElement;
+@
+			}
+@			ANY_ATTRIBUTES(myElement)
+			[
+					"/>"
+				|
+					'>' ANY_ELEMENTS(myElement) "</" IDENTIFIER:sCloseElement
+					=> if sOpenElement != sCloseElement error("'</" + sCloseElement + ">' found to close '<" + sOpenElement + ">'");
+					'>'
+			]
+		]*;
+
+PCDATA_LITERAL	::=	#!ignore #continue [~'<']*:PCDATA_LITERAL;
+EXTERNAL_DOCTYPE	::= "PUBLIC" #continue STRING_LITERAL STRING_LITERAL | "SYSTEM" #continue STRING_LITERAL;
+IDENTIFIER : value	::=
+		#!ignore #readIdentifier:IDENTIFIER
+		['-' #readIdentifier]*:sIdentifier
+		=> set IDENTIFIER += sIdentifier;
+		;
+STRING_LITERAL:value ::= '"' #!ignore #continue ->(:STRING_LITERAL)'"' | "'" #!ignore #continue ->(:STRING_LITERAL)"'";
+ELEMENT_VALUE:value ::= ->(:ELEMENT_VALUE)"<";

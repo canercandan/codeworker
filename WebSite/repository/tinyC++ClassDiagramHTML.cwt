@@ -1,0 +1,55 @@
+@
+local sPrefix = getProperty("FILE");
+local iIndex = sPrefix.findLastString('.');
+if $iIndex > 0$ set sPrefix = sPrefix.leftString(iIndex);
+
+@<html>
+	<header>
+		<title>@this.title@</title>
+	</header>
+	<body>
+		<h1>@this.title@</h1>
+		@this.documentation@
+@
+foreach i in this.diagrams {
+	local sCurrentDiagram = sPrefix;
+	if !first(i) || !last(i) set sCurrentDiagram += key(i);
+	ref i.classes = project.classes;
+	ref i.typedefs = project.typedefs;
+	generate("tinyC++ClassDiagramGraphViz.cwt", i, sPrefix + ".gvz");
+	system("\"c:\\Program Files\\ATT\\GraphViz\\bin\\dot.exe\" -Tpng -o" + sCurrentDiagram + ".png " + sPrefix + ".gvz");
+	if i.title {
+		@			<h2>@i.title@</h2>
+@
+	}
+	if i.documentation {
+		@				@i.documentation@
+@
+	}
+	if i.doxygen_class {
+		if i.classes.findElement(i.doxygen_class) {
+			if !i.classes[i.doxygen_class].comment error("no Doxygen comment in class '" + i.doxygen_class + "'");
+			local hDoxygenFile = createVirtualTemporaryFile(i.classes[i.doxygen_class].comment);
+			local hConvertedFile = createVirtualTemporaryFile("");
+			try {
+				translate("Doxygen2HTML.cwp", project, hDoxygenFile, hConvertedFile);
+			} catch(sError) {
+				traceLine(loadVirtualFile(hDoxygenFile));
+				deleteVirtualFile(hDoxygenFile);
+				deleteVirtualFile(hConvertedFile);
+				error(sError);
+			}
+			deleteVirtualFile(hDoxygenFile);
+			@				@loadVirtualFile(hConvertedFile)@
+@
+			deleteVirtualFile(hConvertedFile);
+		} else {
+			error("no class '" + i.doxygen_class + "' to extracting Doxygen comments");
+		}
+	}
+	@				<img src="@sCurrentDiagram@.png"/>
+@
+}
+@	</body>
+</html>
+@

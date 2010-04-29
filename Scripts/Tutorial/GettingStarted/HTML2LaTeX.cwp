@@ -1,0 +1,139 @@
+#noCase
+
+HTML2LaTeX	::= #ignore(HTML) #continue '<' "HTML" '>' HTMLHeader HTMLBody '<' '/' "HTML" '>' #empty;
+HTMLHeader	::= '<' #continue "HEAD" '>' [~['<' '/' "HEAD" '>']]* '<' '/' "HEAD" '>';
+HTMLBody	::= '<' #continue "BODY" '>' HTMLText '<' '/' "BODY" '>';
+//note: blank characters are interesting, so we refuse to ignore HTML blanks and comments,
+HTMLText	::= #!ignore
+		[
+//note: handling of HTML escape sequences, announced by character \textbf{'\&'},
+			'&' #continue #readIdentifier:sEscape HTMLEscape<sEscape> ';'
+				|
+//note: if not the beginning of a tag, the current character of the input stream
+//note: is put to the output stream,
+			~'<':cChar => writeText(cChar);
+				|
+//note: token operator '!' doesn't move the position of the input stream, and it continues
+//note: in sequence only if the token expression that follows doesn't match; here, we check
+//note: whether we have reached an end of tag or not,
+			!['<' blanks '/']
+			[
+//note: we do not ignore comments anymore, so we have to do it my ourselves,
+				"<!--" #continue [~"-->"]* "-->"
+					|
+//note: an embedded tag has been encountered,
+				'<' #continue #ignore(HTML) #readIdentifier:sTag HTMLNextOfTag<sTag>
+			]
+		]*;
+//note: template clauses \samp{HTMLEscape<\textit{T}>} are always valid and just convert
+//note: special characters to their LaTeX representation,
+HTMLEscape<"lt">	::= => {@<@};
+HTMLEscape<"gt">	::= => {@>@};
+HTMLTag(sTag : value)	::= '<' #readText(sTag) #continue HTMLNextOfTag<sTag>;
+//note: in the real life, HTML tag \textit{<H1>} could represent a chapter, but the LaTeX
+//note: output file is intended to be included into the reference manual of \CodeWorker\ as
+//note: an illustration ; it will be a part of a section, so chapters are translated as
+//note: sub sections!
+HTMLNextOfTag<"H1">	::=
+		#continue '>' => {@\subsection{@}
+		HTMLText
+		'<' '/' "H1" '>' => {@}@};
+//note: in the real life, HTML tag \textit{<H2>} could represent a section, but for the same
+//note: reason as above, it will be translated as a sub-sub section,
+HTMLNextOfTag<"H2">	::=
+		#continue '>' => {@\subsubsection{@}
+		HTMLText
+		'<' '/' "H2" '>' => {@}@};
+HTMLNextOfTag<"A">	::= [HTMLAttribute]* #continue '>' HTMLText '<' '/' 'A' '>';
+HTMLNextOfTag<"TABLE">	::=
+		[HTMLAttribute]* #continue '>' => {
+			@\begin{table@
+//note: with HTML, the number of columns the table expects is deduced later. However, a
+//note: latex table (well-formed for a PDF conversion) must know explicetly of how many
+//note: columns it is composed. So, a floating position is attached to the current position
+//note: of the output file. While discovering columns, text will be inserted here and further.
+			newFloatingLocation("table PDF suffix");
+			@}{@
+//note: the format of each column is specified at this place,
+			newFloatingLocation("table columns");
+			@}{.5}@
+		}
+//note: we consider that the first line of the table gives the name of the columns, and we'll
+//note: take the PDF table suffix ('ii' for 2 columns, 'iii' for 3 columns, ...) to write
+//note: lines of the table correctly,
+		=> local sPDFTableSuffix;
+		HTMLTableTitle(sPDFTableSuffix)
+//note: we translate as many lines of the table as we can read, knowing the PDF suffix,
+		[HTMLTableLine(sPDFTableSuffix)]*
+		'<' '/' "TABLE" '>' => {@\end{table@sPDFTableSuffix@}
+@};
+HTMLTableTitle(sPDFTableSuffix : node)	::=
+	'<' "TR" [HTMLAttribute]*
+	#continue '>'
+	[HTMLTableCol(sPDFTableSuffix)]*
+	'<' '/' "TR" '>' => {
+		insertText(getFloatingLocation("table PDF suffix"), sPDFTableSuffix);
+		writeText(endl());
+	};
+//note: the clause is intended to read the name of a column of a table, and to translate it
+//note: to LaTeX, knowing that some text must be inserted into the declarative part of the
+//note: LaTeX table,
+HTMLTableCol(sPDFTableSuffix : node) ::=
+	'<' "TD" [HTMLAttribute]* #continue '>' => {
+		@{@
+		if !sPDFTableSuffix insertText(getFloatingLocation("table columns"), "l");
+		else insertText(getFloatingLocation("table columns"), "|l");
+		set sPDFTableSuffix += "i";
+	}
+	'<' 'B' '>' [#!ignore [~'<':cChar => writeText(cChar);]*] '<' '/' 'B' '>'
+	'<' '/' "TD" '>' => {@}@};
+HTMLTableLine(sPDFTableSuffix : value)	::=
+		'<' "TR" [HTMLAttribute]* #continue '>' => {@\line@sPDFTableSuffix@@}
+		[HTMLTag("TD")]* '<' '/' "TR" '>' => {writeText(endl());};
+HTMLNextOfTag<"TD">	::=
+		[HTMLAttribute]* #continue '>' => {@{@}
+		HTMLCellText '<' '/' "TD" '>' => {@}@};
+//note: the text into a cell of a table shouldn't contain paragraph jumps (empty line in LaTeX),
+HTMLCellText	::= #!ignore
+		[
+			'&' #continue #readIdentifier:sEscape HTMLEscape<sEscape> ';'
+				|
+//note: the simplest way to avoid empty lines is to ignore end of lines, and to replace it to
+//note: a space,
+			['\r']? ['\n'] => {@ @}
+				|
+			~'<':cChar => writeText(cChar);
+				|
+			!['<' blanks '/']
+			[
+				"<!--" #continue [~"-->"]* "-->"
+					|
+				'<' #continue #ignore(HTML) #readIdentifier:sTag HTMLNextOfTag<sTag>
+			]
+		]*;
+HTMLNextOfTag<"UL">	::=
+		[HTMLAttribute]* #continue '>' => {@\begin{itemize}
+@}
+		[HTMLTag("LI")]*
+		'<' '/' "UL" '>' => {@\end{itemize}
+@};
+HTMLNextOfTag<"LI">	::=
+		[HTMLAttribute]* #continue '>' => {@\item @}
+		HTMLText
+		'<' '/' "LI" '>' => {writeText(endl());};
+HTMLNextOfTag<"B">	::=
+		#continue '>' => {@\textbf{@}
+		HTMLText
+		'<' '/' "B" '>' => {@}@};
+HTMLNextOfTag<"I">	::=
+		#continue '>' => {@\textbf{@}
+		HTMLText
+		'<' '/' "I" '>' => {@}@};
+HTMLNextOfTag<"FONT">	::= [HTMLAttribute]* #continue '>' HTMLText '<' '/' "FONT" '>';
+HTMLNextOfTag<"BR">	::=	['/']? #continue '>' => { writeText(endl());};
+HTMLAttribute	::= #readIdentifier ['=' #continue [STRING_LITERAL | WORD_LITERAL]]?;
+
+
+blanks ::= [' '| '\t' | '\r' | '\n']*;
+STRING_LITERAL ::= #!ignore '\"' [~'\"']* '\"';
+WORD_LITERAL ::= #!ignore [~['>' | '/' | ' ' | '\t']]+;

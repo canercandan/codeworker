@@ -1,0 +1,282 @@
+@
+
+function isNodeType(theType : node) {
+	if theType.name == "base" || theType.name == "enum" return theType.pointers;
+	if theType.name == "callback" return false;
+	return true;
+}
+
+function getCppType(theType : node) {
+	local sType = theType.is_const;
+	switch(theType) {
+		case "base":
+		case "enum":
+		case "struct":
+		case "union":
+		case "callback":
+			sType += theType.name;
+	}
+	return sType + theType.pointers;
+}
+
+@// C++ CodeWorker interface for building dynamic library bindings
+#include "CW4dl.h"
+#include "ExternalValueNode.h"
+
+#include "SDL.h"
+
+
+//-------------------------------------------------------------------------
+// Exported function 'SDL_Init'.
+//
+// Initialization of the module in CodeWorker.
+// Registers all commands in CodeWorker, for recognizing them in the
+// scripting language.
+//-------------------------------------------------------------------------
+CW4DL_EXPORT_SYMBOL void SDL_Init(CW4dl::Interpreter* interpreter) {
+@
+foreach i in this.functions {
+	local sFunction = subString(i.key(), 4);
+	if $i.parameters > 4$ {
+		@	CW4dl::PARAMETER_TYPE @sFunction@[] = {@
+		foreach j in i.parameters {
+			if j.name == "..." break;
+			if !j.first() {
+				@, @
+			}
+			if isNodeType(j.type) {
+				@CW4dl::NODE_PARAMETER@
+			} else {
+				@CW4dl::VALUE_PARAMETER@
+			}
+		}
+		@};
+@
+	}
+	@	interpreter->createCommand("@sFunction@"@
+	if $i.parameters > 4$ {
+		@, @sFunction@@
+	} else {
+		foreach j in i.parameters {
+			if j.name == "..." break;
+			@, CW4dl::@
+			if isNodeType(j.type) {
+				@NODE_PARAMETER@
+			} else {
+				@VALUE_PARAMETER@
+			}
+		}
+	}
+	@);
+@
+}
+
+foreach i in this.constants {
+	local sConstant = i.name.subString(4);
+	@	CW4dl::Tree* p_@sConstant@ = interpreter->createVariable("@sConstant@");
+	interpreter->setIntValue(p_@sConstant@, @i.name@);
+@
+}
+
+@}
+
+
+//-------------------------------------------------------
+// Wrappers for all public structures
+//-------------------------------------------------------
+
+@
+foreach i in this.structs if i.name.startString("SDL_") {
+	local sStruct = i.name.subString(4);
+	@class @sStruct@StructWrapper : public CodeWorker::ExternalValueNode {
+	public:
+		@i.name@* internal_;
+
+	public:
+		inline @sStruct@StructWrapper(@i.name@* internal = NULL) : internal_(internal) {}
+};
+
+
+@
+}
+@
+
+//-------------------------------------------------------
+// Wrappers for all unions
+//-------------------------------------------------------
+
+@
+foreach i in this.unions if i.name.startString("SDL_") {
+	local sUnion = i.name.subString(4);
+	@class @sUnion@UnionWrapper : public CodeWorker::ExternalValueNode {
+	public:
+		@i.name@* internal_;
+
+	public:
+		inline @sUnion@UnionWrapper(@i.name@* internal = NULL) : internal_(internal) {}
+};
+
+
+@
+}
+
+@
+
+
+//-------------------------------------------------------
+// Wrappers for all callbacks
+//-------------------------------------------------------
+
+class CBKParamWrapper {
+	public:
+		std::string functionName_;
+		CW4dl::Tree* data_;
+};
+
+@
+foreach i in this.callbacks {
+	@@getCppType(i.return_type)@ @i.name@CBKWrapper(@
+	local bParams = (i.parameters#back.type.name == "void");
+	foreach j in i.parameters {
+		if !j.first() {@, @}
+		@@getCppType(j.type)@ @j.name@@
+	}
+	@) {
+@
+	if bParams {
+		@	CBKParamWrapper* pParams = (CBKParamWrapper*) @i.parameters#back.name@;
+	if (pParams == NULL) globalInterpreter_->error("no @i.parameters#back.name@ instance for the callback '@i.name@'");
+@
+	}
+@	CW4dl::Function* pCWCBK = globalInterpreter_->findFunction(@(bParams?"pParams->functionName_.c_str()":"\"" + i.name + "\"")@);
+	if (pCWCBK == NULL) globalInterpreter_->error("No CodeWorker callback existing with the specified name, while triggering the callback '@i.name@'");
+	const char* tcResult = globalInterpreter_->callFunction(pCWCBK@
+	foreach j in i.parameters {
+		@, @
+		if j.last() && bParams {
+			@pParams->data_@
+		} else {
+			@l_@j.name@@
+		}
+	}
+	@);
+	globalInterpreter_->releaseFunction(pCWCBK);
+@
+	switch(i.return_type.name) {
+		case "int":
+		case "Uint32":
+			if i.return_type.pointers error("unhandled callback return type");
+			@	return atoi(tcResult);
+@
+	}
+@}
+
+@
+}
+@
+
+
+//-------------------------------------------------------
+// Binding to the C functions of SDL
+//-------------------------------------------------------
+
+@
+function convert2Cpp(param : node) {
+	@	@getCppType(param.type)@ @param.name@;
+@
+	switch(param.type) {
+		case "base":
+			if param.type.pointers {
+				if param.type.pointers == '*' && param.type.name == "void" {
+					@	@param.name@ = a considerer!;
+@
+					break;
+				} else if param.type.pointers == '*' && param.type.name == "FILE" {
+					@	@param.name@ = a considerer;
+@
+					break;
+				} else error("base* not handled yet (" + getCppType(param.type) + ")!");
+			}
+			switch(param.type.name) {
+				case "double":
+				case "float":
+					@	@param.name@ = ((p_@param.name@ == NULL) ? 0.0 : atof((const char*) p_@param.name@));
+@
+					break;
+				case "Sint8":
+				case "Uint8":
+				case "Sint16":
+				case "Uint16":
+				case "Sint32":
+				case "Uint32":
+				case "short":
+				case "long":
+				case "int":
+					@	@param.name@ = ((p_@param.name@ == NULL) ? 0 : atoi((const char*) p_@param.name@));
+@
+					break;
+				case "string":
+					@	@param.name@ = (const char*) p_@param.name@;
+@
+					break;
+			}
+			break;
+		case "enum":
+			if param.type.pointers error("enum* not handled yet (" + getCppType(param.type) + ")!");
+			@	@param.name@ = ((p_@param.name@ == NULL) ? 0 : atoi((const char*) p_@param.name@));
+@
+			break;
+		case "struct":
+			local sStruct = param.name.subString(4);
+			@	if (p_@param.name@ != NULL) {
+		@sStruct@StructWrapper* w_@param.name@ = dynamic_cast<@sStruct@StructWrapper*>((CW4dl::Tree*) p_@param.name@);
+		if (w_@param.name@ != NULL) @param.name@ = w_@param.name@->instance_;
+		else @param.name@ = NULL;
+	} else @param.name@ = NULL;
+@
+			break;
+		case "callback":
+			@	@param.name@ = @param.type.name@CBKWrapper;
+@
+			break;
+	}
+}
+
+foreach i in this.functions {
+	local sFunction = subString(i.key(), 4);
+	@CW4DL_EXPORT_SYMBOL const char* @sFunction@(CW4dl::Interpreter* interpreter@
+	if $i.parameters > 4$ {
+		@, CW4dl::Parameter* tParams@
+	} else {
+		foreach j in i.parameters {
+			if j.name == "..." break;
+			@, CW4dl::Parameter p_@j.name@@
+		}
+	}
+	@) {
+@
+	if $i.parameters > 4$ {
+		local iIndex = 0;
+		foreach j in i.parameters {
+			if j.name == "..." break;
+			@	CW4dl::Parameter p_@j.name@ = tParams[@iIndex@];
+@
+			increment(iIndex);
+		}
+	}
+	// translate parameters to C++
+traceLine("++ " + sFunction + "()");
+	foreach j in i.parameters {
+		if j.name == "..." break;
+local sError;
+try {
+		convert2Cpp(j);
+} catch(sError) {
+traceLine(sError);
+traceObject(i);
+}
+	}
+	@}
+
+@
+}

@@ -1,0 +1,238 @@
+//Source file: Y:/DOCUMENTS/PRODUCTDOCUMENTS/INTERFACESPECIFICATIONS/HOSA/IDL/hosa/hosa_gms_data.idl
+
+#ifndef __HOSA_GMS_DATA_DEFINED
+#define __HOSA_GMS_DATA_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+#include "hosa_common_data.idl"
+#include "gms.idl"
+#include "osa.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			module hms {
+				
+				/* Specifies properties of a message. */
+				
+				struct TpHosaMessageDescription {
+					/* This is the messageID as it is used on the API to identify a message. This should not be confused with the RFC 822 "Message-ID" field body. The latter can be obtained with  hosaGetMessageHeadersReq().
+					The messageID used on the API is persistent over sessionsand at least unique within the context of a mailbox-folder. */
+					org::csapi::TpString MessageID;
+					/* A list of RFC822 email addresses representing the author of the message. */
+					TpHosaEmailAddressList From;
+					/* A list of RFC822 email addresses representing the primary recipients of the message. */
+					TpHosaEmailAddressList To;
+					/* Specifies the subject of the message. */
+					org::csapi::TpString Subject;
+					/* Specifies the date/time that the message was received by the messaging system. */
+					org::csapi::TpDateAndTime ReceivedDate;
+					/* Specifies the size of the message in bytes. */
+					org::csapi::TpInt32 Size;
+				};
+				
+				/* Describes the status of a mailbox folder. */
+				
+				struct TpHosaMailboxFolderStatusInformation {
+					/* Specifies the total number of messages in the mailbox folder. */
+					org::csapi::TpInt32 TotalMessageCount;
+				};
+				
+				/* Sepcifies properties of a body part. */
+				
+				struct TpHosaBodyPartDescription {
+					/* The contents of the field shall be interpreted as the RFC 2045 Content-Description field body. */
+					org::csapi::TpString ContentDescription;
+					/* This field specifies the length of the body part content in bytes. */
+					org::csapi::TpInt32 ContentSize;
+					/* The contents of the field shall be interpreted as the RFC 2045 Content-Type field body. */
+					org::csapi::TpString ContentType;
+					/* The contents of the field shall be interpreted as the RFC 2045 Content-Transfer-Encoding field body. */
+					org::csapi::TpString ContentTransferEncoding;
+					/* The contents of the field shall be interpreted as the RFC 2045 Content-ID field body. */
+					org::csapi::TpString ContentID;
+					/* The contents of the field shall be interpreted as the RFC 2183 Content-Disposition field body. */
+					org::csapi::TpString ContentDisposition;
+					/* Identifies the body part uniquely within the message. This identifier is created by the System and shall always be the same for the same message, whether a structure was listed with a nesting level of n or n+1 should not make a difference. */
+					org::csapi::TpString PartID;
+					/* Specifies how deep the part is nested within the structure. */
+					org::csapi::TpInt32 NestingLevel;
+				};
+				
+				typedef sequence <TpHosaMessageDescription> TpHosaMessageDescriptionList;
+				
+				typedef sequence <TpHosaBodyPartDescription> TpHosaBodyPartDescriptionList;
+				
+				/* Carries new message arrived event specific info. */
+				
+				struct TpHosaGMSNewMessagArrivedEventInfo {
+					/* Specifies in which mailbox the message arrived. */
+					org::csapi::TpString MailboxID;
+					/* Specifies in which folder the new message is received. */
+					org::csapi::TpString FolderID;
+					/* Gives a short description of the message. */
+					TpHosaMessageDescription MessageDescription;
+					/* Passes back information that the Application presented at the creation of the notification. */
+					org::csapi::TpOctetSet ApplicationPassBackInformation;
+				};
+				
+				/* Specifies the criteria for a new message to be reported to the requesting Application. A message is regarded new when it has not been reported to the application before and arrived after the notification was created. */
+				
+				struct TpHosaGMSNewMessageArrivedCriteria {
+					/* Specifies the mailbox for which new message events shall be reported. */
+					org::csapi::TpString MailboxID;
+					/* Specifies in which folder new message reception shall be reported. */
+					org::csapi::TpString FolderID;
+					/* Authentication specific info needed to access the mailbox specified by MailboxID. Note that this is not a real criterion that will be part of criteria matching. */
+					org::csapi::TpString AuthenticationInfo;
+					/* Specifies Application specific information that will be passed back to the Application when a mailevent occurs that matches the other criteria. Note that this field will be part of criteria matching, this means that when the same application requests two notifications with all criteria the same except for this field then these notifications shall be treated as separate notifications. */
+					org::csapi::TpOctetSet ApplicationPassBackInformation;
+				};
+				
+				/* Specifies the criteria for a messaging event to be reported to the requesting Application. */
+				
+				union TpHosaMessagingEventCriteria switch(org::csapi::gms::TpMessagingEventName) {
+					case org::csapi::gms::P_EVENT_GMS_NEW_MESSAGE_ARRIVED: TpHosaGMSNewMessageArrivedCriteria EventGMSNewMessageArrived;
+				};
+				
+				/* The list message criteria can be used to narrow down the list of messages reported to the Application by specifying extra criteria that the listed messages need to conform to. */
+				
+				struct TpHosaListMessagesCriteria {
+					/* When this field is TRUE only unread messages shall be reported. */
+					org::csapi::TpBoolean OnlyUnreadMessages;
+				};
+				
+				/* Specifies what kind of event occurred and carries event specific information. */
+				
+				union TpHosaMessagingEventInfo switch(org::csapi::gms::TpMessagingEventName) {
+					case org::csapi::gms::P_EVENT_GMS_NEW_MESSAGE_ARRIVED: TpHosaGMSNewMessagArrivedEventInfo EventGMSNewMessageArrived;
+				};
+				
+				typedef sequence <TpHosaMessagingEventInfo> TpHosaMessagingEventInfoSet;
+				
+				/* Specifies the type of error that occurred. */
+				
+				enum TpHosaGMSError {
+
+					/* Undefined error. */
+					P_HOSA_GMS_UNDEFINED_ERROR,
+					/* The Application has insufficient privileges for the requested action to be carried out. */
+					P_HOSA_GMS_NOT_AUTHORIZED_ERROR,
+					/* The folder that the request refers to does not exist. */
+					P_HOSA_GMS_NOT_EXISTING_FOLDER_ERROR,
+					/* The message that the request refers to does not exist. */
+					P_HOSA_GMS_NOT_EXISTING_MESSAGE_ERROR,
+					/* The body part that the request refers to does not exist. */
+					P_HOSA_GMS_NOT_EXISTING_BODYPART_ERROR,
+					/* The mailbox that the request refers to does not exist. */
+					P_HOSA_GMS_NOT_EXISTING_MAILBOX_ERROR,
+					/* A mail store connection problem occurred. */
+					P_HOSA_GMS_CONNECTION_TIMEOUT_ERROR					
+				};
+				
+				/* Specifies the different types of header fields recognized. */
+				
+				enum TpHosaMessageHeaderFieldType {
+
+					/* The origination date specifies the date and time at which the creator of the message indicated that the message was complete and ready to enter the mail delivery system. This field has the same semantics as the RFC(2)822 "Date:" field. */
+					P_HOSA_MESSAGE_DATE_SENT,
+					/* Specifies the author(s) of the message,  that is, the mailbox address(es) of the person(s) or system(s) responsible for the writing of the message.This field has the same semantics as the RFC(2)822 "From:" field. */
+					P_HOSA_MESSAGE_SENT_FROM,
+					/* Specifies the mailbox address of the agent responsible for the actual transmission of the message. This field has the same semantics as the RFC(2)822 "Sender:" field. */
+					P_HOSA_MESSAGE_SENDER,
+					/* Indicates the mailbox adress(es) to which the author of the message suggests that replies be sent. This field has the same semantics as the RFC(2)822 "Reply-To:" field. */
+					P_HOSA_MESSAGE_REPLY_TO,
+					/* Specifies the address(es) of the primary recipient(s) of the message. This field has the same semantics as the RFC(2)822 "To:" field. */
+					P_HOSA_MESSAGE_SENT_TO,
+					/* Specifies the addresses of others who are to receive the message, though the content of the message may not be directed at them. This field has the same semantics as the RFC(2)822 "Cc:" field. */
+					P_HOSA_MESSAGE_CC_TO,
+					/* Specifies addresses of recipients of the message whose addresses are not to be revealed to other recipients of the message. This field has the same semantics as the RFC(2)822 "Bcc:" field. */
+					P_HOSA_MESSAGE_BCC_TO,
+					/* Specifies a unique message identifier that refers to a particular version of a particular message. This field has the same semantics as the RFC(2)822 "Message-ID:" field.
+					Note: This message ID can not be used on the messaging interface to address this specific message. See TpHosaMessageDescription for more information. */
+					P_HOSA_MESSAGE_RFC822_MESSAGE_ID,
+					/* May be used to identify the message (or messages) to which the new message is a reply. The messages are referred by their RFC(2)822 Message-ID. This field has the same semantics as the RFC(2)822 "In-Reply-To:" field. */
+					P_HOSA_MESSAGE_IN_REPLY_TO,
+					/* May be used to identify the message (or messages) with which this message forms a thread of conversation. The messages are referred by their RFC(2)822 Message-ID. This field has the same semantics as the RFC(2)822 "References:" field. */
+					P_HOSA_MESSAGE_REFERENCES,
+					/* A short string identifying the topic of the message. This field has the same semantics as the RFC(2)822 "Subject:" field. */
+					P_HOSA_MESSAGE_SUBJECT,
+					/* This field has the same semantics as the RFC(2)822 "Comments:" field. */
+					P_HOSA_MESSAGE_COMMENTS,
+					/* This field has the same semantics as the RFC(2)822 "Keywords:" field. */
+					P_HOSA_MESSAGE_KEYWORDS,
+					/* All  trace fields like for example RFC(2)822 "Return-Path:" and "Received:" will be gathered under this flag. */
+					P_HOSA_MESSAGE_TRACE_FIELD,
+					/* All  RFC(2)822 resent fields will be gathered under this flag. */
+					P_HOSA_MESSAGE_RESENT_FIELD,
+					/* Declare the version of the Internet message body format standard in use. This field has the same semantics as the RFC2045 "MIME-Version:" field. */
+					P_HOSA_MESSAGE_MIME_VERSION,
+					/* The Content-Type header field specifies the nature of the data in the body of an entity by giving media type and subtype identifiers, and by providing auxiliary information that may be required for certain media types. This field has the same semantics as the RFC2045 "Content-Type:" field. */
+					P_HOSA_MESSAGE_MIME_CONTENT,
+					/* This field's value is a single token specifying the type of encoding. This field has the same semantics as the RFC2045 "Content-Transfer-Encoding:" field. */
+					P_HOSA_MESSAGE_MIME_ENCODING,
+					/* When present  uniquely identifyies a MIME entity. This field has the same semantics as the RFC2045 "Content-ID:" field. */
+					P_HOSA_MESSAGE_MIME_ID,
+					/* Specifies some descriptive information about the MIME entity. This field has the same semantics as the RFC2045 "Content-Description:" field. */
+					P_HOSA_MESSAGE_MIME_DESCRIPTION,
+					/* Specifies how the MIME entity shall be presented, inline or as an attachment. This field has the same semantics as the RFC2183 "Content-Disposition:" field. */
+					P_HOSA_MESSAGE_MIME_DISPOSITION,
+					/* Any RFC 822 header field which begins with the string "Content-" and does not match the description of the other MIME fields. */
+					P_HOSA_MESSAGE_MIME_EXTENSION_FIELD,
+					/* Any header field that does not match any of the of the other field types in this datatype. */
+					P_HOSA_MESSAGE_EXTENSION_FIELD					
+				};
+				
+				/* Specifies the name and value of a header field. */
+				
+				struct TpHosaGenericHeaderField {
+					/* Contains the field name of an RFC822 header field. */
+					org::csapi::TpString FieldName;
+					/* Contains the field body of a RFC822 header field. */
+					org::csapi::TpString FieldValue;
+				};
+				
+				/* Carries the contents of one message header field. */
+				
+				union TpHosaMessageHeaderField switch(TpHosaMessageHeaderFieldType) {
+					case P_HOSA_MESSAGE_DATE_SENT: org::csapi::TpDateAndTime DateSent;
+					case P_HOSA_MESSAGE_SENT_FROM: TpHosaEmailAddressList From;
+					case P_HOSA_MESSAGE_SENDER: TpHosaEmailAddress Sender;
+					case P_HOSA_MESSAGE_REPLY_TO: TpHosaEmailAddressList ReplyTo;
+					case P_HOSA_MESSAGE_SENT_TO: TpHosaEmailAddressList To;
+					case P_HOSA_MESSAGE_CC_TO: TpHosaEmailAddressList Cc;
+					case P_HOSA_MESSAGE_BCC_TO: TpHosaEmailAddressList Bcc;
+					case P_HOSA_MESSAGE_RFC822_MESSAGE_ID: org::csapi::TpString RFC822MessageID;
+					case P_HOSA_MESSAGE_IN_REPLY_TO: TpHosaStringSet InReplyTo;
+					case P_HOSA_MESSAGE_REFERENCES: TpHosaStringSet References;
+					case P_HOSA_MESSAGE_SUBJECT: org::csapi::TpString Subject;
+					case P_HOSA_MESSAGE_COMMENTS: org::csapi::TpString Comments;
+					case P_HOSA_MESSAGE_KEYWORDS: TpHosaStringSet Keywords;
+					case P_HOSA_MESSAGE_TRACE_FIELD: TpHosaGenericHeaderField TraceField;
+					case P_HOSA_MESSAGE_RESENT_FIELD: TpHosaGenericHeaderField ResentField;
+					case P_HOSA_MESSAGE_MIME_VERSION: org::csapi::TpString MimeVersion;
+					case P_HOSA_MESSAGE_MIME_CONTENT: org::csapi::TpString MimeContent;
+					case P_HOSA_MESSAGE_MIME_ENCODING: org::csapi::TpString MimeEncoding;
+					case P_HOSA_MESSAGE_MIME_ID: org::csapi::TpString MimeID;
+					case P_HOSA_MESSAGE_MIME_DESCRIPTION: org::csapi::TpString MimeDescription;
+					case P_HOSA_MESSAGE_MIME_DISPOSITION: org::csapi::TpString MimeDisposition;
+					case P_HOSA_MESSAGE_MIME_EXTENSION_FIELD: TpHosaGenericHeaderField MimeExtensionField;
+					case P_HOSA_MESSAGE_EXTENSION_FIELD: TpHosaGenericHeaderField ExtensionField;
+				};
+				
+				typedef sequence <TpHosaMessageHeaderField> TpHosaMessageHeaderFieldSet;
+				
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif

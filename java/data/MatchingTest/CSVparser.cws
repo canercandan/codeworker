@@ -1,0 +1,2 @@
+parseAsBNF("CSVparser.cwp", this, "example.csv");
+traceObject(this, 10);

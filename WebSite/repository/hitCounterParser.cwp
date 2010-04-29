@@ -1,0 +1,50 @@
+/*description:
+{
+	Parses the description of all hits done.
+
+	Format:\\
+	\samp{\textit{hitCounter} ::= [\textit{remote_host}]*}\\
+	\samp{\textit{remote_host} ::= \textbf{"host"} hostNameAsString \textbf{'\{'} [\textit{date_split}]* \textbf{'\}'}}\\
+	\samp{\textit{date_split} ::= \textit{DATE} \textit{numberOfHits}}
+
+	The parse tree:
+	\begin{itemize}
+		\item \textbf{hits}: total number of hits
+		\item \textbf{hosts[]}: list of all remote hosts
+			\begin{itemize}
+				\item \textbf{hits}: total number of hits for this remote host
+				\item \textbf{dates[]}: hits by date for this remote host
+					\begin{itemize}
+						\item \textbf{hits}: total number of hits for this remote host at this date
+					\end{itemize}
+			\end{itemize}
+		\item \textbf{dates[]}: list of all dates
+			\begin{itemize}
+				\item \textbf{hits}: total number of hits for this date
+			\end{itemize}
+	\end{itemize}
+}
+*/
+hitCounter	::= #ignore(C++) [remote_host]* #continue #empty;
+
+remote_host	::=
+		#readIdentifier:"host"
+		#readCString:sHost
+		=> insert this.hosts[sHost] = sHost;
+		=> localref myHost = this.hosts[sHost];
+		'{'
+		[date_split(myHost)]*
+		=> insert this.hits = $this.hits + myHost.hits$;
+		#continue
+		'}';
+
+date_split(myHost : node)	::=
+		DATE:sDate
+		#continue
+		#readInteger:iHits
+		=> insert myHost.dates[sDate].hits = iHits;
+		=> insert myHost.hits = $myHost.hits + iHits$;
+		=> insert this.dates[sDate].hits = $this.dates[sDate].hits + iHits$;
+		;
+
+DATE	::=	#!ignore #readInteger #readIdentifier;

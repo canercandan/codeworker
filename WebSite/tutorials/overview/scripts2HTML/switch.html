@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><span class="raw_text">@</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#startString">startString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(), <span class="string">&quot;switch&quot;</span>) {
+    <span class="raw_text">@</span><span class="raw_text">{
+    int iHashCode = 0;
+    std::string sKey = @</span><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#coreString">coreString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(), <span class="numeric">7</span>, <span class="numeric">1</span>)<span class="raw_text">@</span><span class="raw_text">;
+    for (int i = 0; i &lt; sKey.size(); i++) {
+        unsigned char c = sKey[i];
+        iHashCode = (31*iHashCode + (c%31)) % 64000000;
+    }
+    bool bDefault = false;
+    switch(iHashCode) {
+@</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> codes;
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sData = <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupValue">getMarkupValue</A>();
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#while">while</A> sData {
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> iIndex = sData.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#findString">findString</A>(<span class="string">&#39;\n&#39;</span>);
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>iIndex &lt; <span class="numeric">0</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a> || <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a>sData.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#startString">startString</A>(<span class="string">&quot;//&quot;</span>) <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;syntax error&quot;</span>);
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sKey = sData.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#midString">midString</A>(<span class="numeric">2</span>, <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>iIndex - <span class="numeric">2</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>);
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> sKey.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#endString">endString</A>(<span class="string">&#39;\r&#39;</span>) <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sKey = sKey.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#rsubString">rsubString</A>(<span class="numeric">1</span>);
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> iHashCode = <span class="numeric">0</span>;
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> i = <span class="numeric">0</span>;
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#while">while</A> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>i &lt; sKey.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#lengthString">length</A>()<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a> {
+            <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> c = sKey.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#charAt">charAt</A>(i);
+            <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#iHashCode">iHashCode</A> = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>(<span class="numeric">31</span>*iHashCode + (c.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#charToInt">charToInt</A>()%<span class="numeric">31</span>)) % <span class="numeric">64000000</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>;
+            <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#increment">increment</A>(i);
+        }
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> codes[iHashCode].keys = <span class="string">&quot;\&quot;&quot;</span> + <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#composeCLikeString">composeCLikeString</A>(sKey) + <span class="string">&quot;\&quot;&quot;</span>;
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sData = sData.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#subString">subString</A>(<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>iIndex + <span class="numeric">1</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>);
+    }
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> codes {
+        <span class="raw_text">@</span><span class="raw_text">        case @</span><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>(i)<span class="raw_text">@</span><span class="raw_text">: // @</span>
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> j <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> i.keys {
+            <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#first">first</A>(j) {
+                <span class="raw_text">@</span><span class="raw_text">, @</span>
+            }
+            <span class="raw_text">@</span><span class="raw_text">@</span>j<span class="raw_text">@</span><span class="raw_text">@</span>
+        }
+        <span class="raw_text">@</span><span class="raw_text">
+@</span>
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> j <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> i.keys {
+            <span class="raw_text">@</span><span class="raw_text">            @</span>
+            <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#first">first</A>(j) {
+                <span class="raw_text">@</span><span class="raw_text">} else @</span>
+            }
+            <span class="raw_text">@</span><span class="raw_text">if (sKey == @</span>j<span class="raw_text">@</span><span class="raw_text">) {
+@</span>
+            <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setProtectedArea">setProtectedArea</A>(<span class="string">&quot;case &quot;</span> + j + <span class="string">&quot;:&quot;</span>);
+        }
+        <span class="raw_text">@</span><span class="raw_text">            } else {
+                bDefault = true;
+            }
+            break;
+@</span>
+    }
+    <span class="raw_text">@</span><span class="raw_text">        default:
+            bDefault = true;
+    }
+    if (bDefault) {
+@</span>
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setProtectedArea">setProtectedArea</A>(<span class="string">&quot;default:&quot;</span>);
+    <span class="raw_text">@</span><span class="raw_text">    }
+}
+@</span>
+} <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">else</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#startString">startString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(), <span class="string">&quot;enum&quot;</span>) {
+    <span class="comment">// extract enums</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> keys;
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sData = <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupValue">getMarkupValue</A>();
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#while">while</A> sData {
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> iIndex = sData.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#findString">findString</A>(<span class="string">&#39;\n&#39;</span>);
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>iIndex &lt; <span class="numeric">0</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a> || <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a>sData.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#startString">startString</A>(<span class="string">&quot;//&quot;</span>) <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;syntax error&quot;</span>);
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sKey = sData.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#midString">midString</A>(<span class="numeric">2</span>, <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>iIndex - <span class="numeric">2</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>);
+        <span class="comment">// just a few code to add for taking into account values on enums</span>
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> sKey.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#endString">endString</A>(<span class="string">&#39;\r&#39;</span>) <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sKey = sKey.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#rsubString">rsubString</A>(<span class="numeric">1</span>);
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> keys = sKey;
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sData = sData.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#subString">subString</A>(<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>iIndex + <span class="numeric">1</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>);
+    }
+
+    <span class="comment">// declare enums in C++</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sEnumType = <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#subString">subString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(), <span class="numeric">5</span>);
+    <span class="raw_text">@</span><span class="raw_text">enum @</span>sEnumType<span class="raw_text">@</span><span class="raw_text"> {
+@</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> keys {
+        <span class="raw_text">@</span><span class="raw_text">    @</span>i<span class="raw_text">@</span><span class="raw_text">@</span>
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#last">last</A>(i) {
+            <span class="raw_text">@</span><span class="raw_text">,@</span>
+        }
+        <span class="raw_text">@</span><span class="raw_text">
+@</span>
+    }
+<span class="raw_text">@</span><span class="raw_text">
+};
+@</span>
+    <span class="comment">// write the C++ function to convert to string</span>
+    <span class="raw_text">@</span><span class="raw_text">
+std::string @</span>sEnumType<span class="raw_text">@</span><span class="raw_text">ToString(@</span>sEnumType<span class="raw_text">@</span><span class="raw_text"> e@</span>sEnumType<span class="raw_text">@</span><span class="raw_text">) {
+    switch(e@</span>sEnumType<span class="raw_text">@</span><span class="raw_text">) {
+@</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> keys {
+        <span class="raw_text">@</span><span class="raw_text">        case @</span>i<span class="raw_text">@</span><span class="raw_text">: return &quot;@</span><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#composeCLikeString">composeCLikeString</A>(i)<span class="raw_text">@</span><span class="raw_text">&quot;;
+@</span>
+    }
+<span class="raw_text">@</span><span class="raw_text">    }
+    return &quot;Undefined&quot;;
+}
+@</span>
+}
+<span class="raw_text"></span></pre><hr />
+		<div style="background-color: #eeeedd">Generated by <a href="http://www.codeworker.org/index.html"><img border=0 src="http://www.codeworker.org/CodeWorker99x38.png"/></a> v4.5.3 from <a href="CWscript2HTML.html">CWscript2HTML.cwp</a>.</div>
+	</body>
+</html>

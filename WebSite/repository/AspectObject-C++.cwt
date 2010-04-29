@@ -1,0 +1,90 @@
+@
+
+#include "CommonTools-C++.cws"
+
+function insertCppInclude(sInclude : value) {
+	insertTextOnceToFloatingLocation("Aspects::declarations", "#include " + sInclude + endl());
+}
+
+if getMarkupKey() == "Aspects::header::declarations" {
+	newFloatingLocation("Aspects::declarations");
+
+	foreach i in this.classes {
+		local sIndentation;
+		foreach j in i.nested_names {
+			@@sIndentation@namespace @j@ {
+@
+			sIndentation += '\t';
+		}
+		@@sIndentation@class @i@;
+@
+		while sIndentation {
+			set sIndentation = sIndentation.subString(1);
+			@@sIndentation@}
+@
+		}
+	}
+} else if getMarkupKey() == "Aspects::header" {
+	foreach i in this.aspects {
+		@	class @key(i)@@
+		if i.extends {
+			@ : public @i.extends@@
+		}
+		@ {
+	public:
+@
+		foreach j in i.members if j.member_type.empty() {
+			@		@
+			if j.method_name {
+				if j.modifiers.findElement("abstract") {@virtual @}
+				else if j.modifiers.findElement("static") {@static @}
+				else if !j.modifiers.findElement("final") {@virtual @}
+				@@getCppTargetType(j.target_type)@ @j.method_name@(@
+				foreach k in j.parameters {
+					if !first(k) {@, @}
+					@@getCppTargetType(k.type)@ @k.name@@
+				}
+				@)@
+				if j.modifiers.findElement("abstract") {@ = 0@}
+			} else if j.attribute_name {
+				if j.modifiers.findElement("static") {@static @}
+				@@getCppTargetType(j.target_type)@ @j.attribute_name@@
+				if j {@ = @getCppTargetCode<"aspect">(j)@@}
+			} else {
+				error("either method or attribute expected in aspect '" + key(i) + "'");
+			}
+			@;
+@
+		}
+@	};
+
+@
+	}
+} else if getMarkupKey() == "Aspects::declarations" {
+	newFloatingLocation("Aspects::declarations");
+
+	foreach i in this.classes {
+		insertCppInclude("\"" + i + ".h\"");
+	}
+} else if getMarkupKey() == "Aspects::body" {
+	foreach i in this.aspects {
+		foreach j in i.members if j.member_type.empty() && !j.modifiers.findElement("abstract") {
+			if j.method_name {
+				@	@getCppTargetType(j.target_type)@ @key(i)@::@j.method_name@(@
+				foreach k in j.parameters {
+					if !first(k) {@, @}
+					@@getCppTargetType(k.type)@ @k.name@@
+				}
+				@) {
+			@getCppTargetCode<"aspect">(j)@
+	}
+
+@
+			} else if j.attribute_name {
+				// nothing to do
+			} else {
+				error("either method or attribute expected in aspect '" + key(i) + "'");
+			}
+		}
+	}
+}

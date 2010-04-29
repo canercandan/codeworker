@@ -1,0 +1,146 @@
+//Source file: fw_if_access.idl
+//Date:  17 February 2002
+//Framework Access Interfaces for ETSI ES 201 915-3 v.1.2.1, Parlay 3.1
+
+
+#ifndef __FW_IF_ACCESS_DEFINED
+#define __FW_IF_ACCESS_DEFINED
+
+
+
+#include "osa.idl"
+#include "fw_data.idl"
+
+module org {
+	
+	module csapi {
+		
+		module fw {
+			
+			module fw_access {
+				
+				
+				
+				module trust_and_security {
+					
+					
+					
+					interface IpInitial : IpInterface {
+						
+						TpAuthDomain initiateAuthentication (
+							in TpAuthDomain clientDomain,	
+							in TpAuthType authType	
+							)							
+							raises (TpCommonExceptions, P_INVALID_DOMAIN_ID, P_INVALID_INTERFACE_TYPE, P_INVALID_AUTH_TYPE);
+							
+					};
+					
+					
+					
+					interface IpAuthentication : IpInterface {
+						
+						IpInterface requestAccess (
+							in TpAccessType accessType,	
+							in IpInterface clientAccessInterface	
+							)							
+							raises (TpCommonExceptions, P_ACCESS_DENIED, P_INVALID_ACCESS_TYPE, P_INVALID_INTERFACE_TYPE);
+							
+					};
+					
+					
+					
+					interface IpClientAccess : IpInterface {
+						
+						void terminateAccess (
+							in TpString terminationText,	
+							in TpSigningAlgorithm signingAlgorithm,	
+							in TpOctetSet digitalSignature	
+							)							
+							raises (TpCommonExceptions, P_INVALID_SIGNING_ALGORITHM, P_INVALID_SIGNATURE);
+							
+					};
+					
+					interface IpAccess : IpInterface {
+						
+						IpInterface obtainInterface (
+							in TpInterfaceName interfaceName	
+							)							
+							raises (TpCommonExceptions,P_ACCESS_DENIED,P_INVALID_INTERFACE_NAME);
+							
+						
+						IpInterface obtainInterfaceWithCallback (
+							in TpInterfaceName interfaceName,	
+							in IpInterface clientInterface	
+							)							
+							raises (TpCommonExceptions, P_ACCESS_DENIED, P_INVALID_INTERFACE_NAME, P_INVALID_INTERFACE_TYPE);
+							
+						
+						void endAccess (
+							in TpEndAccessProperties endAccessProperties	
+							)							
+							raises (TpCommonExceptions,P_ACCESS_DENIED, P_INVALID_PROPERTY);
+							
+						
+						TpInterfaceNameList listInterfaces ()							
+							raises (TpCommonExceptions, P_ACCESS_DENIED);
+							
+						
+						void releaseInterface (
+							in TpInterfaceName interfaceName	
+							)							
+							raises (TpCommonExceptions, P_ACCESS_DENIED, P_INVALID_INTERFACE_NAME);
+							
+					};
+					
+					interface IpClientAPILevelAuthentication : IpInterface {
+						
+						TpOctetSet authenticate (
+							in TpOctetSet challenge	
+							);
+							
+						
+						void abortAuthentication ();
+							
+						
+						void authenticationSucceeded ();
+							
+					};
+					
+					
+					
+					interface IpAPILevelAuthentication : IpAuthentication {
+						
+						TpEncryptionCapability selectEncryptionMethod (
+							in TpEncryptionCapabilityList encryptionCaps	
+							)							
+							raises (TpCommonExceptions, P_ACCESS_DENIED, P_NO_ACCEPTABLE_ENCRYPTION_CAPABILITY);
+							
+						
+						TpOctetSet authenticate (
+							in TpOctetSet challenge	
+							)							
+							raises (TpCommonExceptions, P_ACCESS_DENIED);
+							
+						
+						void abortAuthentication ()							
+							raises (TpCommonExceptions,P_ACCESS_DENIED);
+							
+						
+						void authenticationSucceeded ()							
+							raises (TpCommonExceptions, P_ACCESS_DENIED);
+							
+					};
+					
+				};
+				
+			};
+			
+			
+			
+		};
+		
+	};
+	
+};
+
+#endif

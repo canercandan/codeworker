@@ -1,0 +1,417 @@
+#include "../WebSite/repository/CWcode2DevCom.cwp"
+
+// Coloration syntaxique des mot-clés du TLC.
+function keyword<"TLC">(sId : value) {
+	return sId in	{"strategy", "duration", "activate", "desactivate", "start", "time", "vehicles_hour"};
+}
+
+// Coloration syntaxique des mot-clés du GRZ.
+function keyword<"GRZ">(sId : value) {
+	return sId in	{"digraph", "ranksep", "node", "shape", "style", "fillcolor", "fontname", "fontcolor", "color", "label"};
+}
+
+#overload mainCWcode ::=
+		=> {
+			local sDate = completeDate($formatDate(getNow(), "%t") - 0.375$, "%t");
+			@            <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>freshmeat.net: Tutorials - @
+  newFloatingLocation("title");
+  @</title>
+  <meta name="description" content="freshmeat maintains the Web's largest index of Unix and cross-platform open source software. Thousands of applications are meticulously cataloged in the freshmeat database, and links to new code are added daily.">
+  <meta name="keywords" content="freshmeat free software open source opensource gpl gnu fsf license linux unix application apps applications latest new fresh recent linux download code project release update editorial">
+  <meta name="keywords" content=@newFloatingLocation("keywords");@>
+  <link rel="icon" href="/favicon.ico" type="image/ico" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="alternate" type="application/rss+xml" title="freshmeat.net RSS feed" href="/backend/fm-releases-global.xml" />
+
+    <style type="text/css">
+  <!--
+    BODY
+  {
+    margin: 0;
+    padding: 0;
+  }
+
+  BODY, P, DIV, TD, TH, TR, FORM, OL, UL, LI, INPUT, TEXTAREA, SELECT, A
+  {
+    font-family: Verdana, Tahoma, Arial, Helvetica, sans-serif;
+      }
+
+  A:hover  {
+    color: #3366CC;
+  	text-decoration: none;
+  }
+
+  A  {
+    color: #3366CC;
+  	text-decoration: underline;
+  }
+
+.code {
+	font-family: Courier, "Courier New", Monospaced, Serif;
+}
+
+
+	.colonne { 
+		padding: 3px;
+		font-size : 11px;
+		font-family : "Verdana";  
+	}
+	.colonne_entete {
+		padding: 3px;
+		background-color: #BBDDFF;
+		font-weight: bold;
+		font-size : 11px;
+		font-family : "Verdana";  
+	}
+	span.xml_comment, span.cpp_define {
+		color: #008000;
+	}
+	span.csharp_ch,span.xml_ch {
+		color: #993399;
+	}
+	span.csharp_type,span.xml_attribute {
+		font-weight : bold;
+		color: #3366CC;
+	}
+	span.xml_tag {
+		font-weight : bold;
+		color: #000080;
+	}
+	.entete {
+		background-color: #BBDDFF;
+		font-weight: bold;
+	}
+	.image {
+		margin : 10px;
+		text-align : center;
+	}
+	.summaryIndent0 {
+		color : #333333;
+		margin-left : 0px;
+		font-weight : normal;
+		font-size : 12px;
+		font-family : "Verdana";
+		text-decoration : none;
+	}
+	.summaryIndent1 {
+		color : #666666;
+		margin-left : 15px;
+		font-weight : normal;
+		font-size : 11px;
+		font-family : "Verdana";
+		text-decoration : none;
+	}
+	.tableau {
+		margin : 20px;
+	}
+	.titre_code {
+		padding : 2px;
+		background-color: #DDEEFF;
+		font-weight: bold;
+		font-size : 10px;
+		font-family : "Verdana";  
+	}
+
+	SPAN.comment,span.cpp_comment
+	{
+		COLOR: #007b00;
+		BACKGROUND-COLOR: transparent
+	}
+	SPAN.raw_text
+	{
+		COLOR: #FF0000;
+		FONT-WEIGHT: bold;
+		BACKGROUND-COLOR: #FFFF00
+	}
+	SPAN.directive
+	{
+		COLOR: #00008b;
+		BACKGROUND-COLOR: transparent
+	}
+	SPAN.numeric
+	{
+		COLOR: #8b008b;
+		BACKGROUND-COLOR: transparent
+	}
+	SPAN.string
+	{
+		COLOR: #F74848;
+		FONT-STYLE: italic;
+		BACKGROUND-COLOR: transparent
+	}
+
+	A.instruction {
+		FONT-WEIGHT: bold;
+		COLOR: #000000;
+		TEXT-DECORATION: none
+	}
+	A.instruction:visited
+	{
+		COLOR: #000000
+	}
+	A.instruction:active
+	{
+		FONT-WEIGHT: normal;
+		COLOR: #000000;
+		TEXT-DECORATION: underline
+	}
+	A.instruction:hover
+	{
+		FONT-WEIGHT: bold;
+		COLOR: #0000FF
+	}
+
+	A.procedure {
+		FONT-WEIGHT: bold;
+		COLOR: #000080;
+		TEXT-DECORATION: none
+	}
+	A.procedure:visited
+	{
+		COLOR: #000080
+	}
+	A.procedure:active
+	{
+		FONT-WEIGHT: normal;
+		COLOR: #000080;
+		TEXT-DECORATION: underline
+	}
+	A.procedure:hover
+	{
+		FONT-WEIGHT: bold;
+		COLOR: #0000FF
+	}
+
+	A.function {
+		FONT-WEIGHT: bold;
+		COLOR: #0000C0;
+		TEXT-DECORATION: none
+	}
+	A.function:visited
+	{
+		COLOR: #0000C0
+	}
+	A.function:active
+	{
+		FONT-WEIGHT: normal;
+		COLOR: #0000C8;
+		TEXT-DECORATION: underline
+	}
+	A.function:hover
+	{
+		FONT-WEIGHT: bold;
+		COLOR: #0000FF
+	}
+
+	A.constant {
+		FONT-WEIGHT: bold;
+		COLOR: #A80000;
+		TEXT-DECORATION: none
+	}
+	A.constant:visited
+	{
+		COLOR: #A80000
+	}
+	A.constant:active
+	{
+		FONT-WEIGHT: normal;
+		COLOR: #A80000;
+		TEXT-DECORATION: underline
+	}
+	A.constant:hover
+	{
+		FONT-WEIGHT: bold;
+		COLOR: #0000FF
+	}
+
+	A.directive {
+		FONT-WEIGHT: bold;
+		COLOR: #A80000;
+		TEXT-DECORATION: none
+	}
+	A.directive:visited
+	{
+		COLOR: #A80000
+	}
+	A.directive:active
+	{
+		FONT-WEIGHT: normal;
+		COLOR: #A80000;
+		TEXT-DECORATION: underline
+	}
+	A.directive:hover
+	{
+		FONT-WEIGHT: bold;
+		COLOR: #0000FF
+	}
+  -->
+  </style>
+      <!-- BEGIN: AdSolution-Tag 4.2: Global-Code [PLACE IN HTML-HEAD-AREA!] -->
+  <script type="text/javascript" language="javascript" src="http://a.as-us.falkag.net/dat/dlv/aslmain.js"></script>
+  <!-- END: AdSolution-Tag 4.2: Global-Code -->
+</head>
+
+<body bgcolor="#FFFFFF" link="#3366CC" vlink="#3366CC" alink="#3366CC" text="#000000">
+
+<div align="center">
+
+<table cellspacing="0" cellpadding="0" width="100%" border="0">
+  <tr>
+    <td width="15" bgcolor="#FFFFFF"><img src="http://images.freshmeat.net/img/pixel.gif" width="5" height="1" alt=""></td>
+    <td valign="top" align="left"><br>
+        
+  <p>
+
+@
+		}
+		#super::#super::mainCWcode
+		=> {
+			if existFloatingLocation("TOC", false) insertText(getFloatingLocation("TOC"), "<p/><br/>");
+			@          <p><hr align="center" size="1" width="100%" noshade></p>
+          <p><b>T-Shirts and Fame!</b></p>
+          <p>We're eager to find people interested in writing articles on
+          software-related topics. We're flexible on length, style, and
+          topic, so long as you know what you're talking about and back up
+          your opinions with facts. Anyone who writes an article gets a
+          t-shirt from <a href="http://www.thinkgeek.com/">ThinkGeek</a>
+          in addition to 15 minutes of fame. If you think you'd like to try
+          your hand at it, let <a href="mailto:jeff.covey@writeText('@');@freshmeat.net">jeff.covey@writeText('@');@freshmeat.net</a>
+          know what you'd like to write about.</p>
+      <!-- End of content -->
+    </td>
+    <td width="15" bgcolor="#FFFFFF"><img src="http://images.freshmeat.net/img/pixel.gif" width="5" height="1" alt=""></td>
+  </tr>
+</table>
+</div>
+<br><br>
+<div align="center"><small><font color="#666666">
+&copy; Copyright 2005
+
+<a target="_blank" href="http://www.ostg.com/">OSTG</a> Open Source Technology Group, All Rights Reserved.<br>
+About <a href="/about/">freshmeat.net</a>&nbsp;&#149;&nbsp;
+<a target="_blank" href="http://www.ostg.com/privacy.htm">Privacy Statement</a>&nbsp;&#149;&nbsp;
+<a target="_blank" href="http://www.ostg.com/terms.htm">Terms of Use</a>&nbsp;&#149;&nbsp;
+<a target="_blank" href="http://www.ostg.com/advertising/">Advertise</a>&nbsp;&#149;&nbsp;
+<a href="/contact/">Contact Us</a>&nbsp;&#149;&nbsp;
+<a>Revision</a>: v2.6.0-pre1</font></small></div><br>
+
+<!-- End of main table -->
+<img src="http://images-aud.freshmeat.net/pc.gif?l,566" width="1" height="1" alt="" border="0">
+
+</body>
+</html>@
+		}
+		;
+
+#overload CWcode<"title">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=>{@<p><a href="#top"><img src="http://images.freshmeat.net/img/icon.gif" height="25" width="25" alt="" align="left" border="0"></a>
+&nbsp;<b><font size="+1">@}
+		text:sText
+		=>{@</font></b><br>@}
+		=> insertText(getFloatingLocation("title"), removeLayout(sText));
+		endCode<"title">
+		;
+
+#overload CWcode<"docinfo/">(options : node) ::=
+		removeCodeBegin(options)
+		=> {
+			@  &nbsp;<small><font color="#999999">by <a href="http://freshmeat.net/~@options["profileName"]@/">@options["author"]@</a>, in <a href="/articles/section/tutorials/">Tutorials</a> - @formatDate(getNow(), "%W, %B %d")@th @formatDate(getNow(), "%Y")@ 00:00  PDT</font></small>
+  </p>
+@
+			if options["keywords"] {
+				insertTextToFloatingLocation("keywords", "\"" + options["keywords"] + "\"");
+			}
+		}
+		;
+
+#overload CWcode<"synopsis">(options : node) ::=
+		removeCodeBegin(options)
+		=> {@<p>@}
+		#super::#super::CWcode<"synopsis">(options):sText
+/*		=> sText = removeLayout(sText);
+		=> sText = sText.replaceString('\r', "");
+		=> sText = sText.replaceString('\n', " ");
+		=> insertTextToFloatingLocation("description", "\"" + sText + "\"");
+*/		=> {
+			@</p>
+	<p><hr align="center" size="1" width="100%" noshade>
+        <small>
+          <b>Copyright notice:</b> All reader-contributed material on freshmeat.net 
+          is the property and responsibility of its author; for reprint rights, please contact the author
+          directly.
+        </small>
+        <hr align="center" size="1" width="100%" noshade></p>
+@
+		}
+		;
+
+#overload CWcode<"chapter">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		[
+				#check(options["chapter"] == "AuthorBio")
+				=> {
+					@<p><hr align="center" size="1" width="100%" noshade></p>
+          <p/><b>@
+				}
+				text:sText
+				=> {
+					@</b> <p/>
+@
+				}
+			|
+				#check(options["chapter"] == "References")
+				=>{@<h2>@}
+				text:sText
+				=>{@</h2>@}
+			|
+				=> local sAnchor = 'L' + this.toc.size();
+				=> {
+					if $!existFloatingLocation("TOC", false)$ {
+						newFloatingLocation("TOC");
+					}
+					if options["chapter"] {
+						sAnchor = options["chapter"];
+					}
+					@<h2><a name="@sAnchor@"></a>@
+				}
+				text:sText
+				=> {
+					sText = sText.removeLayout();
+					@</h2>@
+					insertText(getFloatingLocation("TOC"), "<br/><a class=\"summaryIndent0\" href=\"#" + sAnchor + "\">" + sText + "</a>");
+					insert this.toc[sText];
+				}
+		]
+		endCode<"chapter">
+		;
+
+#overload CWcode<"section">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> local sAnchor = 'L' + this.toc.size() + '_' + this.toc#back.size();
+		=> {
+			if this.toc.empty() error("cannot find a section outside of a chapter");
+			if options["section"] {
+				@<a name="@options["section"]@"></a>@
+			}
+			if options["section"] {
+				sAnchor = options["section"];
+			}
+			@<h3><a name="@sAnchor@"></a>@
+		}
+		text:sText
+		=> {
+			sText = sText.removeLayout();
+			@</h3>@
+			insertText(getFloatingLocation("TOC"), "<br/><a class=\"summaryIndent1\" href=\"#" + sAnchor + "\">" + sText + "</a>");
+			insert this.toc#back[sText];
+		}
+		endCode<"section">
+		;
+

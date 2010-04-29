@@ -1,0 +1,22 @@
+#ifndef _@this.name@_h_
+#define _@this.name@_h_
+
+#include "TrafficLightStrategy.h"
+
+class @this.name@ : public TrafficLightStrategy {
+	public:
+		inline @this.name@() {}
+		virtual ~@this.name@();
+
+		virtual bool start() const;		
+		virtual int executeRules();
+
+	private:
+@
+foreach i in this.rules {
+	@		bool executeRule@i.key()@();
+@
+}
+@};
+
+#endif

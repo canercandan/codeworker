@@ -1,0 +1,88 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+#ifndef _CGExternalHandling_h_
+#define _CGExternalHandling_h_
+
+#include <string>
+
+namespace CodeWorker {
+	class CGExternalHandling {
+	private:
+		CGExternalHandling* _pOldExternalHandling;
+
+	public:
+		CGExternalHandling();
+		virtual ~CGExternalHandling();
+
+		inline CGExternalHandling* getOldExternalHandling() const { return _pOldExternalHandling; }
+
+		virtual std::string inputLine(bool bEcho) = 0;
+		virtual std::string inputKey(bool bEcho) = 0;
+		virtual void traceLine(const std::string& sLine) = 0;
+		virtual void traceText(const std::string& sText) = 0;
+	};
+
+	class CGQuietOutput : public CGExternalHandling {
+	private:
+		std::string _sOutput;
+
+	public:
+		CGQuietOutput() {}
+		virtual ~CGQuietOutput();
+
+		inline const std::string& getOutput() const { return _sOutput; }
+
+		virtual std::string inputLine(bool bEcho);
+		virtual std::string inputKey(bool bEcho);
+		virtual void traceLine(const std::string& sLine);
+		virtual void traceText(const std::string& sText);
+	};
+
+	class ScpStream;
+
+	class CGStandardInput : public CGExternalHandling {
+	private:
+		ScpStream* _pStandardInput;
+		bool _bOwner;
+
+	public:
+		inline CGStandardInput(ScpStream& theStandardInput, bool bOwner = false) : _pStandardInput(&theStandardInput), _bOwner(bOwner) {}
+		CGStandardInput(const std::string& sText);
+		virtual ~CGStandardInput();
+
+		inline ScpStream& getStandardInput() const { return *_pStandardInput; }
+
+		virtual std::string inputLine(bool bEcho);
+		virtual std::string inputKey(bool bEcho);
+		virtual void traceLine(const std::string& sLine);
+		virtual void traceText(const std::string& sText);
+	};
+
+	class CGFileStandardInput : public CGStandardInput {
+	public:
+		CGFileStandardInput(const std::string& sFilename);
+		virtual ~CGFileStandardInput();
+	};
+}
+
+#endif
+

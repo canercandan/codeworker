@@ -1,0 +1,103 @@
+mainCWcode ::= #continue text #empty;
+
+text ::=
+		[
+				!!["[/" #readIdentifier ']' | "[*]"] #break
+			|
+				readCode<"">
+			|
+				EOL
+			|
+				#readChar	
+		]*
+		;
+
+EOL ::= ['\r']? '\n';
+
+readCode<T> ::=
+		'[' #readIdentifier:sCode
+		#check(!T || (sCode == T))
+		=> local options;
+		[
+			=> local sValue;
+			[
+				'='
+				readValue:sValue
+				=> insert options[sCode] = sValue;
+			]?
+			[
+				','
+				#readIdentifier:sKey
+				'='
+				readValue:sValue
+				=> insert options[sKey] = sValue;
+			]*
+		]?
+		[
+				"/]"
+				CWcode<sCode + '/'>(options)
+			|
+				']'
+				CWcode<sCode>(options)
+		]
+		;
+
+readValue:value ::=
+		[
+				#readCString:readValue
+			|
+				[~[']' | "/]" | ',']]*:readValue
+		]
+		;
+
+endCode<T> ::= "[/" #readText(T) ']';
+
+CWcode<T>(options : node) ::= #check(true);
+
+CWcode<"title">(options : node) ::= #continue text endCode<"title">;
+CWcode<"introduction">(options : node) ::= #continue text endCode<"introduction">;
+CWcode<"i">(options : node) ::= #continue text endCode<"i">;
+CWcode<"b">(options : node) ::= #continue text endCode<"b">;
+CWcode<"a">(options : node) ::= #continue text endCode<"a">;
+CWcode<"docinfo/">(options : node) ::= #check(true);
+CWcode<"synopsis">(options : node) ::= #continue text endCode<"synopsis">;
+CWcode<"url">(options : node) ::= #continue text endCode<"url">;
+CWcode<"reference">(options : node) ::= #continue text endCode<"reference">;
+CWcode<"chapter">(options : node) ::= #continue text endCode<"chapter">;
+CWcode<"section">(options : node) ::= #continue text endCode<"section">;
+CWcode<"subsection">(options : node) ::= #continue text endCode<"subsection">;
+CWcode<"subsubsection">(options : node) ::= #continue text endCode<"subsubsection">;
+CWcode<"frame">(options : node) ::= #continue text endCode<"frame">;
+CWcode<"rationale">(options : node) ::= #continue text endCode<"rationale">;
+CWcode<"line/">(options : node) ::= #check(true);
+CWcode<"xiti/">(options : node) ::= #check(true);
+CWcode<"image/">(options : node) ::= #check(true);
+CWcode<"bibliography">(options : node) ::= #continue text endCode<"bibliography">;
+
+CWcode<"list">(options : node) ::=
+		#continue
+		#skipIgnore(blanks)
+		[
+			"[*]" text
+		]*
+		#skipIgnore(blanks)
+		endCode<"list">
+		;
+
+CWcode<"keyword">(options : node) ::= #continue text endCode<"keyword">;
+CWcode<"code">(options : node) ::= #continue text endCode<"code">;
+
+CWcode<"table">(options : node) ::=
+		#continue
+		#skipIgnore(blanks)
+		readCode<"header">
+		[
+			#skipIgnore(blanks)
+			readCode<"row">
+		]*
+		#skipIgnore(blanks)
+		endCode<"table">
+		;
+CWcode<"header">(options : node) ::= #continue [#skipIgnore(blanks) readCode<"cell">]* endCode<"header">;
+CWcode<"row">(options : node) ::= #continue [#skipIgnore(blanks) readCode<"cell">]* endCode<"row">;
+CWcode<"cell">(options : node) ::= #continue text endCode<"cell">;

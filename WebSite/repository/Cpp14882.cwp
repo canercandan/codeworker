@@ -1,0 +1,1073 @@
+translation_unit	::=
+		=> {
+			global tableOfMacros;
+		}
+		#ignore(preprocessing) #continue
+		[declaration_seq(this.translation_unit, this.translation_unit)]?
+		#empty;
+
+//-------------------------
+// Preprocessing directives
+//-------------------------
+
+preprocessing ::=
+		[
+				' ' | '\t' | '\r' | '\n'
+			|
+				"//" #continue ->"\n" | "/*" #continue -> "*/"
+			|
+				'#'
+				#ignore(preprocessor_blanks)
+				#continue
+				#readIdentifier:sDirective
+				preprocessor_directive<sDirective>
+			|
+				#readIdentifier:sMacro
+				#check(findElement(sMacro, tableOfMacros))
+				macro_expansion(sMacro)
+		]*;
+
+preprocessor_blanks	::= [' ' | '\t' | '\r' | "//" [~"\n"]* | "/*" -> "*/"]*;
+
+preprocessor_directive<"if">	::=
+		#continue
+		=> local bResult;
+		preprocessor_expression(bResult);
+		[
+				#check(bResult)
+			|
+				preprocessor_ignore_group(true);
+		];
+preprocessor_directive<"ifdef">	::=
+		#continue
+		#readIdentifier:sIdentifier
+		[
+				#check(findElement(sIdentifier, this.preprocessor.defines))
+			|
+				preprocessor_ignore_group(true)
+		];
+preprocessor_directive<"ifndef">	::=
+		#continue
+		#readIdentifier:sIdentifier
+		[
+				#check(!findElement(sIdentifier, this.preprocessor.defines))
+			|
+				preprocessor_ignore_group(true)
+		];
+preprocessor_directive<"elif">	::= preprocessor_ignore_group(false);
+preprocessor_directive<"else">	::= preprocessor_ignore_group(false);
+preprocessor_directive<"endif">	::= preprocessor_ignore_group(false);
+
+preprocessor_ignore_group(bValidate : value)	::=
+		=> local sDirective;
+		#continue ->['#' #readIdentifier:{"if, "ifdef", "ifndef", "elif", "else, "endif"}]
+		[
+				#check(startString(sDirective, "if"))
+				preprocessor_ignore_group(false)
+			|
+				#check(sIdentifier == "else")
+				[
+						#check(bValidate)
+					|
+						preprocessor_ignore_group(false)
+				]
+			|
+				#check(sIdentifier == "elif")
+				[
+						#check(bValidate)
+						=> local bResult;
+						preprocessor_expression(bResult);
+						[
+								#check(bResult)
+							|
+								preprocessor_ignore_group(false)
+						]
+					|
+						preprocessor_ignore_group(false)
+				]
+			|
+				#check(sIdentifier == "endif")
+		];
+
+preprocessor_expression(bResult : node)	::=
+		=> local pExpr;
+		constant_expression("preprocessor", pExpr, bResult);
+
+preprocessing_file	::= [group]?;
+group	::= [group_part]+;
+group_part	::= [pp_tokens]? new_line | if_section | control_line;
+if_section	::= if_group [elif_group]* [else_group]? endif_line;
+if_group	::=
+		[
+				#readIdentifier:"if" #continue constant_expression
+			|
+				#readIdentifier:"ifdef" #continue identifier
+			|
+				#readIdentifier:"ifndef" #continue identifier
+		]
+		new_line [group]?;
+elif_group	::= '#' #readIdentifier:"elif" #continue constant_expression new_line [group]?;
+else_group	::= '#' #readIdentifier:"else" #continue new_line [group]?;
+endif_line	::= '#' #readIdentifier:"endif" #continue new_line;
+control_line	::=
+		'#'
+		[
+				#readIdentifier:"include" pp_tokens new_line
+			|
+				#readIdentifier:"define" identifier replacement_list new_line
+			|
+				#readIdentifier:"define" identifier lparen [identifier_list]? ')' replacement_list new_line
+			|
+				#readIdentifier:"undef" identifier new_line
+			|
+				#readIdentifier:"line" pp_tokens new_line
+			|
+				#readIdentifier:"error" [pp_tokens]? new_line
+			|
+				#readIdentifier:"pragma" [pp_tokens]? new_line
+			|
+				new_line
+		];
+lparen : #!ignore	::= '('; //the left-parenthesis character without preceding white-space
+replacement_list	::= [pp_tokens]?;
+pp_tokens	::= [preprocessing_token]+;
+
+// the new-line character, ignoring all comments up to the end of the line
+new_line : #!ignore	::= [['\t' | ' ']* "/*" [~"*/" #continue ~'\n']*]* ['\t' | ' ']* ["//" ->'\n' | ['\r']? '\n'];
+
+
+//-------------------------
+//   Lexical conventions
+//-------------------------
+
+hex_quad	::= [hexadecimal_digit]4;
+universal_character_name	::= "\\u" hex_quad | "\\U" hex_quad hex_quad;
+preprocessing_token	::=
+		header_name | identifier | pp_number | character_literal |
+		string_literal | preprocessing_op_or_punc |
+		~['\t' | ' ' | '\r' | '\n']; // each non-white-space character that cannot be one of the above
+token	::= identifier | keyword | literal | operator | punctuator;
+header_name	::= '<' h_char_sequence '>' | '\"' q_char_sequence '\"';
+h_char_sequence	::= [h_char]+;
+h_char	::= ~['\r' | '\n' | '>']; // any member of the source character set except new-line and '>'
+q_char_sequence	::= [q_char]+;
+q_char	::= ~['\r' | '\n' | '\"']; // any member of the source character set except new-line and '"'
+pp_number	::=
+		=> local iDigits = 0;
+		[digit => increment(iDigits);]* ['.']? [digit => increment(iDigits);]
+		#check($iDigits > 0$)
+		[['e' |'E'] ['+' | '-']? digit_sequence]?;
+
+identifier	::= nondigit [nondigit | digit]*;
+
+nondigit	::= '_' | 'a'..'z' | 'A'..'Z'; // one of universal_character_name
+digit	::= '0'..'9';
+preprocessing_op_or_punc	::=
+		'{' | '}' | '[' | ']' | '#' | "##" | '(' | ')' |
+		"<:" | ":>" | "<%" | "%>" | "%:" | "%:%:" | ';' | ':' | "..." |
+		#readIdentifier:{"new", "delete"} | '?' | "::" | '.' | ".*" |
+		'+' | '-' | '*' | '/' | '%' | '^' | '&' | '|' | '~' |
+		'!' | '=' | '<' | '>' | "+=" | "-=" | "*=" | "/=" | "%=" |
+		"^=" | "&=" | "|=" | "<<" | ">>" | ">>=" | "<<=" | "==" | "!=" |
+		"<=" | ">=" | "&&" | "||" | "++" | "--" | ',' | "->*" | "->" |
+		#readIdentifier:{"and", "and_eq", "bitand", "bitor", "compl", "not", "not_eq", "or", "or_eq"} |
+		#readIdentifier:{"xor", "xor_eq"};
+
+
+//-------------------------
+//        Literals
+//-------------------------
+
+literal(source : value, expr : node, bResult : node)	::=
+		integer_literal(source, expr, bResult) |
+		character_literal(source, expr, bResult) |
+		floating_literal(source, expr, bResult) |
+		string_literal(source, expr, bResult) |
+		boolean_literal(source, expr, bResult);
+
+integer_literal(source : value, expr : node, bResult : node)	::=
+		#!ignore
+		[
+				decimal_literal(source, expr, bResult)
+			|
+				hexadecimal_literal(source, expr, bResult)
+			|
+				octal_literal(source, expr, bResult)
+		]
+		[integer_suffix(expr)]?;
+
+decimal_literal(source : value, expr : node, bResult : node)	::=
+		nonzero_digit:iDigit
+		[digit]*:iNumber
+		=> set bResult = iDigit + iNumber;
+		=> insert expr.operator = "integer decimal";
+		=> insert expr.value = bResult;
+		;
+
+octal_literal(source : value, expr : node, bResult : node)	::=
+		'0'
+		[octal_digit]*:bResult
+		=> insert expr.operator = "integer octal";
+		=> insert expr.value = "0" + bResult;
+		=> if source == "preprocessor" set bResult = octalToDecimal(bResult);
+		;
+
+hexadecimal_literal(source : value, expr : node, bResult : node)	::=
+		["0x" | "0x"] #continue
+		[hexadecimal_digit]+:bResult
+		=> insert expr.operator = "integer hexa";
+		=> insert expr.value = "0x" + bResult;
+		=> if source == "preprocessor" set bResult = hexaToDecimal(bResult);
+		;
+
+nonzero_digit	::= '1'..'9';
+octal_digit	::= '0'..'7';
+hexadecimal_digit	::= '0'..'9' | 'a'..'f' | 'A'..'F';
+
+integer_suffix(expr : node)	::=
+		unsigned_suffix(expr) [long_suffix(expr)]?
+	|
+		long_suffix(expr) [unsigned_suffix(expr)]?;
+
+unsigned_suffix(expr : node)	::= ['u' | 'U'] => { insert expr.unsigned = true; } ;
+long_suffix(expr : node)	::= ['l' | 'L'] => { insert expr.long = true; } ;
+
+character_literal(source : value, expr : node, bResult : node)	::=
+		=> local bWide;
+		['L' => set bWide = true;]?
+		'\''
+		#!ignore #continue
+		=> insert expr.operator = "character";
+		c_char_sequence:expr.value
+		=> if source == "preprocessor" set bResult = "'" + expr.value + "'";
+		=> if bWide insert expr.wide = true;
+		'\'';
+
+c_char_sequence	::= [c_char]+;
+c_char	::= ~['\'' | '\\' | '\r' | '\n'] | escape_sequence | universal_character_name;
+escape_sequence	::= simple_escape_sequence | octal_escape_sequence | hexadecimal_escape_sequence;
+simple_escape_sequence	::= "\\'" | "\\\"" | "\\?" | "\\a" | "\\b" | "\\f" | "\\n" | "\\r" | "\\t" | "\\v";
+octal_escape_sequence	::= '\\' [octal_digit]1..3;
+hexadecimal_escape_sequence	::= "\\x" [hexadecimal_digit]+;
+
+floating_literal(source : value, expr : node, bResult : node)	::=
+		fractional_constant(source, expr, bResult)
+		[exponent_part(source, expr, bResult)]?
+		[floating_suffix(source, expr, bResult)]?;
+fractional_constant(source : value, expr : node, bResult : node)	::=
+		#!ignore
+		=> local iDigits = 0;
+		[digit => increment(iDigits);]*:sLeft
+		['.' [digit => increment(iDigits);]* ]?:sRight
+		#check($iDigits > 0$)
+		=> if source == "preprocessor" set bResult = sLeft + sRight;
+		=> insert expr.operator = "floating-point";
+		=> insert expr.fractional_constant = sLeft + sRight;
+		;
+exponent_part(source : value, expr : node, bResult : node)	::=
+		['e' | 'E']
+		#continue
+		#!ignore
+		[sign:expr.exponent]?
+		digit_sequence:sExponent
+		=> insert expr.exponent += sExponent;
+		=> if source == "preprocessor" set bResult += "E" + expr.exponent;
+		;
+sign	::= '+' | '-';
+digit_sequence	::= [digit]+;
+floating_suffix(source : value, expr : node, bResult : node)	::=
+		[
+				['f' | 'F'] => insert expr.suffix = "F";
+			|
+				['l' | 'L'] => insert expr.suffix = "L";
+		]
+		=> if source == "preprocessor" set bResult += expr.suffix;
+		;
+
+string_literal(source : value, expr : node, bResult : node)	::=
+		=> local bWide;
+		['L' => set bWide = true;]?
+		'\"'
+		#continue #!ignore
+		=> insert expr.operator = "string";
+		[s_char_sequence:expr.value]?
+		'\"'
+		=> if source == "preprocessor" set bResult = "\"" + expr.value + "\"";
+		=> if bWide insert expr.wide = true;
+		;
+s_char_sequence	::= [s_char]+;
+s_char	::= ~['\'' | '\\' | '\r' | '\n'] | escape_sequence | universal_character_name;
+
+boolean_literal(source : value, expr : node, bResult : node)	::=
+		#readIdentifier:{"false", "true"}:expr.value
+		=> if source == "preprocessor" set bResult = expr.value;
+		=> insert expr.operator = "boolean";
+		;
+
+//-------------------------
+//        Expressions
+//-------------------------
+
+primary_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		literal(source, expr, bResult) |
+		#readIdentifier:"this" => insert expr.operator = "this"; |
+		'(' expression(source, scope, expr, bResult) ')' |
+		id_expression(source, scope, expr, bResult);
+
+id_expression	::= unqualified_id | qualified_id;
+unqualified_id	::=
+		identifier | operator_function_id | conversion_function_id |
+		'~' class_name |
+		template_id;
+qualified_id	::=
+		["::"]? nested_name_specifier [template]? unqualified_id |
+		"::" [identifier | operator_function_id | template_id];
+nested_name_specifier	::=
+		class_or_namespace_name
+		"::"
+		[
+				#readIdentifier:"template"
+				nested_name_specifier
+			|
+				[nested_name_specifier]?
+		];
+
+class_or_namespace_name(scope : node, expr : node)	::=
+		class_name(scope, expr)
+	|
+		namespace_name(scope, expr);
+
+postfix_expression(source : value, scope : node, scope : node, expr : node, bResult : node)	::=
+		[
+				primary_expression(source, scope, expr, bResult)
+			|
+				simple_type_specifier '(' [expression_list]? ')'
+			|
+				#readIdentifier:"typename" ["::"]? nested_name_specifier identifier '(' [expression_list]? ')'
+			|
+				#readIdentifier:"typename" ["::"]? nested_name_specifier [#readIdentifier:"template"]? template_id '(' [expression_list]? ')'
+			|
+				#readIdentifier:{"dynamic_cast", "static_cast", "reinterpret_cast", "const_cast"} '<' type_id '>' '(' expression ')'
+			|
+				#readIdentifier:"typeid" '(' [expression | type_id] ')'
+		]
+		[
+				'[' expression ']'
+			|
+				'(' [expression_list]? ')'
+			|
+				['.' | "->"] [#readIdentifier:"template"]? ["::"]? id_expression
+			|
+				['.' | "->"] pseudo_destructor_name
+			|
+				"++"
+			|
+				"--"
+		]*;
+
+expression_list(source : value, scope : node, scope : node, expr : node, bResult : node)	::=
+		assignment_expression(source, scope, expr, bResult)
+		[',' #continue assignment_expression(source, scope, expr, bResult)]*;
+
+pseudo_destructor_name	::=
+		["::"]? [nested_name_specifier]? [type_name "::"]? '~' type_name |
+		["::"]? nested_name_specifier #readIdentifier:"template" template_id "::" '~' type_name;
+
+unary_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		["++" | "--" | unary_operator]:sOperator
+		=> local pExpr;
+		cast_expression(source, scope, pExpr, bResult)
+		=> insert expr.operator = "unary" + sOperator;
+		=> setall expr.expression = pExpr;
+	|
+		#readIdentifier:"sizeof"
+		=> insert expr.operator = "sizeof";
+		[
+				unary_expression(source, scope, expr.expression, bResult)
+			|
+				'(' type_id(scope, expr.type) ')'
+		]
+	|
+		new_expression(scope, expr)
+	|
+		delete_expression(scope, expr)
+	|
+		postfix_expression(source, scope, expr, bResult);
+
+unary_operator	::= '*' | '&' | '+' | '-' | '!' | '~';
+
+new_expression(scope : node, expr : node)	::=
+		["::"]?
+		#readIdentifier:"new"
+		#continue
+		=> insert expr.operator = "new";
+		[new_placement(scope, expr)]?
+		[
+				'(' #continue type_id(scope, expr.type) ')'
+			|
+				[new_type_id(scope, expr.type)]?
+		]
+		[new_initializer(scope, expr)]?;
+
+new_placement(scope : node, expr : node)	::=
+		'('
+		#continue
+		=> pushItem expr.placements;
+		=> local bResult;
+		assignment_expression("", scope, expr.placements#back, bResult)
+		[
+			','
+			#continue
+			=> pushItem expr.placements;
+			assignment_expression("", scope, expr.placements#back, bResult)
+		]*
+		')';
+
+new_type_id(scope : node, expr : node)	::=
+		type_specifier_seq(scope, expr) [new_declarator(scope, expr)]?;
+
+new_declarator(scope : node, expr : node)	::=
+		ptr_operator(scope, expr) [new_declarator(scope, expr)]? |
+		direct_new_declarator(scope, expr);
+
+direct_new_declarator(scope : node, expr : node)	::=
+		'[' #continue
+		=> pushItem expr.dimensions;
+		=> local bResult;
+		assignment_expression("", scope, expr.dimensions#back, bResult)
+		']'
+		[
+			'[' #continue
+			=> pushItem expr.dimensions;
+			constant_expression("", scope, expr.dimensions#back, bResult)
+			']'
+		]*;
+
+new_initializer(scope : node, expr : node)	::=
+		'(' #continue
+		[
+			=> local pExpr;
+			=> local bResult;
+			assignment_expression("", scope, pExpr, bResult)
+			=> pushItem expr.initializers;
+			=> setall expr.initializers#back = pExpr;
+			[
+				','
+				#continue
+				=> pushItem expr.initializers;
+				assignment_expression("", scope, expr.initializers#back, bResult)
+			]*
+		]?
+		')';
+
+delete_expression(scope : node, expr : node)	::=
+		["::"]?
+		#readIdentifier:"delete"
+		#continue
+		=> insert expr.operator = "delete";
+		['[' #continue ']' => insert expr.array = true;]?
+		=> local bResult;
+		cast_expression("", scope, expr.expression, bResult);
+
+cast_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		unary_expression(source, scope, expr, bResult)
+	|
+		'(' type_id(scope, pExpr) ')'
+		#continue
+		=> insert expr.operator = "cast";
+		=> setall expr.type = pExpr;
+		cast_expression(source, scope, expr.expression, bResult);
+
+pm_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		cast_expression(source, scope, expr, bResult)
+		[
+			[".*" | "->*"]:sOperator
+			#continue
+			=> slideNodeContent(expr, left);
+			cast_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = sOperator;
+		]*;
+
+multiplicative_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		pm_expression(source, scope, expr, bResult)
+		[
+			['*' | '/' | '%']:sOperator
+			#continue
+			=> slideNodeContent(expr, left);
+			pm_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = sOperator;
+		]*;
+
+additive_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		multiplicative_expression(source, scope, expr, bResult)
+		[
+			["+" | "-"]:sOperator
+			#continue
+			=> slideNodeContent(expr, left);
+			multiplicative_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = sOperator;
+		]*;
+
+shift_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		additive_expression(source, scope, expr, bResult)
+		[
+			["<<" | ">>"]:sOperator
+			#continue
+			=> slideNodeContent(expr, left);
+			additive_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = sOperator;
+		]*;
+
+relational_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		shift_expression(source, scope, expr, bResult)
+		[
+			['<' | '>' | "<=" | ">="]:sOperator
+			#continue
+			=> slideNodeContent(expr, left);
+			shift_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = sOperator;
+		]*;
+
+equality_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		relational_expression(source, scope, expr, bResult)
+		[
+			["==" | "!="]:sOperator
+			#continue
+			=> slideNodeContent(expr, left);
+			relational_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = sOperator;
+		]*;
+
+and_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		equality_expression(source, scope, expr, bResult)
+		[
+			"&"
+			#continue
+			=> slideNodeContent(expr, left);
+			equality_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = "&";
+		]*;
+
+exclusive_or_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		and_expression(source, scope, expr, bResult)
+		[
+			"^"
+			#continue
+			=> slideNodeContent(expr, left);
+			and_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = "^";
+		]*;
+
+inclusive_or_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		exclusive_or_expression(source, scope, expr, bResult)
+		[
+			"|"
+			#continue
+			=> slideNodeContent(expr, left);
+			exclusive_or_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = "|";
+		]*;
+
+logical_and_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		inclusive_or_expression(source, scope, expr, bResult)
+		[
+			"&&"
+			#continue
+			=> slideNodeContent(expr, left);
+			inclusive_or_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = "&&";
+		]*;
+
+logical_or_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		logical_and_expression(source, scope, expr, bResult)
+		[
+			"||"
+			#continue
+			=> slideNodeContent(expr, left);
+			logical_and_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = "||";
+		]*;
+
+conditional_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		logical_or_expression(source, scope, expr, bResult)
+		[
+			'?'
+			#continue
+			=> slideNodeContent(expr, condition);
+			=> insert expr.operator = "?";
+			expression(source, scope, expr.left, bResult)
+			':'
+			assignment_expression(source, scope, expr.right, bResult)
+		]?;
+
+assignment_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		logical_or_expression(source, scope, expr, bResult)
+		[
+			assignment_operator:sOperator
+			#continue
+			=> slideNodeContent(expr, left);
+			assignment_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = sOperator;
+		]?
+	|
+		throw_expression(scope, expr);
+
+assignment_operator	::= ">=" | "*=" | "/=" | "%=" | "+=" | "-=" | ">>=" | "<<=" | "&=" | "^=" | "|=";
+
+expression(source : value, scope : node, expr : node, bResult : node)	::=
+		assignment_expression(source, scope, expr, bResult)
+		[
+			','
+			#continue
+			=> slideNodeContent(expr, left);
+			assignment_expression(source, scope, expr.right, bResult)
+			=> insert expr.operator = ",";
+		]*;
+
+constant_expression(source : value, scope : node, expr : node, bResult : node)	::=
+		conditional_expression(source, scope, expr, bResult);
+
+
+//-------------------------
+//        Statements
+//-------------------------
+
+statement(scope : node, stmt : node)	::=
+		labeled_statement(scope, stmt) |
+		compound_statement(scope, stmt) |
+		selection_statement(scope, stmt) |
+		iteration_statement(scope, stmt) |
+		jump_statement(scope, stmt) |
+		declaration_statement(scope, stmt) |
+		try_block(scope, stmt) |
+		expression_statement(scope, stmt);
+
+labeled_statement(scope : node, stmt : node)	::=
+		identifier:sIdentifier ':'
+		#continue
+		=> insert stmt.type = "label";
+		=> insert stmt.label = sIdentifier;
+		statement(scope, stmt.statement)
+	|
+		#readIdentifier:"case"
+		#continue
+		=> local bResult;
+		constant_expression(scope, stmt.expression, bResult)
+		=> insert stmt.type = "case";
+		':'
+		statement(scope, stmt.statement)
+	|
+		#readIdentifier:"default"
+		#continue
+		':'
+		=> insert stmt.type = "default";
+		statement(scope, stmt.statement);
+
+expression_statement(scope : node, stmt : node)	::=
+		[
+			=> local bResult;
+			expression(scope, stmt.expression, bResult)
+			=> insert stmt.type = "expression";
+		]? ';';
+
+compound_statement(scope : node, stmt : node)	::=
+		'{'
+		#continue
+		[
+			statement_seq(scope, stmt)
+			=> insert stmt.type = "compound";
+		]?
+		'}';
+statement_seq(scope : node, stmt : node)	::=
+		[
+			=> pushItem stmt.statements;
+			statement(scope, stmt.statements#back)
+		]+
+		=> removeLastElement(stmt.statements);
+	|
+		=> removeVariable(stmt.statements);
+		#check(false);
+
+selection_statement(scope : node, stmt : node)	::=
+		#readIdentifier:"if" #continue
+		'(' condition(scope, stmt.condition) ')'
+		statement(scope, stmt.then)
+		[
+			#readIdentifier:"else" #continue
+			statement(scope, stmt.else)
+		]?
+		=> insert stmt.type = "if";
+	|
+		#readIdentifier:"switch" #continue
+		'(' condition(scope, stmt.condition) ')'
+		statement(scope, stmt.switch)
+		=> insert stmt.type = "switch";
+		;
+
+condition(scope : node, stmt : node)	::=
+		=> local pExpr;
+		=> local bResult;
+		expression("", scope, pExpr, bResult)
+		=> setall stmt = pExpr;
+	|
+		type_specifier_seq
+		declarator
+		'='
+		assignment_expression;
+
+iteration_statement(scope : node, stmt : node)	::=
+		#readIdentifier:"while" #continue
+		'(' condition(scope, stmt.condition) ')'
+		statement(scope, stmt.while)
+		=> insert stmt.type = "while";
+	|
+		#readIdentifier:"do" #continue
+		statement(scope, stmt.do)
+		#readIdentifier:"while"
+		'('
+		=> local bResult;
+		expression("", scope, stmt.condition, bResult)
+		')' ';'
+		=> insert stmt.type = "do";
+	|
+		#readIdentifier:"for" #continue
+		'('
+		for_init_statement(scope, stmt.init)
+		[
+			=> local pStmt;
+			condition(scope, pStmt)
+			=> setall stmt.condition = pStmt;
+		]? ';'
+		[
+			=> local pExpr;
+			=> local bResult;
+			expression("", scope, pExpr, bResult)
+			=> setall stmt.iteration = pExpr;
+		]?
+		')'
+		statement(scope, stmt.for)
+		=> insert stmt.type = "for";
+		;
+for_init_statement(scope : node, stmt : node)	::=
+		expression_statement(scope, stmt)
+	|
+		simple_declaration;
+
+jump_statement(scope : node, stmt : node)	::=
+		#readIdentifier:{"break", "continue"}:stmt.type #continue ';'
+	|
+		#readIdentifier:"return":stmt.type #continue
+		[
+			=> local pExpr;
+			=> local bResult;
+			expression("", scope, pExpr, bResult)
+			=> setall stmt.return = pExpr;
+		]?
+		';'
+	|
+		#readIdentifier:"goto":stmt.type
+		#continue
+		identifier:stmt.goto
+		';';
+
+declaration_statement(scope : node, stmt : node)	::= block_declaration(scope, stmt);
+
+
+//-------------------------
+//      Declarations
+//-------------------------
+
+declaration_seq(scope : node, stmt : node)	::=
+		[
+				pushItem stmt.declarations;
+				declaration(scope, stmt.declarations#back)
+			|
+				removeLastElement(stmt.declarations);
+		]+
+		=> insert stmt.type = "declaration_seq";
+	|
+		removeVariable(stmt.declarations);
+
+declaration(scope : node, stmt : node)	::=
+		block_declaration(scope, stmt) |
+		function_definition(scope, stmt)	|
+		template_declaration(scope, stmt) |
+		explicit_instantiation(scope, stmt) |
+		explicit_specialization(scope, stmt) |
+		linkage_specification(scope, stmt) |
+		namespace_definition(scope, stmt);
+
+block_declaration(scope : node, stmt : node)	::=
+		simple_declaration(scope, stmt) |
+		asm_definition(scope, stmt) |
+		namespace_alias_definition(scope, stmt) |
+		using_declaration(scope, stmt) |
+		using_directive(scope, stmt);
+
+simple_declaration(scope : node, stmt : node)	::=
+		[decl_specifier_seq(scope, stmt)]?
+		[init_declarator_list(scope, stmt)]?
+		';';
+
+decl_specifier(scope : node, stmt : node)	::=
+		storage_class_specifier(scope, stmt)
+	|
+		type_specifier(scope, stmt)
+	|
+		function_specifier(scope, stmt)
+	|
+		#readIdentifier:"friend"
+		=> insert stmt.type = "friend";
+		decl_specifier_seq(scope, stmt.specifier)
+	|
+		#readIdentifier:"typedef"
+		=> insert stmt.type = "typedef";
+		decl_specifier_seq(scope, stmt.specifier);
+
+decl_specifier_seq(scope : node, stmt : node)	::=
+		[
+			=> pushItem stmt.specifiers;
+			decl_specifier(scope, stmt.specifiers)
+		]+
+		=> removeLastElement(stmt.specifiers)
+	|
+		=> removeVariable(stmt.specifiers);
+		;
+storage_class_specifier	::= #readIdentifier:{"auto", "register", "static", "extern", "mutable"};
+function_specifier	::= #readIdentifier:{"inline", "virtual", "explicit"};
+typedef_name	::= identifier;
+type_specifier	::=
+		simple_type_specifier |
+		class_specifier |
+		enum_specifier |
+		elaborated_type_specifier |
+		cv_qualifier;
+simple_type_specifier	::=
+		["::"]? [nested_name_specifier]? type_name |
+		["::"]? nested_name_specifier #readIdentifier:"template" template_id |
+        #readIdentifier:{"char", "wchar_t", "bool", "short", "int", "long", "signed", "unsigned", "float", "double", "void"};
+type_name	::= class_name | enum_name | typedef_name;
+elaborated_type_specifier	::=
+		class_key ["::"]? [nested_name_specifier]? identifier |
+		#readIdentifier:"enum" ["::"]? [nested_name_specifier]? identifier |
+		#readIdentifier:"typename" ["::"]? nested_name_specifier identifier [[#readIdentifier:"template"]? template_id]?;
+
+enum_name	::= identifier;
+enum_specifier	::= #readIdentifier:"enum" [identifier]? '{' [enumerator_list]? '}';
+enumerator_list	::= enumerator_definition [',' enumerator_definition]*;
+enumerator_definition	::= enumerator ['=' constant_expression]?;
+enumerator	::= identifier;
+
+namespace_name	::= original_namespace_name | namespace_alias;
+original_namespace_name	::= identifier;
+namespace_definition	::= named_namespace_definition | unnamed_namespace_definition;
+named_namespace_definition	::= original_namespace_definition | extension_namespace_definition;
+original_namespace_definition	::= #readIdentifier:"namespace" identifier '{' namespace_body '}';
+extension_namespace_definition	::= #readIdentifier:"namespace" original_namespace_name '{' namespace_body '}';
+unnamed_namespace_definition	::= #readIdentifier:"namespace" '{' namespace_body '}';
+namespace_body	::= [declaration_seq]?;
+namespace_alias	::= identifier;
+namespace_alias_definition	::= #readIdentifier:"namespace" identifier '=' qualified_namespace_specifier ';';
+qualified_namespace_specifier	::= ["::"]? [nested_name_specifier]? namespace_name;
+
+using_declaration	::=
+		#readIdentifier:"using" [#readIdentifier:"typename"]? ["::"]? nested_name_specifier unqualified_id ';' |
+		#readIdentifier:"using" "::"  unqualified_id ';';
+using_directive	::= #readIdentifier:"using"  #readIdentifier:"namespace" ["::"]? [nested_name_specifier]? namespace_name ';';
+
+asm_definition(scope : node, stmt : node)	::=
+		#readIdentifier:"asm" #continue
+		=> insert stmt.type = "asm";
+		'(' string_literal:stmt.asm ')' ';';
+
+linkage_specification(scope : node, stmt : node)	::=
+		#readIdentifier:"extern" #continue
+		=> insert stmt.type = "extern";
+		string_literal:stmt.extern
+		[
+				'{' [declaration_seq(scope, stmt)]? '}'
+			|
+				declaration(scope, stmt.declarations[0])
+		];
+
+
+//-------------------------
+//       Declarators
+//-------------------------
+
+init_declarator_list	::= init_declarator [',' init_declarator]*;
+init_declarator	::= declarator [initializer]?;
+declarator	::= direct_declarator | ptr_operator declarator;
+direct_declarator	::=
+		[declarator_id | '(' declarator ')']
+		[
+				'(' parameter_declaration_clause ')'
+				[cv_qualifier_seq]?
+				[exception_specification]?
+			|
+				'[' [constant_expression]? ']'
+		]
+		;
+ptr_operator	::=
+		'*' [cv_qualifier_seq]? |
+		'&' |
+		["::"]? nested_name_specifier '*' [cv_qualifier_seq]?;
+cv_qualifier_seq	::= cv_qualifier [cv_qualifier_seq]?;
+cv_qualifier	::= #readIdentifier:{"const", "volatile"};
+declarator_id	::=
+		["::"]? id_expression |
+		["::"]? [nested_name_specifier]? type_name;
+type_id	::= type_specifier_seq [abstract_declarator]?;
+type_specifier_seq	::= [type_specifier]+;
+abstract_declarator	::= ptr_operator [abstract_declarator]? | direct_abstract_declarator;
+direct_abstract_declarator	::=
+		[direct_abstract_declarator]? '(' parameter_declaration_clause ')' [cv_qualifier_seq]? [exception_specification]? |
+		[direct_abstract_declarator]? '[' [constant_expression]? ']' |
+		'(' abstract_declarator ')';
+parameter_declaration_clause	::= parameter_declaration_list [',' "..."] | ["..."]?;
+parameter_declaration_list	::= parameter_declaration [',' parameter_declaration]?;
+parameter_declaration	::=
+		decl_specifier_seq
+		[declarator | [abstract_declarator]?]
+		['=' assignment_expression]?;
+function_definition	::=
+		[decl_specifier_seq]? declarator [ctor_initializer]? function_body |
+		[decl_specifier_seq]? declarator function_try_block;
+function_body	::= compound_statement;
+initializer	::= '=' initializer_clause | '(' expression_list ')';
+initializer_clause	::= assignment_expression | '{' [initializer_list [',']?]? '}';
+initializer_list	::= initializer_clause [',' initializer_clause]?;
+
+
+//-------------------------
+//        Classes
+//-------------------------
+
+class_name(scope : node, expr : node)	::=
+		template_id(scope, expr)
+	|
+		identifier:sIdentifier
+		#check(existClass(scope, sIdentifier))
+		=> insert expr.type = "class";
+		=> insert expr.class = sIdentifier;
+		;
+
+class_specifier	::= class_head '{' #continue [member_specification]? '}';
+class_head	::=
+		class_key [identifier]? [base_clause]? |
+		class_key nested_name_specifier identifier [base_clause]? |
+		class_key [nested_name_specifier]? template_id [base_clause]?;
+class_key	::= #readIdentifier:{"class", "struct", "union"};
+member_specification	::=
+		member_declaration [member_specification] |
+		access_specifier ':' [member_specification]?;
+member_declaration	::=
+		[decl_specifier_seq]? [member_declarator_list]? ';' |
+		function_definition [';']? |
+		["::"]? nested_name_specifier [#readIdentifier:"template"]? unqualified_id ';' |
+		using_declaration |
+		template_declaration;
+member_declarator_list	::= member_declarator [',' member_declarator]*;
+member_declarator	::=
+		declarator [pure_specifier | constant_initializer]? |
+		[identifier]? ':' constant_expression;
+pure_specifier	::= '=' '0';
+constant_initializer	::= '=' constant_expression;
+
+
+//-------------------------
+//     Derived classes
+//-------------------------
+   
+base_clause	::= ':' base_specifier_list;
+base_specifier_list	::= base_specifier [',' base_specifier]*;
+base_specifier	::=
+		["::"]? [nested_name_specifier]? class_name |
+		#readIdentifier:"virtual" [access_specifier]? ["::"]? [nested_name_specifier]? class_name |
+		access_specifier [#readIdentifier:"virtual"]? ["::"]? [nested_name_specifier]? class_name;
+access_specifier	::= #readIdentifier:{"private", "protected", "public"};
+
+
+//-------------------------
+//      Special member
+//-------------------------
+
+// functions:
+// ----------
+
+conversion_function_id	::= #readIdentifier:"operator" conversion_type_id;
+conversion_type_id	::= type_specifier_seq [conversion_declarator]?;
+conversion_declarator	::= ptr_operator [conversion_declarator]?;
+ctor_initializer	::= ':' mem_initializer_list;
+mem_initializer_list	::= mem_initializer [',' mem_initializer]*;
+mem_initializer	::= mem_initializer_id '(' [expression_list]? ')';
+mem_initializer_id	::= ["::"]? [nested_name_specifier]? class_name | identifier;
+
+
+//-------------------------
+//      Overloading
+//-------------------------
+
+operator_function_id	::= #readIdentifier:"operator" operator;
+operator	::=
+		#readIdentifier:{"new", "delete"} ['[' ']']? |
+		#readChar:{"+", "-", "*", "/", "%", "^", "&", "|", "~", "!", "=", "<", ">"} |
+		"+=" | "-=" | "*=" | "/=" | "%=" | "^=" | "&=" | "|=" | "&&" | ">>" | ">>=" | "<<" | "<<=" |
+		"==" | "!=" | "<=" | ">=" | "&&" | "||" | "++" | "--" | "->*" | "->" | ',' |
+		'[' ']' | '(' ')';
+
+
+//-------------------------
+//        Templates
+//-------------------------
+
+template_declaration	::=
+		[#readIdentifier:"export"]?
+		#readIdentifier:"template" '<' #continue template_parameter_list '>' declaration;
+
+template_parameter_list	::= template_parameter [',' template_parameter]*;
+template_parameter	::= type_parameter | parameter_declaration;   
+type_parameter	::=
+		#readIdentifier:"class" [identifier]? ['=' type_id]?
+	|
+		#readIdentifier:"typename" [identifier]? ['=' type_id]?
+	|
+		#readIdentifier:"template" '<'
+		template_parameter_list '>'
+		#readIdentifier:"class" [identifier]?
+		['=' id_expression]?;
+
+template_id(scope : node, expr : node)	::=
+		template_name(scope, expr) '<' #continue [template_argument_list]? '>';
+
+template_name(scope : node, expr : node)	::=
+		identifier:sIdentifier
+		#check(existTemplate(scope, sIdentifier))
+		;
+
+template_argument_list	::= template_argument [',' template_argument]*;
+template_argument	::= assignment_expression | type_id | id_expression;
+explicit_instantiation	::= #readIdentifier:"template" declaration;
+explicit_specialization	::= #readIdentifier:"template" '<' '>' declaration;
+
+
+//-------------------------
+//    Exception handling
+//-------------------------
+try_block	::= #readIdentifier:"try" compound_statement [handler]+;
+function_try_block	::= #readIdentifier:"try" [ctor_initializer]? function_body;
+handler	::= #readIdentifier:"catch" #continue '(' exception_declaration ')' compound_statement;
+exception_declaration	::= type_specifier_seq [declarator | abstract_declarator]? | "...";
+throw_expression(scope : node, expr : node)	::=
+	#readIdentifier:"throw"
+	=> local pExpr;
+	=> local bResult;
+	[
+		assignment_expression("", scope, pExpr, bResult)
+		=> setall expr.expression = pExpr;
+	]?
+	=> insert expr.operator = "throw";
+	;
+   
+exception_specification	::= #readIdentifier:"throw" #continue '(' [type_id_list]? ')';
+type_id_list	::= type_id [',' type_id]*;

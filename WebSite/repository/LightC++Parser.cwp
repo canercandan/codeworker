@@ -1,0 +1,479 @@
+/*
+
+Limitations:
+*/
+
+#include "CommonTools-C++.cws"
+
+function getParametersSignature(listOfParameters : node) {
+	local sText;
+	foreach i in listOfParameters {
+		if !first(i) set sText += ',';
+		set sText += getCppTargetType(i.type);
+	}
+	return sText;
+}
+
+translation_unit	::=
+		#ignore(C++/Doxygen)
+		=> local myContext;
+		[->remarkablePoint<"outside">(myContext)]* ->#empty;
+
+#include "CommonLanguage-Scanner.cwp"
+#include "CommonLanguage-Parser.cwp"
+
+remarkablePoint<T>(myContext : node) ::=
+			preprocessing(myContext)
+		|
+			doxygen:myContext.doxygen_comment
+		|
+			template_definition<T>(myContext)
+		|
+			declare_type(myContext)
+		|
+			define<T>(myContext)
+		|
+			#readCString
+		;
+
+preprocessing(myContext : node)	::= '#' #readIdentifier endOfLine;
+endOfLine : #!ignore	::=
+		[!['\\' ['\r']? '\n'] ~'\n']*
+		['\n' | '\\' ['\r']? '\n' endOfLine]
+		;
+
+doxygen	::=
+			"//!" #!ignore ->'\n'
+			["/*!" #!ignore ->"*/"]?
+		|
+			"/*!" #!ignore ->"*/"
+		;
+
+template_definition<T>(myContext : node)	::=
+		"template" #continue template_parameters_declaration(myContext)
+		[
+				declare_type(myContext)
+			|
+				define<T>(myContext)
+		]
+		=> removeLastElement(myContext.nested_template_parameters);
+		;		
+
+template_parameters_declaration(myContext : node)	::=
+		'<' #continue
+		=> pushItem myContext.nested_template_parameters;
+		[
+			#readIdentifier:{"class", "typename"}:sType
+			#continue
+			#readIdentifier:sTemplateKey
+			=> insert myContext.nested_template_parameters#back.template_parameters[sTemplateKey] = sType;
+			['=' #continue target_language_type(myContext.nested_template_parameters#back.template_parameters[sTemplateKey])]?
+			[
+				',' #continue
+				#readIdentifier:{"class", "typename"}:sType #readIdentifier:sTemplateKey
+				=> insert myContext.nested_template_parameters#back.template_parameters[sTemplateKey] = sType;
+				['=' #continue target_language_type(myContext.nested_template_parameters#back.template_parameters[sTemplateKey])]?
+			]*
+		]?
+		'>'
+		;
+
+define<"outside">(myContext : node) ::=
+		member<"structor_definition">(myContext)
+	|
+		member<"method_definition">(myContext)
+	;
+
+define<"class_declaration">(myContext : node)	::=
+		member<"structor_definition">(myContext)
+	|
+		member<"method_definition">(myContext)
+	|
+		member<"attribute_definition">(myContext)
+	;
+
+
+keyword<identifier> ::= #check(false);
+
+CLASS	::= #readIdentifier:"class";
+keyword<"class"> ::= #check(true);
+
+member<"method_definition">(myContext : node) ::=
+		=> local listOfModifiers;
+		[method_modifiers(listOfModifiers)]?
+		=> local myType;
+		target_language_type(myType)
+		=> local sClassName;
+		[
+				#readIdentifier:sClassName
+// template methods will have to be recognized!
+//				[
+//					template_parameters_instantiation(myContext)
+//					!!"::"
+//				]?
+				"::"
+			|
+				#check(myContext)
+				=> set sClassName = myContext;
+			|
+				=> set sClassName = false;
+		]
+		=> local listOfParameters;
+		#readIdentifier:sMethodName
+		=> local bIsOperator = (sMethodName == "operator");
+		[
+			#check(bIsOperator)
+			=> set sMethodName = "";
+			#continue
+			[
+				~'(':cChar
+				=> set sMethodName += cChar;
+			]+
+		]?
+		['(' #continue parameters(listOfParameters) ')']
+		[#readIdentifier:"const"]?
+		[#readIdentifier:"throw" '(' ->')']?
+		#continue
+		=> local bFunctionBody;
+		=> local bAbstractMethod;
+		[
+				'{' => set bFunctionBody = true;
+			|
+				';'
+			|
+				'=' '0' ['L']? ';' => set bAbstractMethod = true;
+		]
+		=> local myMemberObject;
+		=> {
+			if sClassName {
+				if !this.scan_only {
+					if !project.classes.findElement(sClassName) {
+						insert project.classes[sClassName] = sClassName;
+						if !myContext.nested_names.empty() setall project.classes[sClassName].nested_names = myContext.nested_names;
+					}
+					localref myClassObject = project.classes[sClassName];
+					local sSignature = sMethodName + '(' + getParametersSignature(listOfParameters) + ')';
+					if bIsOperator set sSignature = "operator " + sSignature;
+					if !myClassObject.methods.findElement(sSignature) {
+						insert myClassObject.methods[sSignature] = sMethodName;
+					}
+					ref myMemberObject = myClassObject.methods[sSignature];
+				} else {
+					set myMemberObject = sClassName;
+				}
+				if bIsOperator insert myMemberObject.is_operator = true;
+				if !listOfModifiers.empty() setall myMemberObject.modifiers = listOfModifiers;
+				setall myMemberObject.return_type = myType;
+				if !listOfParameters.empty() setall myMemberObject.parameters = listOfParameters;
+				if bAbstractMethod insert myMemberObject.is_abstract = true;
+				if myContext.doxygen_comment {
+					insert myMemberObject.comment = myContext.doxygen_comment;
+					set myContext.doxygen_comment = false;
+				}
+			}
+		}
+		[
+			#check(bFunctionBody)
+			#continue
+			member<"function_body">(myMemberObject)
+			'}'
+		]?
+	;
+
+template_parameters_specialization(theEntity : node)	::=
+		'<' #continue
+		=> pushItem theEntity.template_parameters_specializations;
+		target_language_type(theEntity.template_parameters_specializations#back)
+		[
+			',' #continue
+			=> pushItem theEntity.template_parameters_specializations;
+			target_language_type(theEntity.template_parameters_specializations#back)
+		]*
+		'>';
+
+member<"structor_definition">(myContext : node) ::=
+		=> local listOfModifiers;
+		[method_modifiers(listOfModifiers)]?
+		=> local sClassName;
+		[
+				#readIdentifier:sClassName
+				"::"
+			|
+				#check(myContext)
+				=> set sClassName = myContext;
+		]
+		=> local bDestructor;
+		['~' => set bDestructor = true;]?
+		#readIdentifier:sMethodName
+		#check(sMethodName == sClassName)
+		=> local listOfParameters;
+		['(' #continue parameters(listOfParameters) ')']
+		[
+				#readIdentifier:"throw" '(' ->')'
+		]?
+		=> local listOfInitializations;
+		[
+			#check(!bDestructor)
+			=> insert listOfInitializations.class_name = sClassName;
+			constructor_initializers(listOfInitializations)
+		]?
+		'{'
+		#continue
+		=> local myMemberObject;
+		=> if !this.scan_only {
+			if !project.classes.findElement(sClassName) {
+				insert project.classes[sClassName] = sClassName;
+				if !myContext.nested_names.empty() setall project.classes[sClassName].nested_names = myContext.nested_names;
+			}
+			localref myClassObject = project.classes[sClassName];
+			if bDestructor {
+				insert myClassObject.destructor = '~' + sClassName;
+				ref myMemberObject = myClassObject.destructor;
+			} else {
+				local sSignature = sClassName + '(' + getParametersSignature(listOfParameters) + ')';
+				insert myClassObject.constructors[sSignature] = sClassName;
+				ref myMemberObject = myClassObject.constructors[sSignature];
+				if !listOfParameters.empty() setall myMemberObject.parameters = listOfParameters;
+				if !listOfInitializations.empty() setall myMemberObject.initializations = listOfInitializations;
+			}
+		} else {
+			if bDestructor {
+				set myMemberObject = '~' + sClassName;
+			} else {
+				set myMemberObject = sClassName;
+				if !listOfParameters.empty() setall myMemberObject.parameters = listOfParameters;
+				if !listOfInitializations.empty() setall myMemberObject.initializations = listOfInitializations;
+			}
+		}
+		=> {
+			if !listOfModifiers.empty() setall myMemberObject.modifiers = listOfModifiers;
+			if myContext.doxygen_comment {
+				insert myMemberObject.comment = myContext.doxygen_comment;
+				set myContext.doxygen_comment = false;
+			}
+		}
+		member<"function_body">(myMemberObject)
+		'}'
+	;
+
+constructor_initializers(listOfInitializations : node) ::=
+		':' #continue
+		constructor_initializer(listOfInitializations)
+		[',' #continue constructor_initializer(listOfInitializations)]*
+		;
+
+constructor_initializer(listOfInitializations : node)	::=
+		#continue
+		=> pushItem listOfInitializations;
+		#readIdentifier:listOfInitializations#back.attribute
+		'('
+		expression(listOfInitializations#back.default_value)
+		')'
+		;
+
+method_modifiers(listOfModifiers : node) ::=
+		[
+			#readIdentifier:{"virtual", "static", "inline", "explicit"}:sModifier
+			=> insert listOfModifiers[sModifier];
+		]*;
+
+parameters(listOfParameters : node) ::=
+		[
+			parameter(listOfParameters)
+			[
+				',' #continue
+				[
+						parameter(listOfParameters)
+					|
+						"..."
+				]
+			]*
+		]?
+		;
+
+parameter(listOfParameters : node) ::=
+		=> local myType;
+		target_language_type(myType)
+		=> pushItem listOfParameters;
+		[
+			#readIdentifier:listOfParameters#back.name
+			[
+				'[' #continue
+				 => pushItem myType.suffix = "array";
+				[#readIdentifier:myType.suffix#back.size | #readInteger:myType.suffix#back.size]?
+				']'
+			]*
+		]?
+		=> setall listOfParameters#back.type = myType;
+		['=' #continue expression(listOfParameters#back.default_value)]?
+		;
+
+member<"function_body">(myContext : node) ::=
+		function_body(myContext)
+		;
+
+function_body(myContext : node) ::=
+		[
+				'{' #continue function_body(myContext) '}'
+			|
+				^'}'
+		]*
+		;
+
+
+member<"attribute_definition">(myContext : node) ::=
+		=> local listOfModifiers;
+		[attribute_modifiers(listOfModifiers)]?
+		=> local myType;
+		target_language_type(myType)
+		#readIdentifier:sAttribute
+		[
+			'[' #continue
+			 => pushItem myType.suffix = "array";
+			skipBrackets:myType.suffix#back.size
+			']'
+		]*
+		';'
+		=> if !this.scan_only {
+			if myContext.attributes.findElement(sAttribute) error("attribute '" + sAttribute + "' already exists in class '" + myContext + "'");
+			insert myContext.attributes[sAttribute] = sAttribute;
+			localref myAttribute = myContext.attributes[sAttribute];
+			if !listOfModifiers.empty() setall myAttribute.modifiers = listOfModifiers;
+			setall myAttribute.type = myType;
+		}
+		;
+
+attribute_modifiers(listOfModifiers : node) ::=
+		#readIdentifier:"static":sModifier
+		=> insert listOfModifiers[sModifier];
+		;
+
+
+
+declare_type(myContext : node)	::= declare_type<"class_definition">(myContext) | declare_type<"enum_definition">(myContext) | declare_type<"namespace_definition">(myContext) | declare_type<"typedef_definition">(myContext) | declare_type<"friend_definition">(myContext) | declare_type<"extern_definition">(myContext);
+
+declare_type<"friend_definition">(myContext : node)	::=
+	#readIdentifier:"friend" #continue
+	->';'
+	;
+
+declare_type<"extern_definition">(myContext : node)	::=
+	#readIdentifier:"extern" #continue
+	->';'
+	;
+
+declare_type<"enum_definition">(myContext : node)	::=
+	#readIdentifier:"enum" #continue
+	[#readIdentifier]?
+	'{'
+	->'}' ->';'
+	;
+
+declare_type<"class_definition">(myContext : node)	::=
+		=> local theClassHeader;
+		class_definition_header(theClassHeader)
+		#continue
+		=> local myClassObject;
+		=> if !this.scan_only {
+			if !theClassHeader.template_parameters_specializations.empty() {
+				if !project.classes.findElement(theClassHeader) {
+					insert project.classes[theClassHeader] = theClassHeader;
+				}
+				pushItem project.classes[theClassHeader].class_specializations;
+				ref myClassObject = project.classes[theClassHeader].class_specializations#back;
+				setall myClassObject = theClassHeader;
+			} else {
+				if project.classes.findElement(theClassHeader) {
+					merge project.classes[theClassHeader] = theClassHeader;
+				} else {
+					setall project.classes[theClassHeader] = theClassHeader;
+				}
+				ref myClassObject = project.classes[theClassHeader];
+			}
+			if !myContext.nested_template_parameters.empty() {
+				merge myClassObject = myContext.nested_template_parameters#back;
+			}
+		} else {
+			set myClassObject = theClassHeader;
+		}
+		=> {
+			if !myContext.nested_names.empty() setall myClassObject.nested_names = myContext.nested_names;
+			if !myParents.inheritance.empty() setall myClassObject.inheritance = myParents.inheritance;
+			if myContext.doxygen_comment {
+				insert myClassObject.comment = myContext.doxygen_comment;
+				set myContext.doxygen_comment = false;
+			}
+		}
+		[remarkablePoint<"class_declaration">(myClassObject) | ^'}']*
+		'}'
+		;
+
+class_definition_header(theClassHeader : node) ::=
+		#readIdentifier:{"class", "struct"}
+		#readIdentifier:theClassHeader
+		[#readIdentifier:theClassHeader]? // under Windows, when 'class ...DECL <class_name>'
+		[template_parameters_specialization(theClassHeader)]?
+		[declare_type<"parent">(theClassHeader)]?
+		'{'
+		;
+
+declare_type<"parent">(myContext : node)	::=
+		[
+				':' !':' #continue
+				parent_declaration(myContext)
+				[',' #continue parent_declaration(myContext)]*
+			|
+				!!'{'
+		]
+		;
+
+parent_declaration(theClassHeader : node) ::=
+		#pushItem(theClassHeader.inheritance)
+		[
+			#readIdentifier:{"public", "protected", "private", "virtual"}:sModifier
+			=> insert theClassHeader.inheritance#back.modifiers[sModifier];
+		]*
+		target_language_type(theClassHeader.inheritance#back)
+		;
+
+declare_type<"namespace_definition">(myContext : node)	::=
+		#readIdentifier:"namespace"
+		#readIdentifier:sNameSpace
+		'{'
+		#continue
+		=> pushItem myContext.nested_names = sNameSpace;
+		[remarkablePoint<"outside">(myContext) | ^'}']*
+		=> removeLastElement(myContext.nested_names);
+		'}'
+		;
+
+declare_type<"typedef_definition">(myContext : node)	::=
+		#readIdentifier:"typedef"
+		#continue
+		["typename"]?
+		=> local myType;
+		target_language_type(myType)
+		=> local sTypedef = myType;
+		[
+				#check(!myType.is_function)
+				#continue
+				#readIdentifier:sTypedef
+		]?
+		';'
+		=> setall project.typedefs[sTypedef] = myType;
+		=> if sTypedef == "Mutex" error("---------------------------");
+		;
+
+expression(myExpr : node) ::=
+		[
+				#readCString
+			|
+				'[' #continue expression(myExpr) ']'
+			|
+				'{' #continue expression(myExpr) '}'
+			|
+				'(' #continue expression(myExpr) ')'
+			|
+				~[']' | '}' | ')']
+		]*:myExpr
+		;

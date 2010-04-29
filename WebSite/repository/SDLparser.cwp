@@ -1,0 +1,233 @@
+header ::=
+	#ignore(C++)
+=>traceLine("file " + getShortFilename(getInputFilename()) + ':');
+	=> insert this.header_files[getShortFilename(getInputFilename())];
+	[
+			#readIdentifier:sId #continue
+			keyword<sId>
+		|
+			#readCString
+		|
+			#readCChar
+		|
+			'#' #continue
+			#readIdentifier:sDirective
+			directive<sDirective>
+		|
+			#readChar
+	]*
+	;
+
+keyword<T> ::= #check(true);
+
+keyword<"extern"> ::=
+		#readCString:sText
+		#continue
+		#check(sText == "C")
+	|
+		#readIdentifier:"C_LINKAGE"
+	|
+		#continue
+		#readIdentifier:"DECLSPEC"
+		type(theType)
+		#readIdentifier:"SDLCALL"
+		#readIdentifier:sFunction
+		#check(sFunction.startString("SDL_"))
+		'('
+		=> insert this.functions[sFunction].name = sFunction;
+		=> setall this.functions[sFunction].return_type = theType;
+		[
+				"void" ')'
+			|
+				')'
+			|
+				#continue
+				parameter(this.functions[sFunction].parameters)
+				[',' #continue parameter(this.functions[sFunction].parameters)]*
+				')'
+		]
+		';'
+=> traceLine("SDL::" + sFunction.subString(4) + "()");
+	;
+
+keyword<"typedef"> ::=
+	[
+			#readIdentifier:"enum" #continue '{' ignore_brackets '}'
+			#readIdentifier:sName
+			';'
+			=> insert this.enums[sName].name = sName;
+		|
+			#readIdentifier:"struct"
+			#continue
+			=> local sHeaderName;
+			[#readIdentifier:sHeaderName]?
+			[
+					'{' #continue ignore_brackets '}'
+					[
+						#readIdentifier:sName
+						#check(!sHeaderName || sHeaderName == sName)
+						=> if sName != "Uint64" && sName != "Sint64" {
+							insert this.structs[sName].name = sName;
+						}
+						[
+							',' #continue
+							#readIdentifier:sName
+							=> if sName != "Uint64" && sName != "Sint64" {
+								insert this.structs[sName].name = sName;
+							}
+						]*
+					]?
+				|
+					#continue
+					#check(sHeaderName)
+					=> local bPointer;
+					['*':bPointer]?
+					#readIdentifier:sName
+					=> insert this.structs[sName].name = sName;
+					=> insert this.structs[sName].internal = sHeaderName;
+					=> if bPointer insert this.structs[sName].pointers = bPointer;
+					';'
+			]
+		|
+			#readIdentifier:"union"
+			#continue
+			'{' #continue ignore_brackets '}'
+			#readIdentifier:sName
+			=> insert this.unions[sName].name = sName;
+		|
+			#continue
+			type(theType)
+			[
+				'('
+				[
+						'*' #continue ->';'
+					|
+						#continue "SDLCALL" '*' #readIdentifier:sName ')' '('
+						=> insert this.callbacks[sName].name = sName;
+						=> setall this.callbacks[sName].return_type = theType;
+						[
+								"void" ')'
+							|
+								')'
+							|
+								#continue
+								parameter(this.callbacks[sName].parameters)
+								[',' #continue parameter(this.callbacks[sName].parameters)]*
+						]
+						')'
+						';'
+				]
+			]?
+	]?
+	;
+
+keyword<"struct"> ::=
+	[
+			#readIdentifier:sName
+			#continue
+			[
+					';'
+					=> insert this.structs[sName].name = sName;
+				|
+					#continue
+					'{'
+					'}'
+					';'
+			]
+		|
+			#continue
+			'{' ignore_brackets '}'
+			[
+				#readIdentifier
+				[',' #continue #readIdentifier]*
+			]?
+			';'
+	]
+	;
+
+parameter(params : node) ::=
+	[
+			type(theType)
+			#continue
+			#readIdentifier:sName
+			=> insert params[sName].name = sName;
+			=> setall params[sName].type = theType;
+			=> increment(params);
+		|
+			"..."
+			=> insert params["..."].name = "...";
+			=> insert params["..."].type = "...";
+	]
+	;
+
+type(theType : node) ::=
+	[
+			#readIdentifier:"const":theType.is_const
+		|
+			#readIdentifier:"signed":theType.is_signed
+		|
+			#readIdentifier:"unsigned":theType.is_unsigned
+	]?
+	[
+		#readIdentifier:"struct"
+	]?
+	#readIdentifier:theType.name
+	#continue
+	[
+			#check(theType.name in {"char", "double", "FILE", "float", "SDL_HAS_64BIT_TYPE", "int", "long", "Sint8", "Sint16", "Sint32", "short", "Uint8", "Uint16", "Uint32", "void"})
+			=> insert theType = "base";
+		|
+			#check(this.structs.findElement(theType.name))
+			=> insert theType = "struct";
+		|
+			#check(this.unions.findElement(theType.name))
+			=> insert theType = "union";
+		|
+			#check(this.enums.findElement(theType.name))
+			=> insert theType = "enum";
+		|
+			#check(this.callbacks.findElement(theType.name))
+			=> insert theType = "callback";
+	]
+	['*':+theType.pointers]*
+	=> if theType.name == "char" && theType.pointers {
+		theType.name = "string";
+		theType.pointers = theType.pointers.subString(1);
+	}
+	;
+
+directive<T>:#!ignore ::= #continue ->['\n' | '\\' ['\r']? '\n' #nextStep #check(false)];
+
+directive<"include">:#!ignore ::=
+	[' ' | '\t']*
+	[
+			'<' #continue ->'>'
+		|
+			#continue
+			#readCString:sFile
+			[
+				#check(sFile.startString("SDL_")&& !this.header_files.findElement(sFile))
+				#continue
+				#parsedFile(sFile)
+				header
+			]?
+	]
+	;
+
+directive<"define">:#!ignore ::=
+	#continue
+	[' ' | '\t']*
+	#readIdentifier:sDefine
+	[
+			[#continue #!ignore ->['\n' | '\\' ['\r']? '\n' #nextStep #check(false)]]
+		|>
+			[
+				#ignore(C++)
+				!'('
+				#check(sDefine.startString("SDL_") && sDefine == sDefine.toUpperString() && sDefine != "SDL_HAS_64BIT_TYPE")
+				=> insert this.constants[sDefine].name = sDefine;
+			]?
+	]
+	;
+
+ignore_brackets ::= [#readCString | #readCChar | '{' #continue ignore_brackets '}' | ~'}']*;

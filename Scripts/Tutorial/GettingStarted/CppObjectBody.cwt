@@ -1,0 +1,107 @@
+//note: Visual C++-specific pragma must be added to prevent from intempestive warnings
+//note: about template class instantiation of \samp{std::vector<\textit{T}>} in DEBUG mode!
+#ifdef WIN32
+#pragma warning(disable : 4786)
+#endif
+
+@
+//note: the developer will add here all include files he will need for implementation of
+//note: methods,
+setProtectedArea("include files");
+@
+#include "@
+//note: the header of this body is compulsory,
+//merge:
+this.name@.h"
+
+@this.name@::@this.name@()@
+//note: this part concerns the initialization of attributes. Some attributes, such as strings
+//note: and vectors of the STL don't require to be initialized explicitly. It justifies the
+//note: declaration of variable \samp{bAtLeastOne} that is worth \samp{false} as long as
+//note: no attribute has been initialized yet. We'll see why below.
+local bAtLeastOne = false;
+foreach i in this.listOfAttributes {
+//note: arrays and strings are skipped,
+	if !i.type.isArray && (i.type.name != "string") {
+		if bAtLeastOne {
+//note: if it isn't the first attribute to be initialized, a comma make a separation with
+//note: the precedent,
+			@, @
+		} else {
+//note: if it is the first attribute to be initialized, a colon is expected to announce
+//note: the beginning of initializations
+			@ : @
+//note: now, there is at least one attribute to be initialized,
+			set bAtLeastOne = true;
+		}
+		@_@getVariableName(i.name, i.type)@(@
+//note: attribute is populated with the default value corresponding to its type,
+		if i.type.isObject {
+			@0L@
+		} else {
+			switch(i.type.name) {
+				case "int":
+					@0@
+					break;
+				case "double":
+					@0.0@
+					break;
+				case "boolean":
+					@false@
+					break;
+			}
+		}
+		@)@
+	}
+}
+@ {
+}
+
+@this.name@::~@this.name@() {
+@
+//note: aggregated objects must be deleted before leaving this instance,
+foreach i in this.listOfAttributes {
+	if i.type.isAggregation && i.type.isObject {
+		local sAttributeName = "_" + getVariableName(i.name, i.type);
+		local sIndex = "iterate" + normalizeIdentifier(i.name);
+		if i.type.isArray {
+//note: all elements of an aggregated array must be deleted
+			@	for (std::vector<@i.name@*>::const_iterator @sIndex@ = @sAttributeName@.begin(); @sIndex@ != @sAttributeName@.end(); ++@sIndex@) {
+		delete *@sIndex@;
+	}
+@
+		} else {
+//note: the aggregated object is deleted
+			@	delete @sAttributeName@;
+@
+		}
+	}
+}
+@}
+
+@
+//note: implementation of all methods,
+foreach i in this.listOfMethods {
+//note: the return type of the method is translated to C++,
+	if existVariable(i.type) {
+		@@getType<"C++">(i.type)@@
+	} else {
+		@void@
+	}
+	@ @this.name@::@i.name@(@
+//note: parameters of the method are iterated to be written in C++
+	foreach j in i.listOfParameters {
+//note: if iterator \samp{j} doesn't point to the first parameter, a comma makes a
+//note: separation with the precedent,
+		if !first(j) {
+			@, @
+		}
+		@@getParameterType<"C++">(j.type, j.mode)@ @getVariableName(j.name, j.type)@@
+	}
+	@) {
+@
+//note: a protected area is inserted, whose key is the method ID,
+		setProtectedArea(getMethodID(i));
+@}
+@
+}

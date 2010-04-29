@@ -1,0 +1,137 @@
+@
+
+function getJNIRadical(sParam : value) {
+	return toUpperString(sParam.charAt(0)) + sParam.subString(1);
+}
+
+function getJNIParameter(sParam : value) {
+	return 'j' + getJNIRadical(sParam);
+}
+
+function generateFunction(theFunction : node) {
+	foreach param in theFunction.parameterList {
+		local sVarName = getCppVariable(getJNIRadical(param.name), param.type);
+		if param.type == "treexpr" {
+			@	CodeWorker::ExprScriptVariable* expr@param.name@;
+	{
+		GET_STRING(@getJNIRadical(param.name)@);
+		CodeWorker::DtaScript theEmptyScript(NULL);
+		CodeWorker::GrfBlock* pBlock = NULL;
+		CodeWorker::GrfBlock& myNullBlock = *pBlock;
+		CodeWorker::ScpStream myStream(tc@getJNIRadical(param.name)@);
+		expr@param.name@ = theEmptyScript.parseVariableExpression(myNullBlock, myStream);
+		RELEASE_STRING(@getJNIRadical(param.name)@);
+	}
+	std::auto_ptr<CodeWorker::ExprScriptVariable> treexpr@param.name@(expr@param.name@);
+	@getCppCWType(param.type)@& @sVarName@ = *treexpr@param.name@;
+@
+		} else {
+			@	@getCppCWType(param.type)@ @sVarName@;
+@
+			switch(param.type) {
+				case "double":
+				case "int":
+					@	@sVarName@ = @getJNIParameter(param.name)@;
+@
+					break;
+				case "bool":
+					@	@sVarName@ = (@getJNIParameter(param.name)@ != '\0');
+@
+					break;
+				case "ulong":
+				case "ushort":
+					@	@sVarName@ = (@param.type.replaceString('u', "unsigned ")@) @getJNIParameter(param.name)@;
+@
+					break;
+				case "boolref":
+				case "doubleref":
+				case "stringref":
+				case "stringlist":
+					@	// NOT HANDLED YET!
+@
+					break;
+				case "string":
+					@	GET_STRING(@getJNIRadical(param.name)@);
+	@sVarName@ = tc@getJNIRadical(param.name)@;
+@
+					break;
+				case "iterator":
+				case "treeref":
+				case "tree":
+					@	GET_PARSETREE_HANDLE(@getJNIRadical(param.name)@);
+	@sVarName@ = p@getJNIRadical(param.name)@Instance;
+@
+					break;
+			}
+		}
+	}
+	@	@
+	if theFunction.return_type {
+		@@getCppType(theFunction.return_type)@ cppResult = @
+	}
+	@CodeWorker::CGRuntime::@theFunction.name@(@
+	foreach param in theFunction.parameterList {
+		if !param.first() {
+			@, @
+		}
+		@@getCppVariable(param.name, param.type)@@
+	}
+	@);
+@
+	if theFunction.return_type {
+		switch(theFunction.return_type) {
+			case "bool":
+			case "int":
+			case "double":
+				@	result = cppResult;
+@
+				break;
+			case "ulong":
+			case "ushort":
+				@	result = (j@theFunction.return_type.subString(1)@) cppResult;
+@
+				break;
+			case "string":
+				@	result = pEnv->NewStringUTF(cppResult.c_str());
+@
+				break;
+		}
+	}
+	foreach param in reverse theFunction.parameterList {
+		switch(param.type) {
+			case "string":
+				@	RELEASE_STRING(@getJNIRadical(param.name)@);
+@
+				break;
+			default:
+		}
+	}
+}
+
+foreach i in this.procedureList if !findElement("info", i.modifierList) && !findElement("visibility", i.modifierList) {
+	@JNIEXPORT void JNICALL Java_org_codeworker_jni_Runtime_@i.name@(JNIEnv *pEnv, jclass@
+	foreach j in i.parameterList {
+		@, @getCppJNIType(j.type)@ @getJNIParameter(j.name)@@
+	}
+	@) {
+@
+	generateFunction(i);
+	@}
+
+@
+}
+
+foreach i in this.functionList if !findElement("info", i.modifierList) && !findElement("user", i.modifierList) {
+	@JNIEXPORT @getCppJNIType(i.return_type)@ JNICALL Java_org_codeworker_jni_Runtime_@i.name@(JNIEnv *pEnv, jclass@
+	foreach j in i.parameterList {
+		@, @getCppJNIType(j.type)@ @getJNIParameter(j.name)@@
+	}
+	@) {
+	@getCppJNIType(i.return_type)@ result;
+@
+	generateFunction(i);
+	@	return result;
+}
+
+@
+}

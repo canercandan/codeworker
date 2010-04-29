@@ -1,0 +1,83 @@
+<HTML>
+
+	<BODY>
+
+		<H2>Class diagram</H2>
+
+		<IMG src="classDiagram.png"/>
+
+		<P/>
+
+		<FORM method=post action="classDiagram.cwt">
+
+			<B>Requirements specification:</B>
+
+			<BR/>
+
+			<TEXTAREA name="editedSpec" cols=80 rows=25>//&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;
+// This sample model is inspired of the &#145;UML Distilled&#145;
+// book by Martin Fowler.
+//&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;&#150;
+
+package Example {
+    class Product {
+        string reference;
+        double weight;
+        double width;
+        double height;
+        double depth;
+    }
+
+    class Book extends Product {
+        string title;
+        string[] authors;
+        int pages;
+    }
+
+    class Customer {
+        string name;
+        string address;
+    }
+
+    class OrderLine {
+        Product product;
+        int quantity;
+        double amount;
+        double price;
+        string currency;
+        bool satisfied;
+    }
+
+    class Order {
+        date received;
+        bool prePaid;
+        string ID;
+        double price;
+        string currency;
+
+        Customer customer;
+        aggregate OrderLine[] orderLines;
+    }
+
+    class Corporate extends Customer {
+        string contactName;
+        double creditRating;
+        double creditLimit;
+    }
+
+    class Personal extends Customer {
+        string creditCard;
+    }
+}
+</TEXTAREA>
+
+			<BR/>
+
+			<INPUT type=submit value="generate it!"/>
+
+		</FORM>
+
+	</BODY>
+
+</HTML>
+

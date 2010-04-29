@@ -1,0 +1,42 @@
+Separation of concerns in CodeWorker:
+@
+// a list of method declarations (names only)
+insert this.methods["display"].name = "display";
+insert this.methods["delete"].name = "delete";
+insert this.methods["visit"].name = "visit";
+
+// a joint point announcing the implementation
+// of methods
+jointpoint iterate methods(this.methods) {
+	// generates the skeleton of a method
+	@	void @this.name@() {}
+@
+}
+
+@... This is the end of the test
+@
+
+// Implementation of an aspect to apply on methods:
+// several advices
+
+// first advice: called while entering the joint point
+advice before : jointpoint == "methods" {
+	@// beginning of methods
+@
+}
+
+// advice to apply around each method iteration
+advice around_iteration : jointpoint == "methods" {
+	@	// BEGIN around iteration
+@
+	#jointpoint
+	@	// OUT around iteration
+@
+}
+
+// last advice: called while leaving the joint point
+advice after : jointpoint == "methods" {
+	@// end of methods
+@
+	traceObject(this, 10);
+}

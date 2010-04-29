@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><span class="comment">//------------------------------------------------------------------</span>
+<span class="comment">//                    CodeWorker as a DSL builder</span>
+<span class="comment">//</span>
+<span class="comment">//</span>
+<span class="comment">// This tiny project demonstrates the capability of CodeWorker</span>
+<span class="comment">// to implement DSL.</span>
+<span class="comment">//</span>
+<span class="comment">// The current script drives the project:</span>
+<span class="comment">//   - parsing of the specification,</span>
+<span class="comment">//   - definition of some functions used in template-based scripts</span>
+<span class="comment">//   - generation of C++ header/body skeletons.</span>
+<span class="comment">//</span>
+<span class="comment">// It calls:</span>
+<span class="comment">//   - &quot;tinyDSL_parsing.cwp&quot;: extended-BNF parsing script of the DSL</span>
+<span class="comment">//   - &quot;tinyDSL_headerCpp.cwt&quot;: template-based script for C++ header</span>
+<span class="comment">//   - &quot;tinyDSL_bodyCpp.cwt&quot;: template-based script for C++ body</span>
+<span class="comment">//</span>
+<span class="comment">// Type:</span>
+<span class="comment">//   CodeWorker -script tinyDSL_leader.cws</span>
+<span class="comment">//</span>
+<span class="comment">// After running the project, all C++ classes appear in the new</span>
+<span class="comment">// directory &quot;framework/&quot;.</span>
+<span class="comment">// Under Windows/VC++ 6.0, see &quot;DSLbuilder.dsp&quot; to compile the</span>
+<span class="comment">// framework freshly created.</span>
+<span class="comment">//------------------------------------------------------------------</span>
+
+<span class="comment">// Parsing of specifications</span>
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#parseAsBNF">parseAsBNF</A>(<span class="string">&quot;tinyDSL_parsing.cwp&quot;</span>, <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>, <span class="string">&quot;tinyDSL_spec.txt&quot;</span>);
+
+<span class="comment">// Function converting a type node to a C++ type</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A> getCppType(theType : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>) {
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sType;
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> theType.isObject <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sType = theType.name + <span class="string">&#39;*&#39;</span>;
+    <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">else</a> {
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#switch">switch</A>(theType.name) {
+            <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#switch">case</a> <span class="string">&quot;double&quot;</span>: <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sType = <span class="string">&quot;double&quot;</span>;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#break">break</A>;
+            <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#switch">case</a> <span class="string">&quot;string&quot;</span>: <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sType = <span class="string">&quot;std::string&quot;</span>;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#break">break</A>;
+        }
+    }
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> theType.isArray <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sType = <span class="string">&quot;std::vector&lt;&quot;</span> + sType + <span class="string">&#39;&gt;&#39;</span>;
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#return">return</A> sType;
+}
+
+<span class="comment">// Function converting a type node to a C++ type for passing</span>
+<span class="comment">// or returning parameters</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A> getCppReturnType(theType : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>) {
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sType = getCppType(theType);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> theType.isArray || theType.name == <span class="string">&quot;string&quot;</span> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#set">set</A> sType = <span class="string">&quot;const &quot;</span> + sType + <span class="string">&#39;&amp;&#39;</span>;
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#return">return</A> sType;
+}
+
+<span class="comment">// Iterates all classes and generates their C++ header/body.</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#project">project</a>.classes {
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#generate">generate</A>(<span class="string">&quot;tinyDSL_headerCpp.cwt&quot;</span>, i, <span class="string">&quot;framework/&quot;</span> + i.name + <span class="string">&quot;.h&quot;</span>);
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#generate">generate</A>(<span class="string">&quot;tinyDSL_bodyCpp.cwt&quot;</span>, i, <span class="string">&quot;framework/&quot;</span> + i.name + <span class="string">&quot;.cpp&quot;</span>);
+}
+</pre><hr />
+		<div style="background-color: #eeeedd">Generated by <a href="http://www.codeworker.org/index.html"><img border=0 src="http://www.codeworker.org/CodeWorker99x38.png"/></a> v4.5.3 from <a href="CWscript2HTML.html">CWscript2HTML.cwp</a>.</div>
+	</body>
+</html>

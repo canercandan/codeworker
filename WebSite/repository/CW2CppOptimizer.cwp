@@ -1,0 +1,492 @@
+function insertVariable(scope : node, sVariable : value, sType : value, sValue : value) {
+	insert scope.variables[sVariable] = sVariable;
+	insert scope.variables[sVariable].type = sType;
+	insert scope.variables[sVariable].value = sValue;
+}
+
+function getVariable(scope : node, sVariable : value, theVar : reference) {
+	if scope.variables.findElement(sVariable) {
+		ref theVar = scope.variables[sVariable];
+		return true;
+	}
+	if scope.parent.existVariable() return getVariable(scope.parent, sVariable, theVar);
+	return false;
+}
+
+function getSequenceVariable(scope : node, sVariable : value, theVar : reference) {
+	if scope.variables.findElement(sVariable) {
+		ref theVar = scope.variables[sVariable];
+		return true;
+	}
+	if scope.parent.existVariable() && scope.parent == "{}" return getSequenceVariable(scope.parent, sVariable, theVar);
+	return false;
+}
+
+function addScope(scope : node, sType : value) {
+	pushItem scope.blocks;
+	scope.blocks#back = sType;
+	ref scope.blocks#back.parent = scope;
+}
+
+function endScope(scope : node) {
+	foreach i in scope.blocks#back.variables {
+		local theVar;
+		if getVariable(scope, i, theVar) {
+			if theVar.value != i.value theVar.value = false;
+		}
+	}
+}
+
+
+#implicitCopy
+
+CW2CppOptimizer ::=
+	#ignore(C++)
+	[
+			#check(this.explicit_copy)
+			[
+				->[
+					#readIdentifier:sText
+					#nextStep
+					#check(sText == "bool")
+					#readIdentifier:sClass
+					"::"
+					#readIdentifier:sMethod
+					'(' ignore_parenthesis ')' !!'{'
+					#continue
+					explicit_copy_instruction
+				]
+			]*
+		|
+			#check(this.variables.existVariable())
+			[
+				->[
+					#readIdentifier:sType
+					=> local iPosition = $getOutputLocation() - sType.length()$;
+					#nextStep
+					#check(sType in {"int", "bool"})
+					#readIdentifier:sVariable
+					#check(this.variables[sVariable].unique && !this.variables[sVariable].used)
+					=> insertText(iPosition, "/*");
+					[
+							#check(this.variables[sVariable].active)
+							#continue
+							'='
+							#skipIgnore
+							=> {@*/@}
+							ignore_instruction
+						|
+							ignore_instruction
+							=> {@*/@}
+					]
+				]
+			]*
+		|
+			[
+				->[
+					#readIdentifier:sText
+					#nextStep
+					#check(sText == "bool")
+					#readIdentifier:sClass
+					"::"
+					#readIdentifier:sMethod
+					'(' ignore_parenthesis ')' '{'
+					#continue
+					=> local scope;
+					block(scope)
+					'}'
+				]
+			]*
+	]
+	->#empty
+	;
+
+block(scope : node) ::= [instruction(scope)]*;
+
+instruction(scope : node) ::=
+		declaration(scope)
+	|
+		assignment(scope)
+	|
+		'{' #continue
+		=> addScope(scope, "{}");
+		block(scope.blocks#back)
+		=> endScope(scope);
+		'}'
+	|
+		#readIdentifier:sKeyword
+		=> local iPosition = $getOutputLocation() - 2$;
+		#continue
+		keyword<sKeyword>(scope, iPosition)
+	|
+		ignore_instruction
+	;
+
+keyword<"if">(scope : node, iPosition : value) ::=
+	#continue
+	'('
+	[
+			['!']?:bNegative
+			#readIdentifier:sVariable
+			')'
+			=> local var;
+			#check(getVariable(scope, sVariable, var))
+			#continue
+			[
+					#check((var.value == "true" && bNegative) || (var.value == "false" && !bNegative))
+					#continue
+					=> insertText(iPosition, "/*");
+					ignore_instruction_or_block
+					=> {@*/@}
+				|
+					#check((var.value == "true" && !bNegative) || (var.value == "false" && bNegative))
+					#continue
+					=> insertText(iPosition, "/*");
+					=> {@*/@}
+					instruction_or_block(scope, "if")
+				|
+					["CGRuntime::"]?
+					"throw" #continue
+					ignore_instruction_or_block
+					=> insertVariable(scope, sVariable, "bool", (bNegative?"true":"false"));
+				|
+					"CGRuntime::setInputLocation("
+					#readIdentifier
+					')' ';'
+					#explicitCopy
+					!![
+						['}']*
+						"if" '('
+						[
+								#check(bNegative) '!'
+							|
+								#check(!bNegative)
+						]
+						#readText(sVariable)
+						')' ['{']? ["CGRuntime::"]? ["throw" | "setInputLocation"]
+						=> insertText(iPosition, "/*");
+					]
+					=> {@*/@}
+				|
+					'{' #continue
+					=> addScope(scope, "if");
+					=> insertVariable(scope.blocks#back, sVariable, "bool", (bNegative?"false":"true"));
+					[instruction(scope.blocks#back)]*
+					=> endScope(scope);
+					'}'
+					[
+						![#readIdentifier:"else"]
+						=> if bNegative && scope.blocks#back.variables[sVariable].value == "true" {
+							insertVariable(scope, sVariable, "bool", "true");
+						} else if !bNegative && scope.blocks#back.variables[sVariable].value == "false" {
+							insertVariable(scope, sVariable, "bool", "false");
+						}
+					]?
+				|
+					instruction_or_block(scope, "if")
+			]
+			[
+				#readIdentifier:"else" #continue
+				instruction_or_block(scope, "else")
+			]?
+		|
+			#continue ignore_parenthesis ')'
+			instruction_or_block(scope, "if")
+			[
+				#readIdentifier:"else" #continue
+				instruction_or_block(scope, "else")
+			]?
+	]
+	;
+
+keyword<T>(scope : node, iPosition : value) ::= ignore_instruction;
+
+keyword<"CGBNFRuntimeTransformationMode">(scope : node, iPosition : value) ::=
+	#continue
+	"_compilerClause_transformationMode(theEnvironment,"
+	 #readIdentifier:{"true", "false"}
+	 ");"
+	 => insert this.implicit_copy = true;
+	 ;
+
+keyword<"switch">(scope : node, iPosition : value) ::=
+	#continue
+	'(' ignore_parenthesis ')'
+	ignore_instruction_or_block
+	;
+
+keyword<"do">(scope : node, iPosition : value) ::=
+	#continue
+	instruction_or_block(scope, "do")
+	"while"
+	'(' ignore_parenthesis ')'
+	';'
+	;
+
+keyword<"while">(scope : node, iPosition : value) ::=
+	#continue
+	'(' ignore_parenthesis ')'
+	instruction_or_block(scope, "while")
+	;
+
+keyword<"for">(scope : node, iPosition : value) ::=
+	#continue
+	'(' ignore_parenthesis ')'
+	instruction_or_block(scope, "for")
+	;
+
+declaration(scope : node) ::=
+	#readIdentifier:{"int", "bool"}:sType
+	#readIdentifier:sVariable
+	=> if this.variables.findElement(sVariable) {
+		insert this.variables[sVariable].unique = false;
+	} else {
+		insert this.variables[sVariable].unique = true;
+	}
+	[
+			'=' #continue
+			[
+					constant_value:sValue
+					';'
+					=> insertVariable(scope, sVariable, sType, sValue);
+				|
+					"CGRuntime::getInputLocation()"
+					';'
+				|
+					"theEnvironment.skipEmptyChars()"
+					';'
+					=> insert this.variables[sVariable].active = true;
+				|
+					ignore_instruction
+					=> insertVariable(scope, sVariable, sType, false);
+					=> insert this.variables[sVariable].used = true;
+			]
+		|
+			';'
+			=> insertVariable(scope, sVariable, sType, false);
+	]
+	;
+
+assignment(scope : node) ::=
+	#readIdentifier:sVariable
+	'=' #continue
+	[
+			constant_value:sValue
+			';'
+			=> insertVariable(scope, sVariable, false, sValue);
+		|
+			ignore_instruction
+			=> insertVariable(scope, sVariable, false, false);
+	]
+	=> if this.variables.findElement(sVariable) {
+		insert this.variables[sVariable].used = true;
+	}
+	;
+
+instruction_or_block(scope : node, sInstruction : value) ::=
+	=> addScope(scope, sInstruction);
+	[
+			'{' #continue
+			block(scope.blocks#back)
+			'}'
+		|
+			instruction(scope.blocks#back)
+	]
+	=> endScope(scope);
+	;
+
+ignore_instruction_or_block ::=
+		'{' #continue [ignore_instruction]* '}'
+	|
+		ignore_instruction
+	;
+
+ignore_instruction ::=
+		'{' #continue [ignore_instruction]* '}'
+	|
+		#readIdentifier:sKeyword
+		ignore_keyword<sKeyword>
+	|
+		[
+				#readCString
+			|
+				#readCChar
+			|
+				#readIdentifier:sVariable
+				=> local iPosition = getOutputLocation();
+				=> if this.variables.findElement(sVariable) {
+					insert this.variables[sVariable].used = true;
+				}
+				[translate2cpp(sVariable, iPosition)]?
+			|
+				'(' #continue ignore_parenthesis ')'
+			|
+				~[';' | '}']
+		]*
+		';'
+	;
+
+ignore_keyword<T> ::= #check(false);
+
+ignore_keyword<"switch"> ::=
+	#continue
+	'(' ignore_parenthesis ')'
+	ignore_instruction_or_block
+	;
+
+ignore_keyword<"do"> ::=
+	#continue
+	ignore_instruction_or_block
+	"while"
+	'(' ignore_parenthesis ')'
+	';'
+	;
+
+ignore_keyword<"while"> ::=
+	#continue
+	'(' ignore_parenthesis ')'
+	ignore_instruction_or_block
+	;
+
+ignore_keyword<"if"> ::=
+	#continue
+	'(' ignore_parenthesis ')'
+	ignore_instruction_or_block
+	[
+		#readIdentifier:"else" #continue
+		ignore_instruction_or_block
+	]?
+	;
+
+ignore_keyword<"for"> ::=
+	#continue
+	'(' ignore_parenthesis ')'
+	ignore_instruction_or_block
+	;
+
+ignore_parenthesis ::=
+	[
+			#readCString
+		|
+			#readCChar
+		|
+			#readIdentifier:sVariable
+			=> local iPosition = getOutputLocation();
+			=> if this.variables.findElement(sVariable) {
+				insert this.variables[sVariable].used = true;
+			}
+			[translate2cpp(sVariable, iPosition)]?
+		|
+			'(' #continue ignore_parenthesis ')'
+		|
+			~')'
+	]*
+	;
+
+ignore_parameter ::=
+	[
+			#readCString
+		|
+			#readCChar
+		|
+			#readIdentifier:sVariable
+			=> local iPosition = getOutputLocation();
+			=> if this.variables.findElement(sVariable) {
+				insert this.variables[sVariable].used = true;
+			}
+			[translate2cpp(sVariable, iPosition)]?
+		|
+			'(' #continue ignore_parenthesis ')'
+		|
+			~[')' | ',']
+	]+
+	;
+
+translate2cpp(sVariable : node, iPosition : node) ::=
+	#check(sVariable == "CGRuntime")
+	"::"
+	#readIdentifier:sFunction
+	'('
+	[
+			#check(sFunction == "charAt")
+			#continue
+			=> setOutputLocation(iPosition);
+			ignore_parameter
+			[
+				#explicitCopy
+				','
+				#skipIgnore
+				=> {@[@}
+			]
+			ignore_parameter
+			[
+				#explicitCopy
+				')'
+				#skipIgnore
+				=> {@]@}
+			]
+		|
+			#check(sFunction == "lengthString")
+			#continue
+			=> setOutputLocation(iPosition);
+			ignore_parameter
+			=> {@.size(@}
+			')'
+		|
+			=> insert project.CGRuntime[sFunction];
+			#check(false)
+	]
+	;
+
+explicit_copy_instruction ::=
+		=> local iPosition = getOutputLocation();
+		=> local bImplicitID;
+		[
+				#readCString
+			|
+				#readCChar
+			|
+				#readIdentifier:sID
+				=> if sID.startString("_compilerClauseImplicitCopy_") bImplicitID = true;
+			|
+				'(' #continue explicit_copy_parenthesis:bIC ')'
+				=> if bIC bImplicitID = true;
+			|
+				'{' #continue [explicit_copy_instruction]* '}'
+				#break
+			|
+				~[';' | '}']
+		]+
+		[';']?
+		=> if bImplicitID {
+			insertText(iPosition, "/*");
+			@*/@
+		}
+	;
+
+explicit_copy_parenthesis:value ::=
+	[
+			#readCString
+		|
+			#readCChar
+		|
+			#readIdentifier:sID
+			=> if sID.startString("_compilerClauseImplicitCopy_") explicit_copy_parenthesis = true;
+		|
+			'(' #continue explicit_copy_parenthesis ')'
+		|
+			~')'
+	]*
+	;
+
+constant_value:value ::=
+		#readCString:constant_value
+		=> constant_value = '"' + constant_value.composeCLikeString() + '"';
+	|
+		#readCChar:constant_value
+		=> constant_value = '"' + constant_value.composeCLikeString() + '"';
+	|
+		#readNumeric:constant_value
+	|
+		#readIdentifier:{"true", "false"}:constant_value
+	;

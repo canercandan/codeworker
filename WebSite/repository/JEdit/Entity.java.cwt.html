@@ -1,0 +1,124 @@
+
+<HTML>
+<HEAD>
+<TITLE>Entity.java.cwt</TITLE>
+<STYLE TYPE="text/css"><!--
+.syntax0 {
+color: #000000;
+}
+.syntax1 {
+color: #006666;
+font-style: italic;
+}
+.syntax2 {
+color: #990033;
+font-style: italic;
+}
+.syntax3 {
+color: #40aa40;
+}
+.syntax4 {
+color: #404040;
+}
+.syntax5 {
+color: #990033;
+font-weight: bold;
+font-style: italic;
+}
+.syntax6 {
+color: #000000;
+font-weight: bold;
+}
+.syntax7 {
+color: #660066;
+font-weight: bold;
+}
+.syntax8 {
+color: #000066;
+font-weight: bold;
+}
+.syntax9 {
+color: #000066;
+}
+.syntax10 {
+color: #808099;
+font-weight: bold;
+}
+.syntax11 {
+color: #000000;
+font-weight: bold;
+}
+.syntax12 {
+color: #666600;
+}
+.syntax13 {
+color: #ff0000;
+}
+.gutter {
+background: #ffffff;
+color: #000000;
+}
+.gutterH {
+background: #ffffff;
+color: #666699;
+}
+-->
+</STYLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+<PRE><SPAN CLASS="gutter">   1:</SPAN><SPAN CLASS="syntax10">package</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">com</SPAN><SPAN CLASS="syntax10">.</SPAN><SPAN CLASS="syntax10">bsc</SPAN><SPAN CLASS="syntax10">.</SPAN><SPAN CLASS="syntax10">entity</SPAN><SPAN CLASS="syntax10">;</SPAN>
+<SPAN CLASS="gutter">   2:</SPAN>
+<SPAN CLASS="gutter">   3:</SPAN><SPAN CLASS="syntax10">import</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">java</SPAN><SPAN CLASS="syntax10">.</SPAN><SPAN CLASS="syntax10">util</SPAN><SPAN CLASS="syntax10">.</SPAN><SPAN CLASS="syntax10">List</SPAN><SPAN CLASS="syntax10">;</SPAN>
+<SPAN CLASS="gutter">   4:</SPAN>
+<SPAN CLASS="gutterH">   5:</SPAN><SPAN CLASS="syntax10">/</SPAN><SPAN CLASS="syntax10">*</SPAN><SPAN CLASS="syntax10">*</SPAN>
+<SPAN CLASS="gutter">   6:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">*</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">The</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">person</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">entity</SPAN><SPAN CLASS="syntax10">.</SPAN>
+<SPAN CLASS="gutter">   7:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">*</SPAN><SPAN CLASS="syntax10">/</SPAN>
+<SPAN CLASS="gutter">   8:</SPAN><SPAN CLASS="syntax10">public</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">class</SPAN><SPAN CLASS="syntax125"> </SPAN>&lt;%name%&gt;<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">{</SPAN>
+<SPAN CLASS="gutter">   9:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@<SPAN CLASS="syntax6">foreach</SPAN><SPAN CLASS="syntax125"> </SPAN>i<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">in</SPAN><SPAN CLASS="syntax125"> </SPAN>fields{<SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutterH">  10:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">private</SPAN><SPAN CLASS="syntax125"> </SPAN>@i.type.name@<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">_</SPAN>@i.name@<SPAN CLASS="syntax10">;</SPAN><SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutter">  11:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@}
+<SPAN CLASS="gutter">  12:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutter">  13:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">foreach</SPAN><SPAN CLASS="syntax125"> </SPAN>i<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">in</SPAN><SPAN CLASS="syntax125"> </SPAN>lists{<SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutter">  14:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">private</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">List</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">_</SPAN>@i.role@<SPAN CLASS="syntax10">;</SPAN><SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutterH">  15:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutter">  16:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>}
+<SPAN CLASS="gutter">  17:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutter">  18:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">public</SPAN><SPAN CLASS="syntax125"> </SPAN>@name@<SPAN CLASS="syntax10">(</SPAN><SPAN CLASS="syntax125"> </SPAN>@<SPAN CLASS="syntax6">foreach</SPAN><SPAN CLASS="syntax125"> </SPAN>i<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">in</SPAN><SPAN CLASS="syntax125"> </SPAN>lists{<SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutter">  19:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@<SPAN CLASS="syntax10">List</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">List</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">_</SPAN>@i.role@<SPAN CLASS="syntax10">,</SPAN>
+<SPAN CLASS="gutterH">  20:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@}
+<SPAN CLASS="gutter">  21:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">foreach</SPAN><SPAN CLASS="syntax125"> </SPAN>i<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">in</SPAN><SPAN CLASS="syntax125"> </SPAN>fields{<SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutter">  22:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@i.type.name@<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">_</SPAN>@i.name@<SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutter">  23:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">if</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">!</SPAN><SPAN CLASS="syntax6">last</SPAN>(i)<SPAN CLASS="syntax125"> </SPAN>{@<SPAN CLASS="syntax10">,</SPAN><SPAN CLASS="syntax125"> </SPAN>@}@
+<SPAN CLASS="gutter">  24:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@}@<SPAN CLASS="syntax10">)</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">{</SPAN>
+<SPAN CLASS="gutterH">  25:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@<SPAN CLASS="syntax6">foreach</SPAN><SPAN CLASS="syntax125"> </SPAN>i<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">in</SPAN><SPAN CLASS="syntax125"> </SPAN>lists{<SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutter">  26:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">this</SPAN><SPAN CLASS="syntax10">.</SPAN><SPAN CLASS="syntax10">_</SPAN>@i.role@<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">=</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">_</SPAN>@i.role@<SPAN CLASS="syntax10">;</SPAN>
+<SPAN CLASS="gutter">  27:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@}
+<SPAN CLASS="gutter">  28:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">foreach</SPAN><SPAN CLASS="syntax125"> </SPAN>i<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">in</SPAN><SPAN CLASS="syntax125"> </SPAN>fields{<SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutter">  29:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">this</SPAN><SPAN CLASS="syntax10">.</SPAN><SPAN CLASS="syntax10">_</SPAN>@i.name@<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">=</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">_</SPAN>@i.name@<SPAN CLASS="syntax10">;</SPAN>
+<SPAN CLASS="gutterH">  30:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@}@
+<SPAN CLASS="gutter">  31:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">}</SPAN>
+<SPAN CLASS="gutter">  32:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutter">  33:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@<SPAN CLASS="syntax6">foreach</SPAN><SPAN CLASS="syntax125"> </SPAN>i<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">in</SPAN><SPAN CLASS="syntax125"> </SPAN>lists{<SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutter">  34:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">public</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">List</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">get</SPAN>@i.role@<SPAN CLASS="syntax10">(</SPAN><SPAN CLASS="syntax10">)</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">{</SPAN>
+<SPAN CLASS="gutterH">  35:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">return</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">_</SPAN>@i.role@<SPAN CLASS="syntax10">;</SPAN>
+<SPAN CLASS="gutter">  36:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">}</SPAN><SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutter">  37:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutter">  38:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">public</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">void</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">set</SPAN>@i.role@<SPAN CLASS="syntax10">(</SPAN><SPAN CLASS="syntax10">List</SPAN><SPAN CLASS="syntax125"> </SPAN>@i.role@<SPAN CLASS="syntax10">)</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">{</SPAN>
+<SPAN CLASS="gutter">  39:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">this</SPAN><SPAN CLASS="syntax10">.</SPAN><SPAN CLASS="syntax10">_</SPAN>@i.role@<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">=</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">_</SPAN>@i.role@<SPAN CLASS="syntax10">;</SPAN>
+<SPAN CLASS="gutterH">  40:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">}</SPAN>
+<SPAN CLASS="gutter">  41:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@}@<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutter">  42:</SPAN>
+<SPAN CLASS="gutter">  43:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@<SPAN CLASS="syntax6">foreach</SPAN><SPAN CLASS="syntax125"> </SPAN>i<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax6">in</SPAN><SPAN CLASS="syntax125"> </SPAN>fields{<SPAN CLASS="syntax125"> </SPAN>@
+<SPAN CLASS="gutter">  44:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">public</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">int</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">get</SPAN>@i.name@<SPAN CLASS="syntax10">(</SPAN><SPAN CLASS="syntax10">)</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">{</SPAN>
+<SPAN CLASS="gutterH">  45:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">return</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">_</SPAN>@i.name@<SPAN CLASS="syntax10">;</SPAN>
+<SPAN CLASS="gutter">  46:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">}</SPAN>
+<SPAN CLASS="gutter">  47:</SPAN>
+<SPAN CLASS="gutter">  48:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">public</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">void</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">set</SPAN>@i.name@<SPAN CLASS="syntax10">(</SPAN><SPAN CLASS="syntax10">int</SPAN><SPAN CLASS="syntax125"> </SPAN>@i.name@<SPAN CLASS="syntax10">)</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">{</SPAN>
+<SPAN CLASS="gutter">  49:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">this</SPAN><SPAN CLASS="syntax10">.</SPAN><SPAN CLASS="syntax10">_</SPAN>@i.name@<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">=</SPAN><SPAN CLASS="syntax125"> </SPAN>@i.name@<SPAN CLASS="syntax10">;</SPAN>
+<SPAN CLASS="gutterH">  50:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax10">}</SPAN><SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutter">  51:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>@}@
+<SPAN CLASS="gutter">  52:</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>
+<SPAN CLASS="gutter">  53:</SPAN><SPAN CLASS="syntax10">}</SPAN>
+</PRE></BODY>
+</HTML>
+

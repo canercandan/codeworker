@@ -1,0 +1,186 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-@formatDate(getNow(), "%Y")@ Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@writeText('@');@free.fr
+*/
+
+#ifndef _Grf@transformUnderscores(this.name)@_h_
+#define _Grf@transformUnderscores(this.name)@_h_
+
+@
+if findElement("user", this.modifierList) {
+	@
+@
+	setProtectedArea("INCLUDE FILES");
+	@
+@
+}
+@#include "GrfCommand.h"
+
+namespace CodeWorker {
+@
+local includeList;
+foreach i in this.parameterList {
+	switch(i.type) {
+		case "int":
+		case "bool":
+		case "double":
+		case "string":
+		case "ulong":
+		case "ushort":
+			insert includeList["string"] = "ExprScriptExpression";
+			break;
+		case "iterator":
+		case "doubleref":
+		case "boolref":
+		case "stringref":
+		case "stringlist":
+		case "treeref":
+		case "tree":
+		case "treexpr":
+			insert includeList["tree"] = "ExprScriptVariable";
+			break;
+		case "script":
+			insert includeList["script"] = "ExprScriptScriptFile";
+			break;
+	}
+}
+foreach i in includeList {
+	@class @i@;
+@
+}
+@
+	class Grf@transformUnderscores(this.name)@ : public GrfCommand {
+		private:
+@
+foreach i in this.parameterList {
+	switch(i.type) {
+		case "int":
+		case "bool":
+		case "double":
+		case "string":
+		case "ulong":
+		case "ushort":
+			@			ExprScriptExpression* _p@transformUnderscores(i.name)@;
+@
+			break;
+		case "iterator":
+		case "doubleref":
+		case "boolref":
+		case "stringref":
+		case "stringlist":
+		case "treeref":
+		case "tree":
+		case "treexpr":
+			@			ExprScriptVariable* _p@transformUnderscores(i.name)@;
+@
+			break;
+	}
+}
+
+if findElement("user", this.modifierList) {
+	@
+@
+	setProtectedArea("attributes");
+}
+
+@
+		public:
+			Grf@transformUnderscores(this.name)@()@
+foreach i in this.parameterList {
+	if first(i) {
+		@ : @
+	} else {
+		@, @
+	}
+	@_p@transformUnderscores(i.name)@(NULL)@
+}
+@ {@
+
+if findElement("user", this.modifierList) {
+	@
+@
+	setProtectedArea("constructor");
+	@			@
+}
+
+@}
+			virtual ~Grf@transformUnderscores(this.name)@();
+
+			virtual const char* getFunctionName() const { return "@this.name@"; }
+
+@
+local bDefaultParameters;
+foreach i in this.parameterList {
+	if i.default bDefaultParameters = true;
+	switch(i.type) {
+		case "int":
+		case "bool":
+		case "double":
+		case "string":
+		case "ulong":
+		case "ushort":
+			@			inline void set@transformUnderscores(i.name)@(ExprScriptExpression* p@transformUnderscores(i.name)@) { _p@transformUnderscores(i.name)@ = p@transformUnderscores(i.name)@; }
+@
+			break;
+		case "iterator":
+		case "doubleref":
+		case "boolref":
+		case "stringref":
+		case "stringlist":
+		case "treeref":
+		case "tree":
+		case "treexpr":
+			@			inline void set@transformUnderscores(i.name)@(ExprScriptVariable* p@transformUnderscores(i.name)@) { _p@transformUnderscores(i.name)@ = p@transformUnderscores(i.name)@; }
+@
+			break;
+		case "script":
+			@			inline void set@transformUnderscores(i.name)@(ExprScriptScriptFile* p@transformUnderscores(i.name)@) { _p@transformUnderscores(i.name)@ = p@transformUnderscores(i.name)@; }
+@
+			break;
+	}
+}
+@
+@
+if bDefaultParameters {
+	@			void populateDefaultParameters();
+@
+}
+
+if findElement("user", this.modifierList) {
+	@
+@
+	setProtectedArea("interface");
+	@
+@
+}
+
+@			virtual void compileCpp(CppCompilerEnvironment& theCompilerEnvironment) const;
+
+		protected:
+			virtual SEQUENCE_INTERRUPTION_LIST executeInternal(DtaScriptVariable& visibility);
+@
+if findElement("user", this.modifierList) {
+	@
+@
+	setProtectedArea("declarations");
+}
+@	};
+}
+
+#endif

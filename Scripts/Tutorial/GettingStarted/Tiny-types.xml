@@ -1,0 +1,10 @@
+<project>
+	<listOfClasses>
+		<__ARRAY_TYPE name="compulsory" parent="optional[25%]">
+			<listOfAttributes>
+				<__ARRAY_TYPE class="compulsory" isArray="optional[66%]" name="compulsory">
+				</__ARRAY_TYPE>
+			</listOfAttributes>
+		</__ARRAY_TYPE>
+	</listOfClasses>
+</project>

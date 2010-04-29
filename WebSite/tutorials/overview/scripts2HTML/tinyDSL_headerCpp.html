@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><span class="raw_text">#ifndef _@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_h_
+#define _@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_h_
+
+@</span>
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setProtectedArea">setProtectedArea</A>(<span class="string">&quot;USER INCLUDES&quot;</span>);
+<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#newFloatingLocation">newFloatingLocation</A>(<span class="string">&quot;INCLUDE FILES&quot;</span>);
+<span class="raw_text">@</span><span class="raw_text">
+class @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">@</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.superClass {
+    <span class="raw_text">@</span><span class="raw_text"> : public @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.superClass<span class="raw_text">@</span><span class="raw_text">@</span>
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#insertTextOnce">insertTextOnce</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getFloatingLocation">getFloatingLocation</A>(<span class="string">&quot;INCLUDE FILES&quot;</span>), <span class="string">&quot;#include \&quot;&quot;</span> + <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.superClass + <span class="string">&quot;.h\&quot;&quot;</span> + <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#endl">endl</A>());
+}
+<span class="raw_text">@</span><span class="raw_text"> {
+    private:
+        // ATTRIBUTES
+@</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.attributes {
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> i.type.name == <span class="string">&quot;string&quot;</span>
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#insertTextOnce">insertTextOnce</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getFloatingLocation">getFloatingLocation</A>(<span class="string">&quot;INCLUDE FILES&quot;</span>), <span class="string">&quot;#include &lt;string&gt;&quot;</span> + <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#endl">endl</A>());
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> i.type.isArray
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#insertTextOnce">insertTextOnce</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getFloatingLocation">getFloatingLocation</A>(<span class="string">&quot;INCLUDE FILES&quot;</span>), <span class="string">&quot;#include &lt;vector&gt;&quot;</span> + <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#endl">endl</A>());
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> i.type.isObject
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#insertTextOnce">insertTextOnce</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getFloatingLocation">getFloatingLocation</A>(<span class="string">&quot;INCLUDE FILES&quot;</span>),
+                    <span class="string">&quot;class &quot;</span> + i.type.name + <span class="string">&quot;;&quot;</span> + <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#endl">endl</A>());
+    <span class="raw_text">@</span><span class="raw_text">        @</span>getCppType(i.type)<span class="raw_text">@</span><span class="raw_text"> @</span>i.name<span class="raw_text">@</span><span class="raw_text">_;
+@</span>
+}
+<span class="raw_text">@</span><span class="raw_text">
+    public:
+        @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">();
+        virtual ~@</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">();
+
+        // ACCESSORS
+@</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.attributes {
+    <span class="raw_text">@</span><span class="raw_text">        inline @</span>getCppReturnType(i.type)<span class="raw_text">@</span><span class="raw_text"> get_@</span>i.name<span class="raw_text">@</span><span class="raw_text">() const { return @</span>i.name<span class="raw_text">@</span><span class="raw_text">_; }
+        inline void set_@</span>i.name<span class="raw_text">@</span><span class="raw_text">(@</span>getCppReturnType(i.type)<span class="raw_text">@</span><span class="raw_text"> @</span>i.name<span class="raw_text">@</span><span class="raw_text">) { @</span>i.name<span class="raw_text">@</span><span class="raw_text">_ = @</span>i.name<span class="raw_text">@</span><span class="raw_text">; }
+@</span>
+}
+<span class="raw_text">@</span><span class="raw_text">
+@</span>
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setProtectedArea">setProtectedArea</A>(<span class="string">&quot;USER METHODS&quot;</span>);
+<span class="raw_text">@</span><span class="raw_text">};
+
+#endif
+</span><span class="raw_text"></span></pre><hr />
+		<div style="background-color: #eeeedd">Generated by <a href="http://www.codeworker.org/index.html"><img border=0 src="http://www.codeworker.org/CodeWorker99x38.png"/></a> v4.5.3 from <a href="CWscript2HTML.html">CWscript2HTML.cwp</a>.</div>
+	</body>
+</html>

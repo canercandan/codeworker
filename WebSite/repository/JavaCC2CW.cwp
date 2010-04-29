@@ -1,0 +1,118 @@
+JavaCC2CW ::=
+	[
+		#ignore(blanks)
+		#continue
+		#readIdentifier:"DOCUMENT"
+		#readIdentifier:"START"
+		#readIdentifier:"NON" '-' #readIdentifier:"TERMINALS"
+		#skipIgnore
+	]
+	#ignore(C++)
+	[
+		#implicitCopy
+		#continue
+		[BNF_rule]*
+		#skipIgnore
+	]
+	#readIdentifier:"DOCUMENT" #readIdentifier:"END"
+	#empty
+	;
+
+BNF_rule ::=
+	#readIdentifier ':' #continue
+	=> {@:@}
+	'='
+	BNF_sequence ['|' #continue BNF_sequence]*
+	=> {@;@}
+	;
+
+BNF_sequence ::=
+	#continue
+	=> local bContinueToSet = false;
+	[BNF_symbol(bContinueToSet)]+
+	;
+
+BNF_symbol(bContinueToSet : node) ::=
+	#skipIgnore
+	=> if bContinueToSet == "yes" {
+		@#continue @
+		bContinueToSet = "done";
+	}
+	=> local iPosition = getOutputLocation();
+	[
+			'('
+			=> setOutputLocation(iPosition);
+			=> {@[@}
+			#continue BNF_sequence ['|' BNF_sequence]*
+			')'
+			=> setOutputLocation($getOutputLocation() - 1$);
+			=> {@]@}
+			['*' | '+' | '?']?
+		|
+			#readIdentifier:sId !":="
+			#check(sId != "DOCUMENT")
+		|
+			#readCString:sText
+			#check(sText.isIdentifier())
+			=> if !bContinueToSet bContinueToSet = "yes";
+			=> local iLastPosition = getOutputLocation();
+			=> local ids;
+			=> insert ids[sText];
+			[
+				'|'
+				#readCString:sText
+				#check(sText.isIdentifier())
+				=> iLastPosition = getOutputLocation();
+				=> insert ids[sText];
+			]*
+			=> {
+				setOutputLocation(iPosition);
+				@#readIdentifier:@
+				if $ids.size() > 1$ {@{@}
+				foreach i in ids {
+					if !i.first() {
+						@, @
+					}
+					if lengthString(i.key()) == 1 {
+						@'@i.key()@'@
+					} else {
+						@"@i.key()@"@
+					}
+				}
+				if $ids.size() > 1$ {@}@}
+			}
+		|
+			#readCString:sText
+			=> if !bContinueToSet bContinueToSet = "yes";
+			=> if sText.length() == 1 {
+				setOutputLocation(iPosition);
+				@'@sText.composeCLikeString()@'@
+			}
+		|
+			'<'
+			=> setOutputLocation(iPosition);
+			#explicitCopy
+			#continue #readIdentifier:sToken
+			[
+					#check(sToken == "EOF")
+					=> {@#empty@}
+				|
+					#check(sToken == "IDENTIFIER")
+					=> {@#readIdentifier@}
+				|
+					#check(sToken == "INTEGER_LITERAL")
+					=> {@#readInteger@}
+				|
+					#check(sToken == "FLOATING_POINT_LITERAL")
+					=> {@#readNumeric@}
+				|
+					#check(sToken == "CHARACTER_LITERAL")
+					=> {@#readCChar@}
+				|
+					#check(sToken == "STRING_LITERAL")
+					=> {@#readCString@}
+			]
+			'>'
+			=> if !bContinueToSet bContinueToSet = "yes";
+	]
+	;

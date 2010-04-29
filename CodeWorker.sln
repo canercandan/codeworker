@@ -1,0 +1,49 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodeWorker", "CodeWorker.vcproj", "{2F88D263-3F59-4344-81D6-E2CEB0FE48ED}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodeWorkerEXE", "CodeWorkerEXE.vcproj", "{FAA4A96B-3244-4DCE-8286-785048DA77E2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2F88D263-3F59-4344-81D6-E2CEB0FE48ED} = {2F88D263-3F59-4344-81D6-E2CEB0FE48ED}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodeWorker.NET", "cs\CodeWorker.NET.vcproj", "{0C6741D4-2A42-451B-80B5-EE480B0FB155}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodeWorker.JNI", "java\CodeWorker.JNI.vcproj", "{E123F3E0-BAB6-4845-BB9D-47DE5F0D5575}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(DPCodeReviewSolutionGUID) = preSolution
+		DPCodeReviewSolutionGUID = {00000000-0000-0000-0000-000000000000}
+	EndGlobalSection
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{2F88D263-3F59-4344-81D6-E2CEB0FE48ED}.Debug.ActiveCfg = Debug|Win32
+		{2F88D263-3F59-4344-81D6-E2CEB0FE48ED}.Debug.Build.0 = Debug|Win32
+		{2F88D263-3F59-4344-81D6-E2CEB0FE48ED}.Release.ActiveCfg = Release|Win32
+		{2F88D263-3F59-4344-81D6-E2CEB0FE48ED}.Release.Build.0 = Release|Win32
+		{FAA4A96B-3244-4DCE-8286-785048DA77E2}.Debug.ActiveCfg = Debug|Win32
+		{FAA4A96B-3244-4DCE-8286-785048DA77E2}.Debug.Build.0 = Debug|Win32
+		{FAA4A96B-3244-4DCE-8286-785048DA77E2}.Release.ActiveCfg = Release|Win32
+		{FAA4A96B-3244-4DCE-8286-785048DA77E2}.Release.Build.0 = Release|Win32
+		{0C6741D4-2A42-451B-80B5-EE480B0FB155}.Debug.ActiveCfg = Debug|Win32
+		{0C6741D4-2A42-451B-80B5-EE480B0FB155}.Debug.Build.0 = Debug|Win32
+		{0C6741D4-2A42-451B-80B5-EE480B0FB155}.Release.ActiveCfg = Release|Win32
+		{0C6741D4-2A42-451B-80B5-EE480B0FB155}.Release.Build.0 = Release|Win32
+		{E123F3E0-BAB6-4845-BB9D-47DE5F0D5575}.Debug.ActiveCfg = Debug|Win32
+		{E123F3E0-BAB6-4845-BB9D-47DE5F0D5575}.Debug.Build.0 = Debug|Win32
+		{E123F3E0-BAB6-4845-BB9D-47DE5F0D5575}.Release.ActiveCfg = Release|Win32
+		{E123F3E0-BAB6-4845-BB9D-47DE5F0D5575}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

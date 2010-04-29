@@ -1,0 +1,558 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+function writeHTML(cChar) {
+	writeText(composeHTMLLikeString(cChar));
+}
+
+function getHTMLAnchor(sLabel) {
+	set sLabel = replaceString("#",  "_", sLabel);
+	set sLabel = replaceString("&",  "_amp_", sLabel);
+	set sLabel = replaceString(";",  "_", sLabel);
+	set sLabel = replaceString(" ",  "_", sLabel);
+	set sLabel = replaceString("%",  "_percent_", sLabel);
+	set sLabel = replaceString("@",  "_at_", sLabel);
+	set sLabel = replaceString("=",  "_eq_", sLabel);
+	set sLabel = replaceString("<",  "_lt_", sLabel);
+	set sLabel = replaceString(">",  "_gt_", sLabel);
+	set sLabel = replaceString("\"", "_dq_", sLabel);
+	set sLabel = replaceString("'",  "_sq_", sLabel);
+	return sLabel;
+}
+
+function getSectionNumber() {
+	local sText;
+	foreach i in this.sectionNumbers {
+		if !first(i) sText += '.';
+		sText += i;
+	}
+	return sText;
+}
+
+function incrementSectionNumber(iSectionLevel) {
+	while $this.sectionNumbers.size() > iSectionLevel + 1$ this.sectionNumbers.removeLastElement();
+	if $this.sectionNumbers.size() <= iSectionLevel$ {
+		do pushItem this.sectionNumbers = 1; while $this.sectionNumbers.size() <= iSectionLevel$;
+	} else {
+		increment(this.sectionNumbers#back);
+	}
+	return getSectionNumber();
+}
+
+
+LaTeX2HTML ::= parsingMode<this.sParsingMode>;
+parsingMode<"description"> ::= blanks #continue ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) command] | '$' mathEscape | paragraphJump | #readChar:cChar => writeHTML(cChar);]* #empty;
+parsingMode<"chapter"> ::=
+		=> {
+			@<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+	<title>User's guide and reference manual</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+	<meta name="Keywords" content="parser generator,parsing tool,UML parser" />
+	<meta name="Keywords" content="program generator,generative programming,source code generation,universal source code generator,C++ generator,JAVA generator,XML generator,HTML generator,SQL generator" />
+	<meta name="Keywords" content="scripting language,script,language,interpreter,freeware" />
+	<meta name="Keywords" content="reusability,generic programming,learning,beginner's guide,getting started,examples,samples,source code">
+	<meta name="Keywords" content="BNF,Backus Naur Formalism,tokens,lexical,syntactical" />
+	<meta name="Description" content="CodeWorker is a universal parsing tool and source code generator. It interprets scripts that drive the parsing and the generation. It insists on offering powerful functionalities to do intensive code generation.">
+	<meta http-equiv="pragma" content="no-cache" />
+	<meta http-equiv="cache-control" content="no-cache" />
+
+<link rel="stylesheet" type="text/css" href="CodeWorker.css" />
+
+</head>
+<frameset rows="85%,*">
+<frameset cols="180,*">
+@
+			insert this.sTOCFile = getWorkingPath() + "WebSite/manual_" + replaceString(" ", "_", this.sChapterName) + "_TOC.html";
+			insert this.sDocumentFile = getWorkingPath() + "WebSite/manual_" + replaceString(" ", "_", this.sChapterName) + ".html";
+			generated_file(this.sTOCFile) {
+				@<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="CodeWorker.css" />
+	</head>
+	<body class="TOC">
+@
+			}
+			generated_file(this.sDocumentFile) {
+				@<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="CodeWorker.css" />
+	</head>
+	<body>
+@
+			}
+		}
+		#ignore(LaTeX)
+		[
+			"\\newcommand" ignoreBraces [blanks '[' [~']']* ']']* ignoreBraces
+				|
+			"\\special" ignoreBraces
+				|
+			~"\\pdfchapter"
+				|
+			"\\pdfchapter"
+			#continue
+			[
+				'*' 
+					|
+				rawCompoundText:sName
+				[
+					=>	if this.sChapterName && this.sChapterName != sName break;
+					#appendedFile(this.sDocumentFile) chapterContent(sName)
+						|
+					!#empty
+				]
+			]
+		]*
+		#continue
+		#empty
+		=> {
+			appended_file(this.sTOCFile) {
+				@	</body>
+</html>
+@
+			}
+			appended_file(this.sDocumentFile) {
+				@		<a href="http://www.xiti.com/xiti.asp?s=134058" target="_top">
+			<script language="JavaScript1.1">
+			<!--
+				hsh = new Date();
+				hsd = document;
+				hsr = hsd.referrer.replace(/[<>]/g, '');
+				hsi = '<img width="39" height="25" border=0 ';
+				hsi += 'src="http://logv24.xiti.com/hit.xiti?s=134058';
+				hsi += '&p=';
+				hsi += '&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+				if(parseFloat(navigator.appVersion)>=4)
+				{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' + Xiti_s.colorDepth;}
+				hsd.writeln(hsi + '&ref=' + hsr.replace(/&/g, '$') + '" title="Mesurez votre audience"><\!--');
+				//-->
+			</script>
+			<noscript>
+				<img width="39" height="25" border=0 src="http://logv24.xiti.com/hit.xiti?s=134058&p=&" title="Mesurez votre audience">
+			</noscript>
+			<!--//-->
+		</a>
+	</body>
+</html>
+@
+			}
+			if isEmpty(this.listOfIndices) {
+				@	<frame src="manual_@replaceString(" ", "_", this.sChapterName)@_TOC.html"></frame>
+@
+			} else {
+				@	<frameset rows="50%,*">
+		<frame src="manual_@replaceString(" ", "_", this.sChapterName)@_TOC.html"></frame>
+		<frame src="manual_@replaceString(" ", "_", this.sChapterName)@_INDEX.html"></frame>
+	</frameset>
+@
+				generated_file(getWorkingPath() + "WebSite/manual_" + replaceString(" ", "_", this.sChapterName) + "_INDEX.html") {
+					@<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="CodeWorker.css" />
+	</head>
+	<body class="index">
+@
+					foreach i in sorted no_case this.listOfIndices {
+						if i {
+							@		<a href="manual_@replaceString(" ", "_", this.sChapterName)@.html#@getHTMLAnchor(key(i))@" target="manual">@replaceString(" ", "_", key(i))@</a><br/>
+@
+						} else {
+							@		@key(i)@<br/>
+@
+						}
+						foreach j in sorted i.listOfIndices {
+							@		&nbsp;&nbsp;&nbsp;&nbsp;<a href="manual_@replaceString(" ", "_", this.sChapterName)@.html#@getHTMLAnchor(key(i) + "_" + key(j))@" target="manual">@replaceString(" ", "_", key(j))@</a><br/>
+@
+						}
+					}
+					@	</body>
+</html>
+@
+				}
+			}
+			@	<frame src="manual_@replaceString(" ", "_", this.sChapterName)@.html" name="manual"></frame>
+</frameset>
+	<frame src="Copyright.html" name="copyright"></frame>
+</frameset>
+@};
+
+rawCompoundText:value ::= blanks #!ignore '{' [~'}']*:rawCompoundText '}';
+compoundText ::= blanks '{' #continue ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) command] | '$' mathEscape | paragraphJump | ~'}':cChar => writeHTML(cChar); ]* '}';
+mathEscape ::= ['\\' #continue commandMath | paragraphJump | ~'$']* '$';
+commandMath ::= "backslash" => writeText("\\"); | "triangle" => writeText("^"); | "hat" => {writeText("^");};
+
+command ::=	[
+				"begin" #continue begin | "makebox" #continue makeBox |
+				"textit" #continue textIt | "textbf" #continue textBf | "samp" #continue samp |
+				"textrm" #continue textRm | "tiny" #continue tiny | "textsc" #continue textSc |
+				"texttt" #continue textTt | "footnote" #continue footNote |
+				"label" #continue label | "pdflabel" #continue label |
+				"index" #continue index | "ref" #continue reference |
+				"email" #continue email
+			]
+				|
+			#!ignore specialCommand;
+begin ::=	blanks '{' blanks #continue #readIdentifier:sBegin blanks '}'
+			beginContent<sBegin>
+			"\\end" blanks '{' blanks #readIdentifier blanks '}';
+beginContent<"description"> ::= beginContent<"itemize">;
+beginContent<"itemize"> ::=
+	=> {@<ul>@ writeText(endl());}
+	=> local bFirst = true;
+	[
+		'\\' #!ignore ['%' => {@%@} | #ignore(LaTeX) commandItemize(bFirst)]
+			|
+		'$' mathEscape | paragraphJump | ~'\\':cChar => writeHTML(cChar);
+	]*
+	=> {
+		if !bFirst {
+			@</li>@
+			writeText(endl());
+		}
+		@</ul>@
+		writeText(endl());
+	};
+commandItemize(bFirst : node) ::=
+		"item" => {
+			if bFirst set bFirst = false;
+			else {
+				@</li>@
+				writeText(endl());
+			}
+			@<li>@
+		}
+			|
+		!"end" #continue command;
+beginContent<"alltt"> ::=
+		=> {@<p class="AllTT"><code>@}
+		[
+			'\\' !"end" #continue command | '$' mathEscape
+				|
+			~'\\':cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					@<br/>@
+					writeText(endl());
+				} else if cChar == " " {
+					@&nbsp;@
+				} else if cChar == "\t" {
+					@&nbsp;&nbsp;&nbsp;&nbsp;@
+				} else {
+					writeHTML(cChar);
+				}
+			}
+		]*
+		=> {@</code></p>@};
+beginContent<"verbatim"> ::=
+		=> {@<p class="Verbatim"><code>@}
+		[
+			~"\\end":cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					@<br/>@
+					writeText(endl());
+				} else if cChar == " " {
+					@&nbsp;@
+				} else if cChar == "\t" {
+					@&nbsp;&nbsp;&nbsp;&nbsp;@
+				} else {
+					writeHTML(cChar);
+				}
+			}
+		]*
+		=> {@</code></p>@};
+beginContent<"center"> ::=
+		=> {@<p class="center">@}
+		[
+			'\\' !"end" #continue command | '$' mathEscape
+				|
+			~'\\':cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					@<br/>@
+					writeText(endl());
+				} else if cChar == " " {
+					@&nbsp;@
+				} else if cChar == "\t" {
+					@&nbsp;&nbsp;&nbsp;&nbsp;@
+				} else {
+					writeHTML(cChar);
+				}
+			}
+		]*
+		=> {@</p>@};
+beginContent<"tableii"> ::=
+		[blanks '{' [~'}']* '}']2 => {@<table border="1" cellpadding="7" cellspacing="0">@ writeText(endl());@<tr>@ writeText(endl());}
+		[
+			=> newFloatingLocation("TD");
+			compoundText
+			=> {
+				insertText(getFloatingLocation("TD"), "<td class=\"company\" valign=\"top\">");
+				@</td>@
+			}
+		]* => {writeText(endl());@</tr>@ writeText(endl());}
+		[blanks '\\' !"end" #continue commandTableii]*
+		blanks => {@</table><p/>@ writeText(endl());};
+commandTableii ::=
+		=> {@<tr>@ writeText(endl());}
+		"lineii"
+		[
+			=> newFloatingLocation("TD");
+			compoundText
+			=> {
+				insertText(getFloatingLocation("TD"), "<td class=\"content\" valign=\"top\">");
+				@</td>@
+				writeText(endl());
+			}
+		]*
+		=> {@</tr>@ writeText(endl());};
+beginContent<"tableiii"> ::=
+		[blanks '{' [~'}']* '}']2 => {@<table border="1" cellpadding="7" cellspacing="0">@ writeText(endl());@<tr>@ writeText(endl());}
+		[
+			=> newFloatingLocation("TD");
+			compoundText
+			=> {
+				insertText(getFloatingLocation("TD"), "<td class=\"company\" valign=\"top\">");
+				@</td>@
+			}
+		]* => {writeText(endl());@</tr>@ writeText(endl());}
+		[blanks '\\' !"end" #continue commandTableiii]*
+		blanks => {@</table><p/>@ writeText(endl());};
+commandTableiii ::=
+		=> {@<tr>@ writeText(endl());}
+		"lineiii"
+		[
+			=> newFloatingLocation("TD");
+			compoundText
+			=> {
+				insertText(getFloatingLocation("TD"), "<td class=\"content\" valign=\"top\">");
+				@</td>@
+				writeText(endl());
+			}
+		]*
+		=> {@</tr>@ writeText(endl());};
+makeBox ::=
+		blanks #continue '['
+		NUMBER:dLength
+		=> {
+			local iSize = floor(mult(dLength, 5));
+			@@repeatString("&nbsp;", iSize)@@
+		}
+		[~']']* ']'
+		[blanks '[' [~']']* ']'] [compoundText]?;
+textIt ::= => {@<i>@} compoundText => {@</i>@};
+textBf ::= => {@<b>@} compoundText => {@</b>@};
+textRm ::= compoundText;
+footNote ::= #continue =>{@ (@} compoundText =>{@)@};
+samp ::=  => {@<kbd><i>@}compoundText => {@</i></kbd>@};
+tiny ::=
+		=> {@<small><code>@}
+		[
+			compoundText
+				|
+			['\\' #continue command | '$' mathEscape | paragraphJump | ~'}':cChar => writeHTML(cChar); ]*
+		]
+		=> {@</code></small>@};
+textSc ::= => {@<kbd>@} compoundText => {@</kbd>@};
+textTt ::=
+		blanks '{' blanks => {@<p class="AllTT"><code>@}
+		[
+			'\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) command]
+				|
+			'$' mathEscape
+				|
+			~'}':cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					@<br/>@
+					writeText(endl());
+				} else {
+					writeHTML(cChar);
+				}
+			}
+		]*
+		'}'
+		=> {@</code></p>@};
+label ::=
+		=> {@<!-- label: @}
+		compoundText:sLabel
+		=> {
+			@-->@
+			set sLabel = getHTMLAnchor(sLabel.coreString(1, 1));
+			if !findElement(sLabel, this.listOfAnchors) {
+				insert this.listOfAnchors[sLabel] = true;
+				@<a name="@sLabel@"/>@
+			}
+		};
+index ::=
+		rawCompoundText:sIndex
+		=> {
+			local sLabel;
+			set sIndex = replaceString("\\", "", sIndex);
+			set sIndex = replaceString("<", "&lt;", sIndex);
+			set sIndex = replaceString(">", "&gt;", sIndex);
+			local iIndex = findString(sIndex, "!");
+			if isPositive(iIndex) {
+				local sEntry = leftString(sIndex, iIndex);
+				set sIndex = subString(sIndex, add(iIndex, 1));
+				insert this.listOfIndices[sEntry].listOfIndices[sIndex] = true;
+				set sLabel = sEntry + "_" + sIndex;
+			} else {
+				insert this.listOfIndices[sIndex] = true;
+				set sLabel = sIndex;
+			}
+			set sLabel = getHTMLAnchor(sLabel);
+			if !findElement(sLabel, this.listOfAnchors) {
+				insert this.listOfAnchors[sLabel] = true;
+				@<a name="@sLabel@"/>@
+			}
+		};
+reference ::=
+		=> {@<a href="#@}
+		=> local sText;
+		[
+			#generatedString(sText)
+			compoundText
+			=> set sText = sText.coreString(1, 1);
+		]
+		=> {@@getHTMLAnchor(sText)@">@sText@</a>@};
+email ::=
+			'{' #ignore(blanks) "\\WebSite\\" '}'
+			=> {
+				@<a href="mailto:codeworker@
+				writeText("@");
+				@free.fr">codeworker@
+				writeText("@");
+				@free.fr</a>@}
+		|
+			=> {@<a href="mailto:@} compoundText:sText => {@">@sText@</a>@}
+		;
+
+chapterContent(sName : value) ::=
+		=> {
+			writeText(endl());
+			local sLabel = getHTMLAnchor(sName);
+			if !findElement(sLabel, this.listOfAnchors) {
+				insert this.listOfAnchors[sLabel] = true;
+				@<a name="@sLabel@"/>@
+			}
+			@<table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr><td width="200"><a href="index.html"><img src="CodeWorker199x77.jpg"/></a></td><td>
+	<h1>@sName@</h1>
+	</td></tr>
+	</table>
+@
+			writeText(endl());
+			appended_file(this.sTOCFile) {
+				set sName = replaceString("-", "_", sName);
+				@		<a href="manual_@replaceString(" ", "_", this.sChapterName)@.html#@sLabel@" target="manual">@replaceString(" ", "_", sName)@</a><br/>@
+				writeText(endl());
+			}
+		}
+		[!["\\pdfchapter" | "\\printindex" | "\\end"] ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) chapterCommand] | '$' mathEscape | paragraphJump | ~'\\':cChar => writeHTML(cChar);]]*;
+chapterCommand ::=	"pdfsection" #continue #ignore(LaTeX) section | command;
+paragraphJump ::= [['\r']? '\n']2..* => {writeText(endl()); @<p/>@ writeText(endl());};
+section ::=
+		=> local sName;
+		[#generatedString(sName) compoundText]
+		=> {
+			writeText(endl());
+			local sLabel = getHTMLAnchor(sName);
+			if !findElement(sLabel, this.listOfAnchors) {
+				insert this.listOfAnchors[sLabel] = true;
+				@<a name="@sLabel@"/>@
+			}
+			@<h2>@incrementSectionNumber(0)@ @sName@</h2>@
+			writeText(endl());
+			appended_file(this.sTOCFile) {
+				set sName = replaceString("&#150;", "_", sName);
+				@		&nbsp;&nbsp;&nbsp;&nbsp;<a href="manual_@replaceString(" ", "_", this.sChapterName)@.html#@sLabel@" target="manual">@getSectionNumber()@_@replaceString(" ", "_", sName)@</a><br/>@
+				writeText(endl());
+			}
+		}
+		#continue
+		[!["\\pdfchapter"| "\\pdfsection" | "\\printindex" | "\\end"] ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) sectionCommand] | '$' mathEscape | paragraphJump | ~'\\':cChar => writeHTML(cChar);]]*;
+sectionCommand ::=	["pdfsubsection" | "subsection"] #continue subsection | command;
+subsection ::=
+		=> local sName;
+		[#generatedString(sName) compoundText]
+		=> {
+			writeText(endl());
+			local sLabel = getHTMLAnchor(sName);
+			if !findElement(sLabel, this.listOfAnchors) {
+				insert this.listOfAnchors[sLabel] = true;
+				@<a name="@sLabel@"/>@
+			}
+			@<h3>@incrementSectionNumber(1)@ @sName@</h3>@
+			writeText(endl());
+			appended_file(this.sTOCFile) {
+				set sName = replaceString("&#150;", "_", sName);
+				@		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="manual_@replaceString(" ", "_", this.sChapterName)@.html#@sLabel@" target="manual">@getSectionNumber()@_@replaceString(" ", "_", sName)@</a><br/>@
+				writeText(endl());
+			}
+		}
+		#continue
+		[!["\\pdfchapter"| "\\pdfsection" | "\\pdfsubsection" | "\\subsection" | "\\printindex" | "\\end"] ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) subsectionCommand] | '$' mathEscape | paragraphJump | ~'\\':cChar => writeHTML(cChar);]]*;
+subsectionCommand ::=	["pdfsubsubsection" | "subsubsection"] #continue subsubsection | command;
+subsubsection ::=
+		=> local sName;
+		[#generatedString(sName) compoundText]
+		=> {
+			writeText(endl());
+			local sLabel = getHTMLAnchor(sName);
+			if !findElement(sLabel, this.listOfAnchors) {
+				insert this.listOfAnchors[sLabel] = true;
+				@<a name="@sLabel@"/>@
+			}
+			@<h4>@incrementSectionNumber(2)@ @sName@</h4>@
+			writeText(endl());
+			appended_file(this.sTOCFile) {
+				set sName = replaceString("&#150;", "_", sName);
+				@		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="manual_@replaceString(" ", "_", this.sChapterName)@.html#@sLabel@" target="manual">@getSectionNumber()@_@replaceString(" ", "_", sName)@</a><br/>@
+				writeText(endl());
+			}
+		}
+		#continue
+		[!["\\pdfchapter"| "\\pdfsection" | "\\pdfsubsection" | "\\subsection" | "\\pdfsubsubsection" | "\\subsubsection" | "\\printindex" | "\\end"] ['\\' #continue command | '$' mathEscape | paragraphJump | ~'\\':cChar => writeHTML(cChar);]]*;
+
+
+specialCommand ::=
+		"CodeWorker\\" => {@<i class="CodeWorker">CodeWorker</i>@} |
+		"SWORD\\" => {@<a href="http://savannah.nongnu.org/projects/sword">SWORD</a>@} |
+		"GraphViz\\" => {@<a href="http://www.research.att.com/sw/tools/graphviz">GraphViz</a>@} |
+		"ACE\\" => {@<a href="http://www.cs.wustl.edu/~schmidt/ACE.html">ACE</a>@} |
+		"libCURL\\" => {@<a href="http://curl.haxx.se/libcurl/">libcurl</a>@} |
+		"JEdit\\" => {@<a href="http://www.jedit.org">JEdit</a>@} |
+		"TLcleaveland\\" => {@<a href="http://www.craigc.com">TL</a>@} |
+		"TODO\\" => {@<img border="0" src="under_construction.gif" />@} |
+		"arobas" => {writeText("@");} | 
+		"WebSite\\" => {writeText("<i><em>codeworker@free.fr</em></i>");} |
+		'{' => {@{@} | '}' => {@}@} | '@' => {writeText("@");} | '#' => {@#@} |
+		'_' => {@_@} | '&' => {@&amp;@} | '%' => {@%@} |
+		'^' => {@^@} | '~' ['{' '}']? => {@~@} | "'e" => {@é@} |
+		'\\' [' '| '\t' | '\r']* ['\n']? => {@<br/>@ writeText(endl());} |
+		'\"' => {@&quot;@} | '$' => {@$@};
+ignoreBraces ::= blanks '{' [ignoreBraces | ~'}']* '}';
+
+blanks ::= [' '| '\t' | '\r' | '\n']*;
+DIGIT	::=	'0'..'9';
+NUMBER	::=	#!ignore [DIGIT]+ ['.' [DIGIT]+]? [['e' | 'E'] ['+' | '-']? [DIGIT]+]?;

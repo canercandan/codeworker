@@ -1,0 +1,19 @@
+//note: we declare the class \samp{A}, without attributes,
+class A {
+}
+
+//note: we declare the class \samp{B}, which inherits from \samp{A},
+class B : A {
+}
+
+//note: we declare the class \samp{C} that encapsulates an array of \samp{B} instances,
+class C {
+	B[] b
+}
+
+//note: we declare the class \samp{D} that encapsulates an association to an instance of
+//note: class \samp{A} and an array of \samp{C} instances,
+class D {
+	A a
+	C[] c
+}

@@ -1,0 +1,22 @@
+//command: -script Scripts/Tutorial/GettingStarted/Tiny-leaderScript2.cws
+parseAsBNF("Scripts/Tutorial/GettingStarted/Tiny-BNFparsing1.cwp", project, "Scripts/Tutorial/GettingStarted/Tiny.tml");
+
+foreach i in project.listOfClasses {
+	generate("Scripts/Tutorial/GettingStarted/Tiny-JAVA.cwt", i, "Scripts/Tutorial/GettingStarted/tiny/" + i.name + ".java");
+}
+
+//hide:
+copyFile("Scripts/Tutorial/GettingStarted/Tiny.html", "Scripts/Tutorial/GettingStarted/Tiny0.html");
+//highlight:
+traceLine("expanding file 'Tiny0.html'...");
+//note: to expand a file, the interpreter has to know the format of comments used for
+//note: declaring the markups. If the format isn't correct, the file will not be expanded.
+setCommentBegin("<!--");
+setCommentEnd("-->");
+//note: be careful to call the procedure \samp{expand()} and not to confuse with \samp{generate()}!
+//note: Remember that a classic generation rewrites all according to the directives of the
+//note: \textit{pattern script} and preserves protected areas, but doesn't recognize markup keys.
+expand("Scripts/Tutorial/GettingStarted/Tiny-HTML.cwt", project, "Scripts/Tutorial/GettingStarted/Tiny0.html");
+//normal;
+//hide:
+clearVariable(project.listOfClasses);

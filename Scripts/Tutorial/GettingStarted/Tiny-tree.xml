@@ -1,0 +1,35 @@
+<project>
+	<listOfClasses>
+		<__ARRAY_ENTRY __KEY="A">
+			<name __VALUE="A" />
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="B">
+			<name __VALUE="B" />
+			<parent __REFERENCE="project.listOfClasses[&quot;A&quot;]" />
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="C">
+			<name __VALUE="C" />
+			<listOfAttributes>
+				<__ARRAY_ENTRY __KEY="0">
+					<class __REFERENCE="project.listOfClasses[&quot;B&quot;]" />
+					<isArray __VALUE="true" />
+					<name __VALUE="b" />
+				</__ARRAY_ENTRY>
+			</listOfAttributes>
+		</__ARRAY_ENTRY>
+		<__ARRAY_ENTRY __KEY="D">
+			<name __VALUE="D" />
+			<listOfAttributes>
+				<__ARRAY_ENTRY __KEY="0">
+					<class __REFERENCE="project.listOfClasses[&quot;A&quot;]" />
+					<name __VALUE="a" />
+				</__ARRAY_ENTRY>
+				<__ARRAY_ENTRY __KEY="1">
+					<class __REFERENCE="project.listOfClasses[&quot;C&quot;]" />
+					<isArray __VALUE="true" />
+					<name __VALUE="c" />
+				</__ARRAY_ENTRY>
+			</listOfAttributes>
+		</__ARRAY_ENTRY>
+	</listOfClasses>
+</project>

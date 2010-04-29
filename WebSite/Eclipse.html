@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+	<title>CodeWorker: a parsing tool and source code generator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+	<meta name="Description" content="CodeWorker is a parsing tool and source code generator. It interprets scripts that drive the processing of parsing and source code generation. It insists on offering powerful functionalities to do intensive code generation.">
+	<meta http-equiv="pragma" content="no-cache" />
+	<meta http-equiv="cache-control" content="no-cache" />
+
+	<link rel="stylesheet" type="text/css" href="CodeWorker.css" />
+
+</head>
+<body>
+	<table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr><td width="200"><a href="index.html"><img border=0 src="CodeWorker199x77.jpg"/></a></td><td>
+	<h1>Integration with Eclipse</a></h1>
+	</td></tr>
+	</table>
+
+	<h2>What is Eclipse?</h2>
+
+	&quot;<a href="http://www.eclipse.org"><img src="repository/Eclipse/Eclipse.jpg" border="0"/></a> is an open source community
+	whose projects are focused on providing an extensible development platform and application frameworks
+	for building software. Eclipse provides extensible tools and frameworks that span the software development
+	lifecycle, including support for modeling, language development environments for Java, C/C++ and others,
+	testing and performance, business intelligence, rich client applications and embedded development. A large,
+	vibrant ecosystem of major technology vendors, innovative start-ups, universities and research institutions
+	and individuals extend, complement and support the Eclipse Platform.&quot;
+
+	<h2>CodeWorker's plugin</h2>
+
+	A common way of extending Eclipse is to add plugins. An Eclipse plugin now exists for CodeWorker's script.
+
+	<h3>Presentation</h3>
+
+	This first delivery provides editors with syntax coloring, for each kind of CodeWorker's scripts. Here are
+	the recognized file extensions:
+	<ul>
+		<li><b>".cws"</b>: common <i>gluing</i> script, neither specialized to parsing nor code generation</li>
+		<li><b>".cwp"</b>: extended-BNF or translation scripts (generally called from built-in procedures
+			<b>parseAsBNF()</b> or <b>translate()</b>)</li>
+		<li><b>".cwt"</b>: template-based script, intended to code generation</li>
+		<li><b>".gen"</b> (<i>deprecated</i>): old CodeWorker's extension; note a fundamental limitation: for
+			a valid coloring, a template-based script should start with <b>@</b> or <b>&lt;%</b></li>
+	</ul>
+
+	Main functionality of the editor:
+	<ul>
+		<li>syntax highlighting</li>
+		<li>text hover over built-in functions</li>
+		<li>integrated documentation (accessible from the general <b>&quot;Help Contents&quot;</b> menu topic)</li>
+			<ul>
+				<li>reference manual</li>
+				<li>tutorial</li>
+			</ul>
+		<li>execution of scripts</li>
+		<li>reports of execution</li>
+	</ul>
+
+	User's manual of the plugin is accessible from the menu item <b>&quot;Help/Help Contents&quot;</b>.
+
+	<h3>Installation</h3>
+
+	First of all, you must have installed <a href="http://www.eclipse.org/downloads/index.php">Eclipse 3.1.1</a>
+	or higher. If it is the first time for you, start by downloading the Eclipse SDK. Follow their
+	directives to set it up properly onto your platform.
+	<p/>
+	You will need a <a href="http://java.sun.com/j2se/1.5.0/download.jsp">Java runtime environment (JRE)</a>
+	to use Eclipse. CodeWorker's plugin cannot run under Java versions older than 5.0. So, please check that
+	you are running under JRE 5.0 or higher.
+	<p/>
+	Once these prerequisites have been correctly performed, you have to download the CodeWorker's plugin
+	<a href="repository/Eclipse/org.eclipse.codeworker.zip">org.eclipse.codeworker.zip</a>. This archive has to
+	be extracted into the root directory you have chosen for the Eclipse installation. Example (Windows path):
+	&quot;<i>C:\Eclipse</i>&quot;.
+	<p/>
+	Now, you can launch Eclipse. CodeWorker's scripts will be recognized and highlighted.
+
+	<h3>Screenshot</h3>
+
+	<img src="repository/Eclipse/screenshot.jpg" border="0"/>
+</body>
+

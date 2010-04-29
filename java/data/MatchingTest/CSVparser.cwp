@@ -1,0 +1,16 @@
+#matching(this)
+
+cvsFile ::= [!#empty #continue cvsRecord]*;
+cvsRecord ::= ->[['\r']? '\n' | #empty] |> csvStringList;
+csvStringList ::= #ignore(blanks) rawString [',' #continue rawString]*;
+rawString ::= [rawField]?;
+rawField ::= simpleField | quotedField;
+simpleField ::= [~[',' | '"']]+;
+quotedField ::= '"' #continue escapedField '"';
+escapedField ::= ['"' '"' | ~'"']*;
+
+/*
+// remove the multi-line comment to test the BNF grammar of Julian Bucknal
+#overload escapedField ::= subField ['"' '"' escapedField]?;
+subField ::= [~'"']+;
+*/

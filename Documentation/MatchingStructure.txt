@@ -1,0 +1,18 @@
+Tree structure of the variable populated by the BNF engine
+for #matching(variable):
+
+* variable
+  |
+  +- rules[]: list of production rules (signatures only),
+  |
+  +- areas[]: table of positions in the input text, the
+    |         key is worth the position P; no item value
+    +- begin[]: (optional) table for every rule starting
+    |  |       at the position P, the key being worth the
+    |  |       ending position Pf (decreasing order)
+    |  +- []: list of all rules matching [P, Pf] exactly,
+    |
+    +- end[]: (facultative) table for every rule ending at
+      |       the position P, the key being worth the
+      |       starting position Pi (increasing order)
+      +- []: list of all rules matching [Pi, P] exactly,

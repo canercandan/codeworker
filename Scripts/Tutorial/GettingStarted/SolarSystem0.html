@@ -1,0 +1,68 @@
+<HTML>
+	<HEAD>
+		<TITLE>some title...</TITLE>
+	</HEAD>
+	<BODY>
+		<H1>some title...</H1>
+		some global documentation...
+<!--##markup##"classes presentation"--><!--##begin##"classes presentation"-->
+		<H2><A href="#Planet">Planet</A></H2>
+<!--##protect##"Planet:presentation"--><!--##protect##"Planet:presentation"-->
+		<TABLE border="1" cellpadding="3" cellspacing="0" width="100%">
+			<TR BGCOLOR="#CCCCFF">
+				<TD><B>Type</B></TD>
+				<TD><B>Attribute name</B></TD>
+				<TD><B>Description</B></TD>
+			</TR>
+			<TR>
+				<TD>double</TD>
+				<TD>diameter</TD>
+				<TD>
+<!--##protect##"Planet::diameter:description"--><!--##protect##"Planet::diameter:description"-->
+				</TD>
+			</TR>
+		</TABLE>
+
+		<UL>
+			<LI>function double <B>getDistanceToSun</B>(int <I>iDay</I>, int <I>iMonth</I>, int <I>iYear</I>)
+				<BR>
+<!--##protect##"Planet::getDistanceToSun.int.int.int:description"--><!--##protect##"Planet::getDistanceToSun.int.int.int:description"-->
+			</LI>
+		</UL>
+
+		<H2><A href="#Earth">Earth</A></H2>
+<!--##protect##"Earth:presentation"--><!--##protect##"Earth:presentation"-->
+		<TABLE border="1" cellpadding="3" cellspacing="0" width="100%">
+			<TR BGCOLOR="#CCCCFF">
+				<TD><B>Type</B></TD>
+				<TD><B>Attribute name</B></TD>
+				<TD><B>Description</B></TD>
+			</TR>
+			<TR>
+				<TD>std::vector&lt;std::string&gt;</TD>
+				<TD>countryNames</TD>
+				<TD>
+<!--##protect##"Earth::countryNames:description"--><!--##protect##"Earth::countryNames:description"-->
+				</TD>
+			</TR>
+		</TABLE>
+
+		<H2><A href="#SolarSystem">SolarSystem</A></H2>
+<!--##protect##"SolarSystem:presentation"--><!--##protect##"SolarSystem:presentation"-->
+		<TABLE border="1" cellpadding="3" cellspacing="0" width="100%">
+			<TR BGCOLOR="#CCCCFF">
+				<TD><B>Type</B></TD>
+				<TD><B>Attribute name</B></TD>
+				<TD><B>Description</B></TD>
+			</TR>
+			<TR>
+				<TD>std::vector&lt;Planet*&gt;</TD>
+				<TD>planets</TD>
+				<TD>
+<!--##protect##"SolarSystem::planets:description"--><!--##protect##"SolarSystem::planets:description"-->
+				</TD>
+			</TR>
+		</TABLE>
+<!--##end##"classes presentation"-->
+	</BODY>
+</HTML>

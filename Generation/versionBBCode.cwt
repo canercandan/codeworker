@@ -1,0 +1,220 @@
+@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2004 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+function writeFunctionDescription(myFunction : node, myHTMLDoc : node) {
+	@[list]
+	[*] @
+	if myFunction.return_type {
+		@function @
+	} else {
+		@procedure @
+	}
+	@[b]@myFunction.name@([/b]@
+	foreach i in myFunction.parameterList {
+		if !first(i) {
+			@[b],&nbsp;[/b]@
+		}
+		@[color=blue]@i.name@[/color] [b]:[/b] [i]@i.type@[/i]@
+	}
+	if myFunction.return_type {
+		@[b]) :[/b] [i]@myFunction.return_type@[/i]
+@
+	} else {
+		@[b])[/b]
+@
+	}
+	if !isEmpty(myFunction.parameterList) {
+		@[b]Parameter[/b][color=#EFEFEF]WWWWWWWW[/color][b]Type[/b][color=#EFEFEF]WWWWWWWW[/color][b]Description[/b]
+@
+		foreach i in myFunction.parameterList {
+			@	[color=blue]@i.name@[/color][color=#EFEFEF]WWWWWWWW[/color][i]@i.type@[/i][color=#EFEFEF]WWWWWWWW[/color]@i.documentation@
+@
+		}
+		@
+
+@
+	}
+	if myFunction.documentation {
+		createVirtualFile(".#f1", myFunction.documentation);
+		createVirtualFile(".#f2", "");
+		try {
+			translate("LaTeX2BBCode.cwp", myHTMLDoc, ".#f1", ".#f2");
+		} catch(sError) {
+			traceLine("error in the description of function '" + myFunction.name + "':");
+			traceLine(myFunction.documentation);
+			error(sError);
+		}
+		@@loadVirtualFile(".#f2")@
+@
+		deleteVirtualFile(".#f2");
+		deleteVirtualFile(".#f1");
+	}
+	@	
+[/list]
+@
+}
+
+
+function generateVersionChanges(theVersion : node, bLastChanges) {
+	@[list][list][list][color=red]Changes@
+	if bLastChanges {
+		@ on version @theVersion@@
+	} else if theVersion.private {
+		@ on private version @theVersion@@
+	}
+	@[/color][/list][/list][/list]
+@
+	if existVariable(theVersion.description) {
+		local myHTMLDoc;
+		insert myHTMLDoc.sParsingMode = "description";
+		createVirtualFile(".#f1", theVersion.description);
+		createVirtualFile(".#f2", "");
+		try {
+			translate("LaTeX2BBCode.cwp", myHTMLDoc, ".#f1", ".#f2");
+		} catch(sError) {
+			traceLine("error in the description of the version '" + theVersion + "':");
+			traceLine(theVersion.description);
+			error(sError);
+		}
+		@@loadVirtualFile(".#f2")@@
+		deleteVirtualFile(".#f2");
+		deleteVirtualFile(".#f1");
+		@
+
+@
+	}
+	@[b]Date[/b][color=#EFEFEF]WWWWWWWW[/color][b]Type[/b][color=#EFEFEF]WWWWWWWW[/color][b]Caller[/b][color=#EFEFEF]WWWWWWWW[/color][b]Description[/b]
+@
+	foreach i in theVersion.listOfChanges {
+		@[u]@i.date@[/u][color=#EFEFEF]WWWWW[/color][u]@i.type@[/u][color=#EFEFEF]WWWWWW[/color]@
+		switch(i.caller) {
+			case "":
+				@-@
+				break;
+			case "Gwenael CHAZAL":
+				@[url=http://perso.wanadoo.fr/famille-chazal/gwenaelindexenglish.htm]Gwenael CHAZAL[/url]@
+				break;
+			case "Eric NICOLAS":
+				@[url=http://www.erik-n.net/]Eric NICOLAS[/url]@
+				break;
+			case "Laurent RIESTERER":
+				@[url=http://laurent.riesterer.free.fr]Laurent RIESTERER[/url]@
+				break;
+			case "Patrick BRANNAN":
+				@[url=http://www.cs-express.net/]Patrick BRANNAN[/url]@
+				break;
+			case "David JOBET":
+				@[url=http://www.nosica.net/]David JOBET[/url]@
+				break;
+			case "Thierry WILMOT":
+				@[url=http://www.mktools.com/index.html]Thierry WILMOT[/url]@
+				break;
+			default:
+				@@i.caller@@
+		}
+		@
+@
+		local myHTMLDoc;
+		insert myHTMLDoc.sParsingMode = "description";
+		if i.type == "function" {
+			local myFunction;
+			foreach j in i.listOfFunctions {
+				if findElement(j, project.procedureList) ref myFunction = project.procedureList[j];
+				else if findElement(j, project.functionList) ref myFunction = project.functionList[j];
+				else error("'changes.log': unknown function '" + j + "'");
+				writeFunctionDescription(myFunction, myHTMLDoc);
+			}
+		} else if i.type == "option" {
+			if $getArraySize(i.listOfOptions) > 1$ {
+				@Add of @i.listOfOptions.size()@ new options on the command line:
+[list]
+@
+				foreach j in i.listOfOptions {
+					@[*][b]-@j@[/b]
+@
+				}
+				@[/list]
+@
+			} else {
+				@Add of a new option on the command line: [b]-@i.listOfOptions#front@[/b]@
+			}
+		} else {
+			createVirtualFile(".#f1", i.description);
+			createVirtualFile(".#f2", "");
+			try {
+				translate("LaTeX2BBCode.cwp", myHTMLDoc, ".#f1", ".#f2");
+			} catch(sError) {
+				traceLine("error in the description of a '" + i.type + ":" + i.date + "' change:");
+				traceLine(i.description);
+				error(sError);
+			}
+			@@loadVirtualFile(".#f2")@@
+			deleteVirtualFile(".#f2");
+			deleteVirtualFile(".#f1");
+		}
+		@
+
+@
+	}
+	@
+@
+}
+
+
+	local sThisVersion;
+	if findElement("current", project.listOfVersions) set sThisVersion = "current";
+	else set sThisVersion = getVersion();
+	local sVersion = replaceString(".", "_", sThisVersion);
+	local bLastChanges = !getMarkupKey();
+
+	if bLastChanges {
+		@[list][list][list][list][size=16][color=#900b09][i][b]CodeWorker[/b][/i][/color][/size][/list][/list][/list][/list]
+@
+	} else {
+		@[list][list][list][list][size=14][color=#900b09][i][b]CodeWorker[/b][/i][/color][/size] @sThisVersion@, @formatDate(getNow(), "%d%b%Y")@[/list][/list][/list][/list]
+
+[b]Platform[/b][color=#EFEFEF]WWWWWWWW[/color][b]Type[/b][color=#EFEFEF]WWWWWWWW[/color][b]Size[/b][color=#EFEFEF]WWWWWWWW[/color][b]Archive[/b]
+WINDOWS 98/2000/NT/XP[color=#EFEFEF]WWWWWWWW[/color]binaries[color=#EFEFEF]WWWWWWWW[/color]@fileSize("WebSite/downloads/CodeWorker_WIN" + sVersion + ".zip")@[color=#EFEFEF]WWWWWWWW[/color][url=http://www.codeworker.org/downloads/CodeWorker_WIN@sVersion@.zip>CodeWorker_WIN@sVersion@.zip[/url]
+Any platform?[color=#EFEFEF]WWWWWWWW[/color]sources[color=#EFEFEF]WWWWWWWW[/color]@fileSize("WebSite/downloads/CodeWorker_SRC" + sVersion + ".zip")@[color=#EFEFEF]WWWWWWWW[/color][url=http://www.codeworker.org/downloads/CodeWorker_SRC@sVersion@.zip>CodeWorker_SRC@sVersion@.zip[/url]
+
+@
+	}
+
+	if getProperty("makeChanges") && (getProperty("makeChanges") != true) {
+		local bStopAfterPrivates;
+		foreach i in project.listOfVersions {
+			if bStopAfterPrivates && !i.private break;
+			generateVersionChanges(i, bLastChanges);
+			if key(i) == getProperty("makeChanges") set bStopAfterPrivates = true;
+		}
+	} else {
+		local bPointer = false;
+		foreach i in project.listOfVersions {
+			if !bPointer {
+				if key(i) != sThisVersion continue;
+				generateVersionChanges(i, bLastChanges);
+				set bPointer = true;
+			} else if i.private {
+				generateVersionChanges(i, bLastChanges);
+			} else break;
+		}
+	}

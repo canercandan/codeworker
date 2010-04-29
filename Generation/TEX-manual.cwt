@@ -1,0 +1,532 @@
+@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+function convertEscapeLatexSequences(sLine, bBackslash) {
+	set sLine = replaceString("$", "ç", sLine);
+	if bBackslash set sLine = replaceString("\\", "$\\backslash$", sLine);
+	set sLine = replaceString("#", "\\#", sLine);
+	set sLine = replaceString("%", "\\%", sLine);
+	set sLine = replaceString("_", "\\_", sLine);
+	set sLine = replaceString("&", "\\&", sLine);
+	set sLine = replaceString("ç", "\\$", sLine);
+	set sLine = replaceString("^", "$\\hat{}$", sLine);
+	set sLine = replaceString("{", "\\{", sLine);
+	set sLine = replaceString("}", "\\}", sLine);
+	set sLine = replaceString("§§", "\\", sLine);
+	set sLine = replaceString("§1", "{", sLine);
+	set sLine = replaceString("§2", "}", sLine);
+	set sLine = replaceString("~", "\\~{}", sLine);
+	set sLine = replaceString("é", "\\'e", sLine);
+	return sLine;
+}
+
+function cutLinesTooLong(sLine, iCounter : node) {
+	set sLine = replaceString("\t", "    ", sLine);
+/*	local iIndex = 64;
+	if inf(iIndex, lengthString(sLine)) {
+		local sSlice = leftString(sLine, iIndex);
+		set sLine = sSlice + "\n" + cutLinesTooLong(subString(sLine, iIndex), iCounter);
+		increment(iCounter);
+	}
+*/	return sLine;
+}
+function cutTextTooLong(sText) {
+	local sNewText;
+	local lines;
+	cutString(sText, "\n", lines);
+	local iCounter;
+	foreach i in lines {
+		if sNewText set sNewText += "\n" + cutLinesTooLong(i, iCounter);
+		else set sNewText = cutLinesTooLong(i, iCounter);
+	}
+	return sNewText;
+}
+
+function carriageReturnsToLaTeX(sOutput) {
+	set sOutput = convertEscapeLatexSequences(sOutput, true);
+	local sOriginal = sOutput;
+	set sOutput = replaceString("\r", "\\\\\r", sOutput);
+	if sOutput == sOriginal set sOutput = replaceString("\n", "\\\\\n", sOutput);
+	local bContinue;
+	do {
+		set bContinue = false;
+		if endString(sOutput, "\n") {
+			sOutput = rsubString(sOutput, 1);
+			set bContinue = true;
+		}
+		if endString(sOutput, "\r") {
+			sOutput = rsubString(sOutput, 1);
+			set bContinue = true;
+		}
+		if endString(sOutput, "\\\\") {
+			sOutput = rsubString(sOutput, 2);
+			set bContinue = true;
+		}
+	} while bContinue;
+	return sOutput;
+}
+
+function writeFileText(sText, bLineNumbering, bShiftText) {
+	local lines;
+	local iIndex = 1;
+	cutString(sText.replaceString("\r", ""), "\n", lines);
+	local handledLines;
+	local sLastLine;
+	foreach i in lines {
+		set i = replaceTabulations(i, 4);
+		if endString(i, "^") {
+			local iIndex = sub(lengthString(i), 1);
+			local iStart = iIndex;
+			local a = charAt(sLastLine, iStart);
+			if ((a >= "a") && (a <= "z")) || ((a >= "A") && (a <= "Z")) {
+				do {
+					decrement(iStart);
+					set a = charAt(sLastLine, iStart);
+				} while ((a >= "a") && (a <= "z")) || ((a >= "A") && (a <= "Z"));
+			} else {
+				do {
+					decrement(iStart);
+					set a = charAt(sLastLine, iStart);
+				} while a && (a != " ");
+			}
+			increment(iStart);
+			set sLastLine = leftString(sLastLine, iStart) + "§§textbf§1" + midString(sLastLine, iStart, sub(iIndex, iStart)) + "§2" + subString(sLastLine, iIndex);
+		} else {
+			if !first(i) pushItem handledLines = sLastLine;
+			set sLastLine = i;
+		}
+	}
+	pushItem handledLines = sLastLine;
+	foreach i in handledLines {
+		if last(i) && !i break;
+		if !first(i) {
+			@\\
+@
+		}
+		local sLine = i;
+		local iSpaces = trimLeft(sLine);
+		set sLine = convertEscapeLatexSequences(sLine, true);
+		if bShiftText {
+			@	\makebox[1cm][r]{\textrm{\tiny @
+			if bLineNumbering {
+				@@completeLeftSpaces(iIndex, 4)@@
+			} else {
+				@    @
+			}
+			@}} @
+		}
+		if sup(iSpaces, 0) {
+			@\makebox[@mult(0.2, iSpaces)@cm][l]{}@
+		}
+		@@sLine@@
+		increment(iIndex);
+	}
+}
+
+
+function writeFunctionDescription(myFunction : node) {
+	increment(this.iFunctionCounter);
+	@\pdflabel{@myFunction.name@()}
+\index{@myFunction.name@()}
+\pdfsubsection{@myFunction.name@}
+\begin{itemize}
+	\item @
+	if myFunction.return_type {
+		@function @
+	} else {
+		@procedure @
+	}
+	@\textbf{@myFunction.name@(}@
+	foreach i in myFunction.parameterList {
+		if !first(i) {
+			@\textbf{, }@
+		}
+		@\samp{@i.name@} \textbf{:} \textit{@i.type@}@
+	}
+	if myFunction.return_type {
+		@\textbf{) :} \textit{@myFunction.return_type@}
+
+@
+	} else {
+		@\textbf{)}
+
+@
+	}
+	if !isEmpty(myFunction.parameterList) {
+		@\begin{tableiii}{l|l|l}{.6}{Parameter}{Type}{Description}
+@
+		foreach i in myFunction.parameterList {
+			if !i.documentation {
+				increment(this.iNotDocumentedParameter);
+				traceLine(this.iNotDocumentedParameter + ": " + myFunction.name + "/" + i.name + "() not documented");
+			}
+			@	\lineiii{\samp{@i.name@}}{\textit{@i.type + (i.type.script ? '<' + i.type.script + '>':"")@}}{@
+			if i.default {
+				@\textbf{default value:} \textit{@convertEscapeLatexSequences(i.default, true)@}\\
+@
+			}
+			@@i.documentation@}
+@
+		}
+		@\end{tableiii}
+@
+	}
+	if !myFunction.documentation {
+		increment(this.iNotDocumentedCounter);
+		traceLine(this.iNotDocumentedCounter + ": " + myFunction.name + "() not documented");
+	} else {
+		@@myFunction.documentation@
+@
+		if !myFunction.example {
+			increment(this.iNoExampleCounter);
+			traceLine(this.iNoExampleCounter + ": " + myFunction.name + "() no example");
+		} else {
+			if myFunction.input {
+				@
+\textbf{Example - @
+				if myFunction.example.expand {
+					@hand-typed code to expand@
+				} else {
+					@precedent output generated@
+				}
+				@:}
+
+\texttt{@
+				writeFileText(myFunction.input, false, false);
+@
+}
+@
+			}
+			@
+\textbf{Example@
+			if myFunction.input {@ - the script@}
+			@:}
+
+\texttt{@
+			writeFileText(myFunction.example, false, false);
+			@}
+@
+			local sOutput;
+			local sGeneratedText;
+			try {
+				setCommentBegin("//");
+				if myFunction.mode == "parse" {
+					local theContext;
+					insert theContext.function = myFunction.name;
+					set sOutput = parseFreeQuiet("Documentation/ParsingExamples.cws", theContext, "Documentation/ParsingSample.txt");
+				} else if myFunction.mode == "generate" {
+					local theContext;
+					insert theContext.function = myFunction.name;
+					if myFunction.input saveToFile("Documentation/GeneratingSample.txt", myFunction.input);
+					else if existFile("Documentation/GeneratingSample.txt") deleteFile("Documentation/GeneratingSample.txt");
+					if myFunction.example.expand {
+						quiet(sOutput) expand("Documentation/GeneratingExamples.cwt", theContext, "Documentation/GeneratingSample.txt");
+					} else {
+						quiet(sOutput) generate("Documentation/GeneratingExamples.cwt", theContext, "Documentation/GeneratingSample.txt");
+					}
+					if existFile("Documentation/GeneratingSample.txt") set sGeneratedText = loadFile("Documentation/GeneratingSample.txt");
+				} else {
+					if myFunction.example.newProject {
+						new_project set sOutput = executeStringQuiet(this, myFunction.example);
+					} else if myFunction.example.standardInput {
+						string_as_standard_input(myFunction.example.standardInput)
+							set sOutput = executeStringQuiet(this, myFunction.example);
+					} else {
+						set sOutput = executeStringQuiet(this, myFunction.example);
+					}
+				}
+				setCommentBegin("%");
+			} catch(sError) {
+				error(sError + "... while handling function '" + myFunction.name + "':" + endl() + myFunction.example);
+			}
+			if sOutput {
+				@
+\textbf{Output:}
+
+\texttt{@
+				writeFileText(sOutput, false, false);
+				@}
+@
+			}
+			if sGeneratedText {
+				@
+\textbf{Generated text:}
+
+\texttt{@
+				writeFileText(sGeneratedText, false, false);
+				@}
+@
+			}
+		}
+	}
+	if myFunction.method {
+		local sThisParameter = project.methodList[myFunction.method].thisParameter;
+		if !sThisParameter set sThisParameter = myFunction.parameterList#front.name;
+		@
+
+\pdflabel{method @myFunction.method@()}
+\index{method!@myFunction.method@()}
+\textbf{Method:} \textit{@sThisParameter@}.\samp{@myFunction.method@}(@
+		local bFirst = true;
+		foreach i in myFunction.parameterList if i.name != sThisParameter {
+			if bFirst {
+				set bFirst = false;
+			} else {
+				@, @
+			}
+			@\textit{@i.name@}@
+		}
+		@)
+@
+	}
+	if existVariable(myFunction.deprecated) {
+		@
+
+\pdflabel{@myFunction.deprecated.name@()}
+\index{deprecated!@myFunction.deprecated.name@()}
+\textbf{Deprecated form:} \samp{@myFunction.deprecated.name@} has disappeared since version \textit{@myFunction.deprecated.version@}
+@
+	}
+	if existVariable(myFunction.bugs) {
+		@
+
+\textbf{Known bugs:}
+
+@myFunction.bugs@
+@
+	}
+	if existVariable(myFunction.seeAlso) {
+		@
+
+\textbf{See also:}
+
+@
+		foreach i in myFunction.seeAlso {
+			if !first(i) {
+				@, @
+			}
+			@\samp{@i@} \ref{@i@()}@
+		}
+		@
+@
+	} else {
+		increment(this.iNoSeeAlsoCounter);
+		traceLine(this.iNoSeeAlsoCounter + ": " + myFunction.name + "() no 'see also'");
+	}
+	@\end{itemize}
+@
+}
+
+
+function generateFile(sFilename) {
+	local myFile;
+	parseFree("TEX-file-parsing.cwp", myFile, sFilename);
+	if myFile.command {
+		@
+\CodeWorker\ \textit{command line to execute:\\} \samp{@myFile.command@}
+@
+		pushItem this.listOfCommands = myFile.command;
+	}
+	@
+\texttt{
+	\makebox[1cm][r]{\textrm{\tiny     }}  // file "@sFilename@":\\
+@
+	writeFileText(myFile.text, !isEmpty(myFile.listOfNotes), true)
+	@}
+
+@
+	if !isEmpty(myFile.listOfNotes) {
+		@
+@
+		foreach i in myFile.listOfNotes {
+			@\textsc{line @key(i)@:} @i@
+@
+		}
+	}
+}
+
+if getMarkupKey() == "today" {
+	@@formatDate(getNow(), "%B %d, %Y")@
+@
+} else if getMarkupKey() == "version" {
+	@@getVersion()@
+@
+} else if startString(getMarkupKey(), "execute:") {
+	local sOutput;
+	try {
+		setCommentBegin("//");
+		set sOutput = executeStringQuiet(this, subString(getMarkupKey(), 8));
+		setCommentBegin("%");
+	} catch(sError) {
+		error(sError + "... while executing markup '" + getMarkupKey() + "'");
+	}
+	@\begin{verbatim}
+@subString(getMarkupKey(), 8)@
+\end{verbatim}
+@
+	if sOutput {
+		@\textbf{Output:}
+
+\texttt{@
+	writeFileText(sOutput, false, false);
+	@}
+
+@
+	}
+} else if startString(getMarkupKey(), "execute_hide:") {
+	local sOutput;
+	try {
+		setCommentBegin("//");
+		set sOutput = executeStringQuiet(this, subString(getMarkupKey(), 13));
+		setCommentBegin("%");
+	} catch(sError) {
+		error(sError + "... while executing markup '" + getMarkupKey() + "'");
+	}
+	if sOutput {
+		@
+\texttt{@
+	writeFileText(sOutput, false, false);
+	@}
+
+@
+	}
+} else if startString(getMarkupKey(), "include:") {
+	@@loadFile(subString(getMarkupKey(), 8))@@
+} else if startString(getMarkupKey(), "file:") {
+	generateFile(subString(getMarkupKey(), 5));
+} else if startString(getMarkupKey(), "execute_file:") {
+	generateFile(subString(getMarkupKey(), 13));
+	local sOutput;
+	try {
+		if endString(getMarkupKey(), ".html") {
+			setCommentBegin("<!--");
+			setCommentEnd("-->");
+		} else setCommentBegin("//");
+		set sOutput = executeStringQuiet(this, "#include \"" + subString(getMarkupKey(), 13) + "\"");
+		setCommentBegin("%");
+		setCommentEnd("\n");
+	} catch(sError) {
+		error(sError + endl() + "... while executing markup '" + getMarkupKey() + "'");
+	}
+//	set sOutput = carriageReturnsToLaTeX(sOutput);
+	@
+
+\textbf{Output:}
+
+\texttt{@
+	writeFileText(sOutput, false, false);
+	@}
+@
+} else if startString(getMarkupKey(), "debug_file:") {
+	generateFile(subString(getMarkupKey(), 11));
+	local sOutput;
+	try {
+		setCommentBegin("//");
+		local sRequest = "#include \"" + subString(getMarkupKey(), 11) + "\"";
+		file_as_standard_input("GettingStarted/Debugger.cmd")
+			debug set sOutput = executeStringQuiet(this, sRequest);
+		setCommentBegin("%");
+		setCommentEnd("\n");
+	} catch(sError) {
+		error(sError + endl() + "... while executing markup '" + getMarkupKey() + "'");
+	}
+	@
+
+\textbf{Output:}
+
+\texttt{@
+	writeFileText(sOutput, false, false);
+	@}
+@
+} else if startString(getMarkupKey(), "quantify_file:") {
+	generateFile(subString(getMarkupKey(), 14));
+	local sOutput;
+	local sQuantifyOutput;
+	try {
+		setCommentBegin("//");
+		local sRequest = "#include \"" + subString(getMarkupKey(), 14) + "\"";
+		quiet(sQuantifyOutput)
+			quantify set sOutput = executeStringQuiet(this, sRequest);
+		setCommentBegin("%");
+		setCommentEnd("\n");
+	} catch(sError) {
+		error(sError + endl() + "... while executing markup '" + getMarkupKey() + "'");
+	}
+	@
+
+\textbf{Output:}
+
+\texttt{@
+	writeFileText(sOutput, false, false);
+	@}
+
+\textbf{Profiling results:}
+
+\texttt{@
+	writeFileText(sQuantifyOutput, false, false);
+	@}
+@
+} else if getMarkupKey() == "common script functions" {
+	foreach i in project.headings if i.modes.findElement("") {
+		if !i.description error("heading '" + key(i) + "' doesn't have a description field");
+		@\begin{tableii}{l|l}{.8}{Category \textit{@key(i)@}}{@i.description@}
+@
+		foreach j in sorted i.members if !j.mode {
+			@	\lineii{\samp{\textbf{@j.name@}}}{@j.abstract@}
+@
+		}
+		@\end{tableii}
+@
+	}
+	local listOfMembers;
+	foreach i in project.functionList if !i.mode {
+		ref listOfMembers[toLowerString(i.name)] = i;
+	}
+	foreach i in project.procedureList if !i.mode {
+		ref listOfMembers[toLowerString(i.name)] = i;
+	}
+	foreach i in sorted listOfMembers {
+		writeFunctionDescription(i);
+	}	
+} else if getMarkupKey() == "parsing script functions" {
+	local listOfMembers;
+	foreach i in project.functionList if i.mode == "parse" {
+		ref listOfMembers[toLowerString(i.name)] = i;
+	}
+	foreach i in project.procedureList if i.mode == "parse" {
+		ref listOfMembers[toLowerString(i.name)] = i;
+	}
+	foreach i in sorted listOfMembers {
+		writeFunctionDescription(i);
+	}	
+} else if getMarkupKey() == "generation script functions" {
+	local listOfMembers;
+	foreach i in project.functionList if i.mode == "generate" {
+		ref listOfMembers[toLowerString(i.name)] = i;
+	}
+	foreach i in project.procedureList if i.mode == "generate" {
+		ref listOfMembers[toLowerString(i.name)] = i;
+	}
+	foreach i in sorted listOfMembers {
+		writeFunctionDescription(i);
+	}	
+}

@@ -1,0 +1,52 @@
+package solarsystem;
+
+public class @this.name@ @
+//note: if the class inherits from a parent class, this relationship must be written,
+if existVariable(this.parent) {
+	@extends @this.parent.name@ @
+}
+@{
+@
+//note: declaration of all attributes,
+foreach i in this.listOfAttributes {
+	@	private @getType<"JAVA">(i.type)@ _@getVariableName(i.name, i.type)@;
+@
+}
+@
+	public @this.name@() {}
+
+	// accessors:
+@
+//note: accessors to each attribute,
+foreach i in this.listOfAttributes {
+	local sVariableName = getVariableName(i.name, i.type);
+	@	public @getType<"JAVA">(i.type)@ get@normalizeIdentifier(i.name)@() { return _@sVariableName@; }
+	public void set@normalizeIdentifier(i.name)@(@getType<"JAVA">(i.type)@ @sVariableName@) { _@sVariableName@ = @sVariableName@; }
+@
+}
+@
+		// methods:
+@
+//note: declaration of all methods,
+foreach i in this.listOfMethods {
+	@	public @
+	if existVariable(i.type) {
+		@@getType<"JAVA">(i.type)@@
+	} else {
+		@void@
+	}
+	@ @i.name@(@
+	foreach j in i.listOfParameters {
+		if !first(j) {
+			@, @
+		}
+		@@getParameterType<"JAVA">(j.type, j.mode)@ @getVariableName(j.name, j.type)@@
+	}
+	@) {
+@
+	setProtectedArea(getMethodID(i));
+@	}
+
+@
+}
+@}

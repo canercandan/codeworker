@@ -1,0 +1,44 @@
+//hide all:
+TinyBNF ::=	#ignore(JAVA) [classDeclaration]* #empty
+	=> { traceLine("this file has been parsed successfully"); };
+classDeclaration ::=
+	IDENT:"class"
+	IDENT:sName
+	=> insert project.listOfClasses[sName].name = sName;
+	[
+		':'
+		IDENT:sParent
+		=> {
+			if !findElement(sParent, project.listOfClasses)
+				error("class '" + sParent + "' should have been declared before");
+			ref project.listOfClasses[sName].parent = project.listOfClasses[sParent];
+		}
+	]?
+	classBody(project.listOfClasses[sName]);
+//show:
+classBody(myClass : node) ::=
+	'{' [attributeDeclaration(myClass)]* '}';
+attributeDeclaration(myClass : node) ::=
+//note: the name of the class for the association is assigned to the local variable \samp{sName},
+	IDENT:sClass
+//note: we'll need a local variable to point to the attribute's node for commodity,
+	=> local myAttribute;
+	=> {
+//note: the local variable \samp{myAttribute} hasn't been declared here, because it disappears
+//note: at the end of the scope (the trailing brace); a new node is added to the list of
+//note: attributes,
+		pushItem myClass.listOfAttributes;
+//note: the local variable \samp{myAttribute} points to the last item of the list,
+		ref myAttribute = myClass.listOfAttributes#back;
+//note: the class specifier of the association must have been declared,
+		if !findElement(sClass, project.listOfClasses)
+			error("class '" + sClass + "' should have been declared before");
+//note: we populate the parse tree as done by hand,
+		ref myAttribute.class = project.listOfClasses[sClass];
+	}
+//note: this attribute \textit{isArray} is added only if the type of the association is an array,
+	['[' ']' => insert myAttribute.isArray = true;]?
+//note: we complete the attribute description by assigning its name,
+	IDENT:sName => {insert myAttribute.name = sName;};
+
+IDENT ::= #!ignore ['a'..'z'|'A'..'Z']+;

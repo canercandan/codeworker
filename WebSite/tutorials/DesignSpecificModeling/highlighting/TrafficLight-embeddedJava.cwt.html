@@ -1,0 +1,82 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><span class="raw_text">@</span>
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_include">#include</a> <span class="string">&quot;TrafficLight-sharedFunctions.cws&quot;</span>
+
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A> generateJavaClass(strategy : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>) {
+    <span class="raw_text">@</span><span class="raw_text">class @</span>strategy.name<span class="raw_text">@</span><span class="raw_text"> extends TrafficLightStrategy {
+    public @</span>strategy.name<span class="raw_text">@</span><span class="raw_text">() {}
+
+    public bool start() {
+        return @</span>strategy.start<span class="raw_text">@</span><span class="raw_text">;
+    }
+
+    public int executeRules() {
+        int iTriggeredRules = 0;
+        if (bActive_) {
+@</span>
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#incrementIndentLevel">incrementIndentLevel</A>();
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> strategy.rules {
+        <span class="raw_text">@</span><span class="raw_text">        if (executeRule@</span>i.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text">()) ++iTriggeredRules;
+@</span>
+    }
+    <span class="raw_text">@</span><span class="raw_text">    }
+    return iTriggeredRules;
+}
+
+@</span>
+
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> strategy.rules {
+        <span class="raw_text">@</span><span class="raw_text">private bool executeRule@</span>i.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text">() {
+    if (@</span>convertAntecedent2Cpp(i.condition)<span class="raw_text">@</span><span class="raw_text"> == false) {
+        return false;
+    }
+@</span>
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> j <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> i.actions {
+            writeAction&lt;j&gt;(j, <span class="string">&quot;Java&quot;</span>);
+        }
+        <span class="raw_text">@</span><span class="raw_text">    return true;
+}
+
+@</span>
+    }
+    <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#decrementIndentLevel">decrementIndentLevel</A>();
+    <span class="raw_text">@</span><span class="raw_text">}
+
+@</span>
+}
+
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>() == <span class="string">&quot;strategies&quot;</span> {
+    <span class="comment">// the current markup key is worth &quot;strategies&quot;:</span>
+    <span class="comment">// generate the implementation of each strategy</span>
+    <span class="comment">// class, coming from &quot;.tlc&quot; files</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> strategy <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.strategies {
+        generateJavaClass(strategy);
+    }
+} <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">else</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#startString">startString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(), <span class="string">&quot;DSL: &quot;</span>) {
+    <span class="comment">// the current markup key embeds strategies written</span>
+    <span class="comment">// directly into the Java file</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#subString">subString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(), <span class="numeric">5</span>) != <span class="string">&quot;TrafficLight&quot;</span> {
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;only one DSL recognized for the moment: &#39;TrafficLight&#39;!&quot;</span>);
+    }
+
+    <span class="comment">// parsing of the strategies attached to the markup: the function</span>
+    <span class="comment">// &#39;getMarkupValue()&#39; returns data embedded in the markup</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> theParseTree;
+    <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#parseStringAsBNF">parseStringAsBNF</A>(<a href="TrafficLight.cwp.html" class="string">&quot;TrafficLight.cwp&quot;</a>, theParseTree, <A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupValue">getMarkupValue</A>());
+
+    <span class="raw_text">@</span><span class="raw_text">*/
+@</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> strategy <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> theParseTree.strategies {
+        generateJavaClass(strategy);
+    }
+    <span class="raw_text">@</span><span class="raw_text">/*
+@</span>
+}<span class="raw_text"></span></pre><hr />
+		Generated by <I class="CodeWorker">CodeWorker</I> v3.11.0.1 from <a href="http://www.codeworker.org/CWscript2HTML.html">CWscript2HTML.cwp</a>.
+	</body>
+</html>

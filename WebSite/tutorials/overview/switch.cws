@@ -1,0 +1,106 @@
+@
+if startString(getMarkupKey(), "switch") {
+	@{
+    int iHashCode = 0;
+    std::string sKey = @coreString(getMarkupKey(), 7, 1)@;
+    for (int i = 0; i < sKey.size(); i++) {
+        unsigned char c = sKey[i];
+        iHashCode = (31*iHashCode + (c%31)) % 64000000;
+    }
+	bool bDefault = false;
+    switch(iHashCode) {
+@
+	local codes;
+	local sData = getMarkupValue();
+	while sData {
+		local iIndex = sData.findString('\n');
+		if $iIndex < 0$ || !sData.startString("//") error("syntax error");
+		local sKey = sData.midString(2, $iIndex - 2$);
+		if sKey.endString('\r') set sKey = sKey.rsubString(1);
+		local iHashCode = 0;
+		local i = 0;
+		while $i < sKey.length()$ {
+			local c = sKey.charAt(i);
+			iHashCode = $(31*iHashCode + (c.charToInt()%31)) % 64000000$;
+			increment(i);
+		}
+		pushItem codes[iHashCode].keys = "\"" + composeCLikeString(sKey) + "\"";
+		set sData = sData.subString($iIndex + 1$);
+	}
+	foreach i in codes {
+		@        case @key(i)@: // @
+		foreach j in i.keys {
+			if !first(j) {
+				@, @
+			}
+			@@j@@
+		}
+		@
+@
+		foreach j in i.keys {
+			@			@
+			if !first(j) {
+				@} else @
+			}
+			@if (sKey == @j@) {
+@
+			setProtectedArea("case " + j + ":");
+		}
+		@			} else {
+				bDefault = true;
+			}
+			break;
+@
+	}
+	@        default:
+			bDefault = true;
+    }
+	if (bDefault) {
+@
+	setProtectedArea("default:");
+	@	}
+}
+@
+} else if startString(getMarkupKey(), "enum") {
+	// extract enums
+	local keys;
+	local sData = getMarkupValue();
+	while sData {
+		local iIndex = sData.findString('\n');
+		if $iIndex < 0$ || !sData.startString("//") error("syntax error");
+		local sKey = sData.midString(2, $iIndex - 2$);
+		// just a few code to add for taking into account values on enums
+		if sKey.endString('\r') set sKey = sKey.rsubString(1);
+		pushItem keys = sKey;
+		set sData = sData.subString($iIndex + 1$);
+	}
+
+	// declare enums in C++
+	local sEnumType = subString(getMarkupKey(), 5);
+	@enum @sEnumType@ {
+@
+	foreach i in keys {
+		@	@i@@
+		if !last(i) {
+			@,@
+		}
+		@
+@
+	}
+@
+};
+@
+	// write the C++ function to convert to string
+	@
+std::string @sEnumType@ToString(@sEnumType@ e@sEnumType@) {
+	switch(e@sEnumType@) {
+@
+	foreach i in keys {
+		@		case @i@: return "@composeCLikeString(i)@";
+@
+	}
+@	}
+	return "Undefined";
+}
+@
+}

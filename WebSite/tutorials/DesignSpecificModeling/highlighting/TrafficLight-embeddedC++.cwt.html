@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<span class="raw_text">*/@</span><br/>
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_include">#include</a>&nbsp;<span class="string">&quot;TrafficLight-sharedC++.cws&quot;</span><br/>
+<br/>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A>&nbsp;<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#startString">startString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(),&nbsp;<span class="string">&quot;DSL: &quot;</span>)&nbsp;<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;DSL code expansion expected!&quot;</span>);<br/>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A>&nbsp;<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#subString">subString</A>(<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupKey">getMarkupKey</A>(),&nbsp;<span class="numeric">5</span>)&nbsp;!=&nbsp;<span class="string">&quot;TrafficLight&quot;</span>&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;only one DSL recognized for the moment: &#39;TrafficLight&#39;!&quot;</span>);<br/>
+}<br/>
+<br/>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A>&nbsp;theParseTree;<br/>
+<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#parseStringAsBNF">parseStringAsBNF</A>(<a href="TrafficLight.cwp.html" class="string">&quot;TrafficLight.cwp&quot;</a>,&nbsp;theParseTree,&nbsp;<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getMarkupValue">getMarkupValue</A>());<br/>
+<br/>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A>&nbsp;strategy&nbsp;<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a>&nbsp;theParseTree.strategies&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">class&nbsp;@</span>strategy.name<span class="raw_text">@</span><span class="raw_text">&nbsp;:&nbsp;public&nbsp;TrafficLightStrategy&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;public:<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inline&nbsp;@</span>strategy.name<span class="raw_text">@</span><span class="raw_text">()&nbsp;{}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;virtual&nbsp;~@</span>strategy.name<span class="raw_text">@</span><span class="raw_text">()&nbsp;{}<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;virtual&nbsp;bool&nbsp;@</span>strategy.name<span class="raw_text">@</span><span class="raw_text">::start()&nbsp;const&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;@</span>strategy.start<span class="raw_text">@</span><span class="raw_text">;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;virtual&nbsp;int&nbsp;@</span>strategy.name<span class="raw_text">@</span><span class="raw_text">::executeRules()&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;iTriggeredRules&nbsp;=&nbsp;0;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(bActive_)&nbsp;{<br/>
+@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#incrementIndentLevel">incrementIndentLevel</A>();<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#incrementIndentLevel">incrementIndentLevel</A>();<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A>&nbsp;i&nbsp;<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a>&nbsp;strategy.rules&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(executeRule@</span>i.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text">())&nbsp;++iTriggeredRules;<br/>
+@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;iTriggeredRules;<br/>
+}<br/>
+<br/>
+@</span><br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A>&nbsp;i&nbsp;<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a>&nbsp;strategy.rules&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">virtual&nbsp;bool&nbsp;@</span>strategy.name<span class="raw_text">@</span><span class="raw_text">::executeRule@</span>i.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text">()&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;(@</span>convertAntecedent2Cpp(i.condition)<span class="raw_text">@</span><span class="raw_text">&nbsp;==&nbsp;false)&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;false;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A>&nbsp;j&nbsp;<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a>&nbsp;i.actions&nbsp;{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;writeAction&lt;j&gt;(j);<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;true;<br/>
+}<br/>
+<br/>
+@</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#decrementIndentLevel">decrementIndentLevel</A>();<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#decrementIndentLevel">decrementIndentLevel</A>();<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="raw_text">@</span><span class="raw_text">};<br/>
+<br/>
+@</span><br/>
+}<br/>
+<span class="raw_text">@</span><span class="raw_text">/*<br/>
+</span><span class="raw_text"></span><hr />
+		Generated by <I class="CodeWorker">CodeWorker</I> v3.10.3 from <a href="http://www.codeworker.org/CWscript2HTML.html">CWscript2HTML.cwp</a>.
+	</body>
+</html>

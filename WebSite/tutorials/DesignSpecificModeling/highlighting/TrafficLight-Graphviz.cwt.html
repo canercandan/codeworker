@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><span class="raw_text">digraph SigC {
+    ranksep=2
+    node [shape=record,style=filled];
+@</span>
+
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A> toGraphvizText(sText : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">value</a>) {
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#sText">sText</A> = sText.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#replaceString">replaceString</A>(<span class="string">&quot; &lt; &quot;</span>, <span class="string">&quot;\\n&lt;\\n&quot;</span>);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#sText">sText</A> = sText.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#replaceString">replaceString</A>(<span class="string">&quot; &gt; &quot;</span>, <span class="string">&quot;\\n&gt;\\n&quot;</span>);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#sText">sText</A> = sText.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#replaceString">replaceString</A>(<span class="string">&#39; &#39;</span>, <span class="string">&quot;\\ &quot;</span>);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#sText">sText</A> = sText.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#replaceString">replaceString</A>(<span class="string">&#39;&quot;&#39;</span>, <span class="string">&quot;\\\&quot;&quot;</span>);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#return">return</A> sText;
+}
+
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A> writeAction&lt;<span class="string">&quot;duration&quot;</span>&gt;(action : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>) {
+    <span class="raw_text">@</span><span class="raw_text">|@</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> sStreet = toGraphvizText(<span class="string">&#39;&quot;&#39;</span> + action.crossroad_entry.street + <span class="string">&#39;&quot;&#39;</span>);
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> action.crossroad_entry.direction == <span class="string">&quot;c-&gt;s&quot;</span> {
+        <span class="raw_text">@</span><span class="raw_text">@</span>action.crossroad_entry.crossroad<span class="raw_text">@</span><span class="raw_text">-\&gt;@</span>sStreet<span class="raw_text">@</span><span class="raw_text">\n@</span>
+    } <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">else</a> {
+        <span class="raw_text">@</span><span class="raw_text">@</span>sStreet<span class="raw_text">@</span><span class="raw_text">-\&gt;@</span>action.crossroad_entry.crossroad<span class="raw_text">@</span><span class="raw_text">\n@</span>
+    }
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> i <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> action.durations {
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#boolean_expression">!</a>i.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#first">first</A>() {
+            <span class="raw_text">@</span><span class="raw_text">/@</span>
+        }
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> iSec = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>i%<span class="numeric">60</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>;
+        <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> iSec.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#lengthString">length</A>() == <span class="numeric">1</span> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#iSec">iSec</A> = <span class="string">&#39;0&#39;</span> + iSec;
+        <span class="raw_text">@</span><span class="raw_text">@</span><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#floor">floor</A>(<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>i/<span class="numeric">60</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>)<span class="raw_text">@</span><span class="raw_text">min@</span>iSec<span class="raw_text">@</span><span class="raw_text">@</span>
+    }
+}
+
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A> writeAction&lt;<span class="string">&quot;activate&quot;</span>&gt;(action : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>) {
+    <span class="raw_text">@</span><span class="raw_text">|@</span>action.strategy<span class="raw_text">@</span><span class="raw_text">@</span>
+}
+
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#function">function</A> writeAction&lt;<span class="string">&quot;desactivate&quot;</span>&gt;(action : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#function_parameters">node</a>) {}
+
+<span class="raw_text">@</span><span class="raw_text">    @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text"> [style=filled, fillcolor=&quot;#A1E1FF&quot;,fontname=&quot;Arial-Narrow&quot;];
+    @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_start [label=&quot;@</span>toGraphvizText(<a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.start)<span class="raw_text">@</span><span class="raw_text">&quot;,fontname=&quot;Arial-Narrow&quot;,shape=box];
+    @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text"> -&gt; @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_start [label=&quot;start&quot;,fontname=&quot;Arial-Narrow&quot;,fontcolor=&quot;red&quot;,color=&quot;red&quot;,style=&quot;bold&quot;];
+    ranksep=4
+@</span>
+<A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> rule <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.rules {
+    <span class="raw_text">@</span><span class="raw_text">
+    @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_rule@</span>rule.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text"> [label=&quot;@</span>toGraphvizText(rule.condition)<span class="raw_text">@</span><span class="raw_text">&quot;,fontname=&quot;Arial-Narrow&quot;,shape=box];
+    @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text"> -&gt; @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_rule@</span>rule.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text"> [color=&quot;purple&quot;,style=&quot;bold&quot;];
+@</span>
+    <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">foreach</A> action <a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#foreach">in</a> rule.actions {
+        <span class="raw_text">@</span><span class="raw_text">    @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_rule@</span>rule.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text">_@</span>action.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text"> [shape=record,label=&quot;{@</span>action<span class="raw_text">@</span><span class="raw_text">@</span>
+        writeAction&lt;action&gt;(action);
+        <span class="raw_text">@</span><span class="raw_text">}&quot;,fontname=&quot;Arial-Narrow&quot;,fillcolor=yellow];
+    @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_rule@</span>rule.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text"> -&gt; @</span><a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.name<span class="raw_text">@</span><span class="raw_text">_rule@</span>rule.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text">_@</span>action.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#key">key</A>()<span class="raw_text">@</span><span class="raw_text"> [color=&quot;orange&quot;,style=&quot;bold&quot;];
+@</span>
+    }
+}
+
+<span class="raw_text">@</span><span class="raw_text">}
+</span><span class="raw_text"></span></pre><hr />
+		Generated by <I class="CodeWorker">CodeWorker</I> v3.11.0.1 from <a href="http://www.codeworker.org/CWscript2HTML.html">CWscript2HTML.cwp</a>.
+	</body>
+</html>

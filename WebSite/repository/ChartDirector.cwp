@@ -1,0 +1,615 @@
+//**************************************************************************
+//             Parses a header file of the C++ API
+//
+//
+// This script can apply on the header files "chartdir.h" or "FinanceChart.h"
+// only. It extracts the useful information and stores it into a parse tree.
+//
+// Note that the C++ grammar used for parsing the C++ header files is very
+// restrictive considering the whole C++ syntax. It is the minimal grammar
+// to be able to parse the C++ API of Chart Director.
+// Don't reuse it in another context, or be prepared to improve this script
+// a lot!
+//**************************************************************************
+
+// The header BNF rule of the grammar: it asks for parsing the whole C++ header file,
+// pertinent declaration by pertinent declaration.
+// The root of the parse tree is pointed to by 'this'. We'll describe the structure
+// of the parse tree locally to each BNF rule.
+ChartDir ::=
+	// ignore whitespaces and C++ comments between BNF terminals and non-terminals
+	#ignore(C++)
+	// the rest of the sequence must be valid up to the end, otherwise a detailed
+	// syntax error occurs and interrupts the parsing
+	#continue
+	// parse all pertinent declarations
+	declarations(this)
+	// we must have reached the end of C++ header file
+	#empty
+	;
+
+// Do a loop on all declarations found in the C++ header file. The
+// variable 'scope' designates the parse tree to populate at this depth.
+declarations(scope : node) ::=
+	[
+			// ignore the preprocessor directives up to the end of line
+			'#' #continue #!ignore ->['\\' ['\r']? '\n' #nextStep #check(false) | '\n']
+		|
+			// try to recognize a member declaration (function/constant/...)
+			member_declaration(scope)
+		|
+			// a block of instructions: don't care, because the implementations don't
+			// interest us
+			'{' #continue ignore_block '}'
+		|
+			// if one reads an identifier, it must be a keyword at this place
+			#readIdentifier:sKeyword
+			#continue
+			// a very efficient way offered by CodeWorker: dynamic resolution
+			// of generic BNF rules, which improves the separation of
+			// concerns.
+			keyword<sKeyword>(scope)
+	]*
+	;
+
+
+//-------------------------------------------------------------------------
+//                            Member declaration
+//-------------------------------------------------------------------------
+
+// A member declaration is either a function/method or a constant.
+// It delegates the parsing of a function to the non-terminal
+// 'function_declaration'.
+// For a static array, it populates the parse tree like this:
+//   . scope
+//      |
+//      +- arrays[name of the array]
+//          |
+//          +- type = a type specifier (see the non-terminal 'type')
+//          |
+//          +- []: list of constant values
+// For a numeric constant, it populates the parse tree like this:
+//   . scope
+//      |
+//      +- constants[name of the constant] = value of the constant
+//          |
+//          +- type = a type specifier (see the non-terminal 'type')
+member_declaration(scope : node) ::=
+	// ignore the eventual modifiers
+	[#readIdentifier:{"inline", "static", "virtual"}]*
+	// perhaps do we have a destructor declaration
+	=> local bDestructor;
+	['~':bDestructor]?
+	// try to parse a type specifier: the return type for a function,
+	// or the type for a constant or a static array
+	=> local theType;
+	type(scope, theType)
+	#continue
+	// from here, the rest of the BNF sequence must be valid
+	=> local sName; // declare a local variable
+	[
+			// a specific handling if the declaration is a constructor
+			// or a destructor. In that case, what we took for a type specifier
+			// was the constructor/destructor name
+			#check(theType.name == scope.name)
+			// the BNF operator '!!' allows a look ahead, without moving the
+			// input file cursor.
+			// Here, we expect a parenthesis after the constructor/destructor name
+			!!'('
+			// Yes! So, now, we are sure to be in front of a constructor/destructor.
+			// The name of the function is adjusted in case of a destructor.
+			=> sName = bDestructor + theType.name;
+		|
+			// It's a usual function/method/constant: we have to read the
+			// function name, put into the local variable 'sName'
+			#readIdentifier:sName
+	]
+	// Three alternatives. The member is:
+	//   - a function,
+	//   - a static array,
+	//   - a numeric constant,
+	[
+			// First alternative: a function.
+			[
+				// the method might be an operator:
+				#check(sName == "operator")
+				#continue
+				// the only operator encountered (except the cast operator) is
+				// '=': we change the name
+				['=']:sName
+				!!'('
+			]?
+			// to be sure, look ahead for an opening parenthesis
+			!!'(' #continue
+			// the parsing of the parameters and of the rest of the function
+			// will be done in this non-terminal
+			function_declaration(scope, sName, theType)
+		|
+			// Second alternative: a static array.
+			// We don't care about its size
+			'[' #continue ->']'
+			// The declaration of items follows the assignment
+			// operator
+			'=' #continue
+			'{'
+			// extract the first value (all characters up to a comma or a
+			// trailing bracket not included)
+			[~[',' | '}']]*:sValue
+			// populate the parse tree
+			=> setall scope.arrays[sName].type = theType;
+			=> pushItem scope.arrays[sName] = sValue;
+			[
+				// parse other values, up to the trailing bracket
+				',' #continue
+				[~[',' | '}']]*:sValue
+				// populate the parse tree
+				=> pushItem scope.arrays[sName] = sValue;
+			]*
+			'}'
+			';'
+		|
+			// Third alternative: a numeric constant
+			'=' #continue
+			[
+					// try to read a numeric value, assigned to the local
+					// variable 'dConstant'
+					#readNumeric:dConstant #continue
+					// Yes! So, we expect a semi-comma behind.
+					';'
+					// populate the parse tree
+					=> pushItem scope.constants[sName] = dConstant;
+					=> setall scope.constants[sName].type = theType;
+				|
+					// if the constant isn't numeric, the declaration is
+					// ignored
+					ignore_instruction
+			]
+	]
+	;
+
+// Parse a function declaration, starting at the parameters declaration.
+// The name of the function and its return type were already extracted.
+// It populates the parse tree like this:
+//   . scope
+//      |
+//      +- functions[name of the function] = "function"
+//          |
+//          +- []: new prototype attached to this function name
+//              |
+//              +- name = name of the function
+//              |
+//              +- return_type = a type specifier
+//              |
+//              +- parent = a reference to the scope the function belongs to
+// Note: the parameters are populated by the non-terminal 'parameter'.
+function_declaration(scope : node, sName : value, theType : node) ::=
+	// it should start with an opening parenthesis
+	'(' #continue
+	// populate the parse tree
+	=> pushItem scope.functions[sName] = "function";
+	=> localref theFunction = scope.functions[sName]#back;
+	=> insert theFunction.name = sName;
+	=> setall theFunction.return_type = theType;
+	=> ref theFunction.parent = scope;
+	// parse the parameters
+	[
+		parameter(theFunction)
+		[',' #continue parameter(theFunction)]*
+	]?
+	// trailing parenthesis expected to close the parameter declaration
+	')'
+	// might be followed by the initializers of a constructor or by
+	// the 'const' keyword: both ignored
+	[
+			#readIdentifier:"const"
+		|
+			':' #continue
+			#readIdentifier '(' ignore_expression ')'
+			[',' #continue #readIdentifier '(' ignore_expression ')']*
+	]?
+	// dont't care about the implementation of the function
+	'{' #continue ignore_block '}'
+	// might encounter a semi-comma, even if not necessary
+	[';']?
+	// We remove the prototype if it refers to an internal type.
+	// An internal type ends with "*Internal" (see the non-terminal
+	// 'type').
+	=> if theFunction.return_type == "internal" {
+		// the return type is internal: remove the prototype
+		scope.functions[sName].removeLastElement();
+	} else if sName == "create" || sName.startString('~') {
+		// Remove the 'create' methods, which duplicate the
+		// constructor for our point of view.
+		// Also, remove the destructors
+		scope.functions[sName].removeLastElement();
+	} else {
+		foreach i in theFunction.parameters {
+			if i.type == "internal" {
+				// at least one parameter type is internal:
+				// remove the prototype
+				scope.functions[sName].removeLastElement();
+				break;
+			}
+		}
+	}
+	;
+
+// Parse a function parameter.
+// It populates the parse tree like this:
+//   . theFunction
+//      +- parameters[name of the argument]
+//          |
+//          +- name = name of the argument
+//          |
+//          +- type = a type specifier (see the non-terminal 'type')
+//          |
+//          +- default = default value, if any.
+// Note that if the default value appears to be an enum value, the
+// type changes from 'int' to the enum type name, except if the
+// enum type is unnamed.
+parameter(theFunction : node) ::=
+	// extract the parameter type
+	=> local theType;
+	type(theFunction, theType)
+	#continue // from here, we are sure to handle a parameter declaration
+	// name of the argument
+	#readIdentifier:sParam
+	// we populate the parse tree with the name and the type
+	=> insert theFunction.parameters[sParam].name = sParam;
+	=> setall theFunction.parameters[sParam].type = theType;
+	[
+		// is there a default value?
+		'=' #continue
+		// yes! Read up to the next comma or trailing parenthesis, at the same
+		// depth level (not included), and put the value into the parse tree.
+		['(' #continue ignore_expression ')' | ~[',' | ')']]*:theFunction.parameters[sParam].default
+		// Do we have an enum value?
+		=> if theFunction.parameters[sParam].default.startString("Chart::") {
+			// yes! Remove the namespace path
+			local sEnum = theFunction.parameters[sParam].default.subString(7);
+			// look for the enum among the unnamed enum type
+			foreach i in this.namespaces["Chart"].unnamed_enums {
+				if i.values.findElement(sEnum) {
+					// we've got it! Modify the parameter type to an enum type
+					// specifier
+					theFunction.parameters[sParam].type = "enum";
+					theFunction.parameters[sParam].type.name = false;
+					ref theFunction.parameters[sParam].type.enums = i;
+					break;
+				}
+			}
+			if theFunction.parameters[sParam].type != "enum" {
+				// if not found among the unnamed enum type, look for
+				// the enum among named enum types
+				foreach i in this.namespaces["Chart"].enums {
+					if i.values.findElement(sEnum) {
+						// we've got it! Modify the parameter type to an enum type
+						// specifier
+						theFunction.parameters[sParam].type = "enum";
+						theFunction.parameters[sParam].type.name = i.key();
+						ref theFunction.parameters[sParam].type.enums = i;
+						break;
+					}
+				}
+			}
+		}
+	]?
+	;
+
+
+//-------------------------------------------------------------------------
+//                         C++ keywords of the language
+//-------------------------------------------------------------------------
+
+// Here, we'll find an instantiated generic BNF rule for each C++ keyword
+// being liable to announce a declaration (class, function, enum, ...),
+// and encountered in "chartdir.h" or "FinanceChart.h"
+
+// Generic form of the non-terminal 'keyword', called only if no instantiated
+// non-terminal of 'keyword' was found for 'sKeyword'.
+// It never succeeds.
+keyword<sKeyword>(scope : node) ::= #check(false);
+
+// Parse a namespace declaration.
+// It populates the parse tree like this:
+//   . scope
+//      +- namespaces[name of the namespace] = "namespace"
+//          |
+//          +- name = name of the namespace
+//          |
+//          +- parent = a reference to the scope the namespace belongs to
+keyword<"namespace">(scope : node) ::=
+	#continue
+	// read the namespace name
+	#readIdentifier:sName
+	// populate the parse tree
+	=> insert scope.namespaces[sName] = "namespace";
+	=> insert scope.namespaces[sName].name = sName;
+	=> ref scope.namespaces[sName].parent = scope;
+	// parse the enclosed declarations
+	'{'
+	declarations(scope.namespaces[sName])
+	'}'
+	;
+
+// Parse an enum declaration.
+// If the enum type is unnamed, it populates the parse tree like this:
+//   . scope
+//      +- unnamed_enums
+//          |
+//          +- [] = "enum"
+//              |
+//              +- [enum value name]
+// In case of a named enum type, it populates the parse tree like this:
+//   . scope
+//      +- enums[name of the enum] = "enum"
+//          |
+//          +- name = name of the enum
+//          |
+//          +- [enum value name]
+keyword<"enum">(scope : node) ::=
+	#continue
+	=> local theEnums;
+	[
+			// a named enum type
+			#readIdentifier:sName
+			// populate the parse tree, without enum values
+			=> insert scope.enums[sName] = "enum";
+			=> ref theEnums = scope.enums[sName];
+			=> insert theEnums.name = sName;
+		|
+			// populate the parse tree for an unnamed enum type,
+			// without enum values
+			=> pushItem scope.unnamed_enums = "enum";
+			=> ref theEnums = scope.unnamed_enums#back;
+	]
+	// declaration of enum value names
+	'{'
+	// read the first enum value name
+	#readIdentifier:sId
+	// ... and add it to the parse tree
+	=> insert theEnums.values[sId];
+	// don't care about the constant value, if any
+	['=' #continue ->[!!',' | !!'}']]?
+	[
+		',' #continue
+		// read the next enum value name
+		#readIdentifier:sId
+		// ... and add it to the parse tree
+		=> insert theEnums.values[sId];
+		// don't care about the constant value, if any
+		['=' #continue ->[!!',' | !!'}']]?
+	]*
+	'}' ';'
+	;
+
+// Parse a class declaration.
+// It populates a parse tree like this:
+//   . scope
+//      +- classes[name of the class] = "class"
+//          |
+//          +- name = name of the class
+//          |
+//          +- parent = a reference to the scope the class belongs to
+//          |
+//          +- inheritance = name of the inherited Business class
+// Note: the rest of the parse tree is populated by the non-terminal
+// 'declarations'
+keyword<"class">(scope : node) ::=
+	#continue
+	// read the class name
+	#readIdentifier:sName
+	=> local sParent; // will be worth the parent class, if any
+	// read the class body, if the class has some interest for us, and
+	// if we aren't scrutating a forward declaration
+	[
+			// we don't care about the 3 classes seen below:
+			// their body is ignored
+			#check(sName == "AutoDestroy" || sName == "GarbagePtr" || sName == "GarbageContainer")
+			#continue
+			'{' ignore_block '}'
+			';'
+		|
+			// this alternative stands for a body definition
+			[
+				// inheritance: we have noticed that the most pertinent parent
+				// is leftmost in the C++ API
+				':' #continue
+				[#readIdentifier:sParent]+ // strange writing to bypass 'public'
+				[',' #continue [#readIdentifier]+ /*same remark*/]*
+			]?
+			// beginning of the class body
+			'{' #continue
+			// populate the parse tree with basic data
+			=> insert scope.classes[sName] = "class";
+			=> insert scope.classes[sName].name = sName;
+			// if the parent is a business class, and not a technical one,
+			// we retain it
+			=> if sParent && sParent != "AutoDestroy" && sParent != "GarbagePtr" && sParent != "GarbageContainer" insert scope.classes[sName].inheritance = sParent;
+			=> ref scope.classes[sName].parent = scope;
+			// ignore the declaration of attributes
+			ignore_members
+			// parse all function declarations
+			declarations(scope.classes[sName])
+			'}' ';'
+			// sort functions, to have the signatures with most base types first,
+			// function name by function name
+/*			=> foreach i in scope.classes[sName].functions if !i.empty() {
+				local iA = 0;
+				do {
+					if i#[iA].parameters.existVariable() {
+						localref paramsA = i#[iA].parameters;
+						local iB = $iA + 1$;
+						while $iB < i.size()$ {
+							if i#[iB].parameters.existVariable() {
+								localref paramsB = i#[iB].parameters;
+								if $paramsA.size() == paramsB.size()$ {
+									local iCounter = 0;
+									local iBaseA = 0;
+									local iBaseB = 0;
+									while $iCounter < paramsA.size()$ {
+										if paramsA#[iCounter].type == "base" increment(iBaseA);
+										if paramsB#[iCounter].type == "base" increment(iBaseB);
+										increment(iCounter);
+									}
+									if $iBaseB > iBaseA$ {
+										local temp;
+										setall temp = i#[iB];
+										setall i#[iB] = i#[iA];
+										setall i#[iA] = temp;
+										ref paramsA = i#[iA].parameters;
+									}
+								}
+							}
+							increment(iB);
+						}
+					}
+					increment(iA);
+				} while $iA < i.size()$;
+			}
+*/		|
+			// forward declaration: we just register the class in the parse tree
+			';'
+			=> insert scope.classes[sName] = "class";
+			=> insert scope.classes[sName].name = sName;
+			=> ref scope.classes[sName].parent = scope;
+	]
+	;
+
+// Read the 'private' access keyword.
+// Ignore all private declarations.
+keyword<"private">(scope : node) ::=
+	#continue
+	':'
+	ignore_members
+	;
+
+// Read the 'protected' access keyword.
+// Ignore all protected declarations (same as 'private').
+keyword<"protected">(scope : node) ::= #continue keyword<"private">(scope);
+
+// Read the 'public' access keyword, and just does nothing with it.
+keyword<"public">(scope : node) ::= #continue ':';
+
+// Parse a 'typedef' declaration.
+// We are interested for typedefs on class types only.
+// It populates a parse tree like this:
+//   . scope
+//      +- classes[name of the class] = "class"
+//          |
+//          +- name = name of the class
+//          |
+//          +- parent = a reference to the scope the class belongs to
+//          |
+//          +- typedef = existing type
+keyword<"typedef">(scope : node) ::=
+	#continue
+	[
+			#readIdentifier:sOld // existing type
+			#readIdentifier:sNew // name of the typedef
+			';'
+			[
+				=> local theClass;
+				#check(getType(scope, sOld, theClass) && (theClass == "class"))
+				// The erxisting type is a class, so the name of the typedef
+				// is considered as a new class, linked to the old one by the field
+				// 'typedef'.
+				// The function 'instanceOf()' considers this kind of link as an
+				// inheritance relationship.
+				=> insert scope.classes[sNew] = "class";
+				=> insert scope.classes[sNew].name = sNew;
+				=> insert scope.classes[sNew].typedef = sOld;
+				=> ref scope.classes[sNew].parent = scope;
+			]?
+		|
+			// this typedef doesn't interest us
+			->';'
+	]
+	;
+
+// Parse a cast operator, which we don't care and which gives
+// rise to an inheritance relationship in the function 'instanceOf()'.
+keyword<"operator">(scope : node) ::=
+	#continue
+	[
+			#readCString
+		|
+			#readCChar
+		|
+			~[';' | '{']
+	]*
+	[
+			';'
+		|
+			'{' #continue ignore_block '}'
+	]
+	;
+
+// Parse a type specifier.
+// It populates the parse tree like this:
+//   . theType = "base" or "internal" or "array" or "class" or "special"
+//      |
+//      +- const? = "const" if the const modifier exists
+//      |
+//      +- name = type name
+//      |
+//      +- pointers? = concatenation of '*' and post 'const' keywords
+//      |
+//      +- is_reference? = '&' if any
+type(scope : node, theType : node) ::=
+	[#readIdentifier:"const":theType.const]?
+	#readIdentifier:theType.name
+	[
+			#check(theType.name in {"char", "int", "double", "void", "bool"})
+			=> theType = "base";
+		|
+			#check(theType.name.endString("Internal"))
+			=> theType = "internal";
+		|
+			#check(theType.name.endString("Array"))
+			=> theType = "array";
+		|
+			=> local definedType;
+			#check(getType(scope, theType.name, definedType))
+			=> theType = "class";
+		|
+			#check(theType.name == "CHARTDIR_WIDECHAR")
+			=> theType = "base";
+			=> theType.name = "void";
+		|
+			#check(theType.name == "MemBlock")
+			=> theType = "special";
+			=> theType.name = "MemBlock";
+	]
+	[[#readIdentifier:"const":+theType.pointers]? '*':+theType.pointers]*
+	['&':theType.is_reference]?
+	;
+
+
+//-------------------------------------------------------------------------
+//      Some functions for ignoring a bloc/instruction/expression.
+//-------------------------------------------------------------------------
+
+ignore_block ::= [#readCString | #readCChar | '{' #continue ignore_block '}' | ~'}']*;
+ignore_expression ::= [#readCString | #readCChar | '(' #continue ignore_expression ')' | ~')']*;
+ignore_instruction ::= #continue [#readCString | #readCChar | ~';']* ';';
+
+// ignore all private and protected declarations, up to encountering
+// a 'public' access declaration.
+ignore_members ::=
+	=> local bQuit;
+	[
+			#readCString
+		|
+			#readCChar
+		|
+			'{' #continue ignore_block '}'
+		|
+			#readCompleteIdentifier:sId
+			':'
+			=> bQuit = (sId == "public");
+			#check(!bQuit)
+		|
+			~[#check(bQuit) | '}']
+	]*
+	;

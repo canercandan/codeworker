@@ -1,0 +1,17 @@
+digraph structs {
+	node [shape=record,style=filled,color=red3];
+	Product [shape=record,label="{Product|{reference\ :\ string\nweight\ :\ double\nwidth\ :\ double\nheight\ :\ double\ndepth\ :\ double}}",fillcolor=yellow,];
+	Book [shape=record,label="{Book|{title\ :\ string\nauthors\ :\ string[]\npages\ :\ int}}",fillcolor=yellow,];
+	Customer [shape=record,label="{Customer|{name\ :\ string\naddress\ :\ string}}",fillcolor=yellow,];
+	OrderLine [shape=record,label="{OrderLine|{quantity\ :\ int\namount\ :\ double\nprice\ :\ double\ncurrency\ :\ string\nsatisfied\ :\ boolean}}",fillcolor=yellow,];
+	Order [shape=record,label="{Order|{received\ :\ date\nprePaid\ :\ boolean\nID\ :\ string\nprice\ :\ double\ncurrency\ :\ string}}",fillcolor=yellow,];
+	Corporate [shape=record,label="{Corporate|{contactName\ :\ string\ncreditRating\ :\ double\ncreditLimit\ :\ double}}",fillcolor=yellow,];
+	Personal [shape=record,label="{Personal|{creditCard\ :\ string}}",fillcolor=yellow,];
+
+	Book -> Product [arrowhead=empty,arrowsize=2.0];
+	OrderLine -> Product [arrowhead=normal,arrowsize=1.0,headlabel="[1] product"];
+	Order -> Customer [arrowhead=normal,arrowsize=1.0,headlabel="[1] customer"];
+	Order -> OrderLine [arrowtail=diamond,arrowhead=normal,arrowsize=1.0,headlabel="[1..*] orderLines"];
+	Corporate -> Customer [arrowhead=empty,arrowsize=2.0];
+	Personal -> Customer [arrowhead=empty,arrowsize=2.0];
+}

@@ -1,0 +1,80 @@
+@/*description:
+{
+	This script checks whether \CodeWorker\ is running as a CGI program or as an
+	interpreter.\\
+	If running in CGI mode, all CGI environment variables are displayed, followed
+	by the attributes/values of the client request, filled into a form and sent via
+	a \samp{POST} or \samp{GET} method.\\
+	Note that the \textit{global} array \samp{_REQUEST} contains the list of all
+	attributes of the request, with their values.
+	
+	\textbf{Example:} if the client writes \samp{http://myServer/basicInformation.cwt?country=Finland},
+	then:\\
+	\begin{itemize}
+		\item \samp{_REQUEST[\textit{"country"}]} is worth \samp{\textit{"Finland"}}
+		\item a global variable \samp{country} is declared and is worth \samp{\textit{"Finland"}}.
+	\end{itemize}
+}
+
+output "examples/basicInformation.html";
+*/
+@<HTML>
+	<BODY>
+@
+function ENV_VALUE(sEnv : value) {
+	if !existEnv(sEnv) return "(null)";
+	return "<KBD>" + getEnv(sEnv) + "</KBD>";
+}
+
+setWorkingPath(getEnv("REMOTE_HOST") + "/");
+
+if !existEnv("GATEWAY_INTERFACE") || !existEnv("REQUEST_METHOD") {
+	// This file isn't running as a CGI script
+	@		<H2>Warning!</H2>
+			<P/>
+			<H3>
+				If you can read this message, it means that the Web server hasn't registered
+				<I class="CodeWorker">CodeWorker</I> as a CGI program for processing ".cwt"
+				file extensions!
+			</H3>
+@
+} else {
+	@		<TABLE border=1>
+			<TR><TD colspan=2><B>CGI:</B> <I>environment variables</I></TD></TR>
+			<TR><TD>GATEWAY_INTERFACE</TD><TD>@ENV_VALUE("GATEWAY_INTERFACE")@</TD></TR>
+			<TR><TD>SERVER_SOFTWARE</TD><TD>@ENV_VALUE("SERVER_SOFTWARE")@</TD></TR>
+			<TR><TD>SERVER_NAME</TD><TD>@ENV_VALUE("SERVER_NAME")@</TD></TR>
+			<TR><TD>SERVER_PROTOCOL</TD><TD>@ENV_VALUE("SERVER_PROTOCOL")@</TD></TR>
+			<TR><TD>SERVER_PORT</TD><TD>@ENV_VALUE("SERVER_PORT")@</TD></TR>
+			<TR><TD>REMOTE_HOST</TD><TD>@ENV_VALUE("REMOTE_HOST")@</TD></TR>
+			<TR><TD>REMOTE_ADDR</TD><TD>@ENV_VALUE("REMOTE_ADDR")@</TD></TR>
+			<TR><TD>REQUEST_METHOD</TD><TD>@ENV_VALUE("REQUEST_METHOD")@</TD></TR>
+			<TR><TD>CONTENT_LENGTH</TD><TD>@ENV_VALUE("CONTENT_LENGTH")@</TD></TR>
+			<TR><TD>CONTENT_TYPE</TD><TD>@ENV_VALUE("CONTENT_TYPE")@</TD></TR>
+			<TR><TD>QUERY_STRING</TD><TD>@ENV_VALUE("QUERY_STRING")@</TD></TR>
+			<TR><TD>SCRIPT_NAME</TD><TD>@ENV_VALUE("SCRIPT_NAME")@</TD></TR>
+			<TR><TD>PATH_INFO</TD><TD>@ENV_VALUE("PATH_INFO")@</TD></TR>
+			<TR><TD>PATH_TRANSLATED</TD><TD>@ENV_VALUE("PATH_TRANSLATED")@</TD></TR>
+		</TABLE>
+		<P/>
+@
+	if _REQUEST.empty() {
+		@		<H3>No client request</H3>
+@
+	} else {
+		@		<TABLE border=1>
+			<TR><TD colspan=2><B>Client Request</B></TD></TR>
+			<TR><TD><B>attribute</B></TD><TD><B>Value</B></TD></TR>
+@
+		foreach i in _REQUEST {
+			@			<TR><TD>@key(i)@</TD><TD>@i@</TD></TR>
+@
+		}
+		@		</TABLE>
+@
+	}
+}
+@		<P/>
+		<SMALL><B><I>CodeWorker</I></B> version @getVersion()@
+	</BODY>
+</HTML>

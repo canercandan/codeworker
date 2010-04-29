@@ -1,0 +1,23 @@
+global theSession;
+insert theSession.proxy.host = "proxy4";
+insert theSession.proxy.port = 8080;
+
+local params;
+//insert params["q"] = "source code generator";
+insert params["q"] = "source";
+insert params["ie"] = "UTF-8";
+insert params["hl"] = "fr";
+insert params["meta"];
+insert params["btnG"] = "Rechercher";
+
+//local sPage = getHTTPRequest("http://www.google.fr/search", theSession, params);
+local sPage = sendHTTPRequest("http://www.google.fr/search?q=source&ie=UTF-8&hl=fr&meta=", theSession);
+saveToFile("google.html", sPage);
+
+parseAsBNF({
+	google ::=
+		[
+			->["<p class=g><a href="]
+		]*
+		;
+}, results, "google.html");

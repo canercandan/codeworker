@@ -1,0 +1,81 @@
+function writeAction<"duration">(theAction : node, sLanguage : value) {
+	localref theEntry = theAction.crossroad_entry;
+	@	{
+@
+	switch(sLanguage) {
+		case "C++":
+			@		int durations[] = {@
+			break;
+		case "Java":
+			@		int[] durations = {@
+	}
+	foreach i in theAction.durations {
+		if !i.first() {
+			@, @
+		}
+		@@i@@
+	}
+	@, -1};
+		setDuration("@theEntry.street@", "@theEntry.crossroad@", "@theEntry.direction@", durations);
+	}
+@
+}
+
+function writeAction<"activate">(theAction : node, sLanguage : value) {
+	@	activateStrategy("@theAction.strategy@");
+@
+}
+
+function writeAction<"desactivate">(theAction : node, sLanguage : value) {
+	@	bActive_ = false;
+@
+}
+
+function convertAntecedent2Cpp(sAntecedent : value) {
+	// this function returns the transformation of the antecedent
+	return translateString({
+			#implicitCopy // What You Scan Is What You Write
+			antecedent ::=
+				[
+						// consume strings: it may contain 'vehicles_hour' and
+						// we won't transform it into a message
+						#readCString
+					|
+						// if not, perhaps is it an identifier?
+						#readIdentifier:sId
+						[
+							// facultative sequence: process a transformation
+							// if the keyword is worth 'vehicles_hour'
+							#check(sId == "vehicles_hour")
+							#continue // from here, the syntax must be correct
+							'('
+							// stop copying to the output what is scanned
+							#explicitCopy
+							// parses the coordinates of a sensor
+							=> local theSegment;
+							street_segment(theSegment)
+							')'
+							=> {
+								// the transformation itself
+								@"@theSegment.street@", "@theSegment.crossroad@", "@theSegment.direction@")@
+							}
+						]?
+					|
+						// reading of the char if end of string not reached;
+						// implicit copy to the output string
+						~#empty
+				]*
+				;			
+			street_segment(theSegment : node) ::=
+					#readIdentifier:theSegment.crossroad
+					#continue "->"
+					=> insert theSegment.direction = "c->s";
+					#readCString:theSegment.street
+				|
+					#readCString:theSegment.street
+					#continue "->"
+					=> insert theSegment.direction = "s->c";
+					#readIdentifier:theSegment.crossroad
+				;
+		}, this, sAntecedent);
+}

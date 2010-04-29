@@ -1,0 +1,443 @@
+            <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"-->
+<html>
+<head>
+	<title>CodeWorker in Java</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+    <meta name="description" content= />
+	<meta name="keywords" content=>
+	<meta http-equiv="pragma" content="no-cache" />
+	<meta http-equiv="cache-control" content="no-cache" />
+
+	<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	<style type="text/css">
+		<!--
+			body {
+				margin-left : 5px;
+				margin-right : 10px;
+				text-align : justify;
+			}
+			pre {
+				background-color: #FFFFFF;
+				overflow: auto;
+				margin-left : 30px;
+				margin-right : 30px;
+			}
+
+			.synopsis {
+				padding : 10px;
+				color : #666666;
+				background-color : #FFFFFF;
+				font-weight : normal;
+				text-align : justify;
+				font-size : 12px;
+				font-family : "Verdana";
+				text-decoration : none;
+				border: #804000;
+				border-style: solid;
+				border-width: 1px;
+				margin-left : 50px;
+				margin-right : 50px;
+			}
+
+			.colonne { 
+				padding: 3px;
+				font-size : 11px;
+				font-family : "Verdana";  
+				background-color: #FFFFFF;
+			}
+			.colonne_entete {
+				padding: 3px;
+				background-color: #B0A000;
+				font-weight: bold;
+				font-size : 11px;
+				font-family : "Verdana";  
+			}
+			span.cpp_comment
+			{
+				color: #007b00;
+				background-color: transparent
+			}
+			span.xml_comment, span.cpp_define {
+				color: #008000;
+			}
+			span.csharp_ch,span.xml_ch {
+				color: #993399;
+			}
+			span.csharp_type,span.xml_attribute {
+				font-weight : bold;
+				color: #3366CC;
+			}
+			span.xml_tag {
+				font-weight : bold;
+				color: #000080;
+			}
+			.entete {
+				background-color: #BBDDFF;
+				font-weight: bold;
+			}
+			.image {
+				margin : 10px;
+				text-align : center;
+			}
+			.summaryIndent0 {
+				color : #333333;
+				margin-left : 0px;
+				font-weight : normal;
+				font-size : 12px;
+				font-family : "Verdana";
+				text-decoration : none;
+			}
+			.summaryIndent1 {
+				color : #666666;
+				margin-left : 15px;
+				font-weight : normal;
+				font-size : 11px;
+				font-family : "Verdana";
+				text-decoration : none;
+			}
+			.summaryIndent2 {
+				color : #999999;
+				margin-left : 30px;
+				font-weight : normal;
+				font-size : 10px;
+				font-family : "Verdana";
+				text-decoration : none;
+			}
+			.tableau {
+				margin : 20px;
+			}
+			.titre_code {
+				padding : 2px;
+				background-color: #C08000;
+				font-weight: bold;
+				font-size : 10px;
+				font-family : "Verdana";  
+			}
+		-->
+	</style>
+
+</head>
+<body>
+
+<h1>CodeWorker in Java</h1>
+<p/><br/><a class="summaryIndent0" href="#L0">1 Introduction</a><br/><a class="summaryIndent0" href="#L1">2 Calling CodeWorker from Java</a><br/><a class="summaryIndent1" href="#L2_0">2.1 JNI library and the "org.codeworker.jni" package</a><br/><a class="summaryIndent1" href="#L2_1">2.2 Building the JNI library</a><br/><a class="summaryIndent2" href="#L2_2_0">2.2.1 Windows platform</a><br/><a class="summaryIndent2" href="#L2_2_1">2.2.2 Other platforms</a><br/><a class="summaryIndent1" href="#L2_2">2.3 Activating the JNI library</a><br/><a class="summaryIndent1" href="#L2_3">2.4 Example</a><br/><a class="summaryIndent0" href="#L2">3 The Java API of CodeWorker</a><br/><a class="summaryIndent1" href="#L3_0">3.1 org.codeworker.jni.ParseTree</a><br/><a class="summaryIndent2" href="#L3_1_0">3.1.1 public ParseTree()</a><br/><a class="summaryIndent2" href="#L3_1_1">3.1.2 public ParseTree(ParseTree)</a><br/><a class="summaryIndent2" href="#L3_1_2">3.1.3 public String getName()</a><br/><a class="summaryIndent2" href="#L3_1_3">3.1.4 public String getValue() / void setValue(String)</a><br/><a class="summaryIndent2" href="#L3_1_4">3.1.5 public ParseTree getReference()</a><br/><a class="summaryIndent2" href="#L3_1_5">3.1.6 public ParseTree getArray()</a><br/><a class="summaryIndent2" href="#L3_1_6">3.1.7 public String getAttributeNames()</a><br/><a class="summaryIndent2" href="#L3_1_7">3.1.8 public ParseTree getNode(String attr)</a><br/><a class="summaryIndent2" href="#L3_1_8">3.1.9 public ParseTree insertNode(String attr)</a><br/><a class="summaryIndent1" href="#L3_1">3.2 org.codeworker.jni.CompiledCommonScript</a><br/><a class="summaryIndent2" href="#L3_2_0">3.2.1 public CompiledCommonScript()</a><br/><a class="summaryIndent2" href="#L3_2_1">3.2.2 void buildFromFile(string filename)</a><br/><a class="summaryIndent2" href="#L3_2_2">3.2.3 void buildFromString(string text)</a><br/><a class="summaryIndent2" href="#L3_2_3">3.2.4 void execute(ParseTree context)</a><br/><a class="summaryIndent1" href="#L3_2">3.3 org.codeworker.jni.CompiledBNFScript</a><br/><a class="summaryIndent2" href="#L3_3_0">3.3.1 public CompiledBNFScript()</a><br/><a class="summaryIndent2" href="#L3_3_1">3.3.2 void buildFromFile(string filename)</a><br/><a class="summaryIndent2" href="#L3_3_2">3.3.3 void buildFromString(string text)</a><br/><a class="summaryIndent2" href="#L3_3_3">3.3.4 void parse(ParseTree context, string parsedFile)</a><br/><a class="summaryIndent2" href="#L3_3_4">3.3.5 void parseString(ParseTree context, string text)</a><br/><a class="summaryIndent1" href="#L3_3">3.4 org.codeworker.jni.CompiledTemplateScript</a><br/><a class="summaryIndent2" href="#L3_4_0">3.4.1 public CompiledTemplateScript()</a><br/><a class="summaryIndent2" href="#L3_4_1">3.4.2 void buildFromFile(string filename)</a><br/><a class="summaryIndent2" href="#L3_4_2">3.4.3 void buildFromString(string text)</a><br/><a class="summaryIndent2" href="#L3_4_3">3.4.4 void generate(ParseTree context, string outputFile)</a><br/><a class="summaryIndent2" href="#L3_4_4">3.4.5 string generateString(ParseTree context, string text)</a><br/><a class="summaryIndent2" href="#L3_4_5">3.4.6 void expand(ParseTree context, string outputFile)</a><br/><a class="summaryIndent1" href="#L3_4">3.5 org.codeworker.jni.CompiledTranslationScript</a><br/><a class="summaryIndent2" href="#L3_5_0">3.5.1 public CompiledTranslationScript()</a><br/><a class="summaryIndent2" href="#L3_5_1">3.5.2 void buildFromFile(string filename)</a><br/><a class="summaryIndent2" href="#L3_5_2">3.5.3 void buildFromString(string text)</a><br/><a class="summaryIndent2" href="#L3_5_3">3.5.4 void translate(ParseTree context, string parsedFile, string outputFile)</a><br/><a class="summaryIndent2" href="#L3_5_4">3.5.5 string generateString(ParseTree context, stringBuilder text)</a><br/><a class="summaryIndent0" href="#L3">4 Conclusion</a><h2><a name="L0"></a>1 Introduction</h2>
+<p/>A Java interface is now available for using CodeWorker in Java applications. This enables calling parse and
+generation tasks directly from Java. Hence, the Java application can handle the parse tree, iterating node arrays,
+accessing to subtrees (the attributes) and so on. Moreover, the developer has all native functions of the
+CodeWorker scripting language at his disposal.
+<p/><h2><a name="L1"></a>2 Calling CodeWorker from Java</h2>
+<p/>There are some points to know before using CodeWorker in a Java software.
+<p/><h3><a name="L2_0"></a>2.1 JNI library and the &quot;org.codeworker.jni&quot; package</h3>
+Once you have downloaded CodeWorker, you&#39;ll find the directory &quot;java&quot; just below the main directory of the
+setup. This directory concerns all about CodeWorker in Java. The JNI library is directly available under the &quot;java&quot;
+directory, in &quot;java/JNICodeWorker.dll&quot; (Windows only; for other platforms, you must build the dynamic library). The
+Java classes implementing the bridge with the native interface are distributed in &quot;java/org/codeworker/jni&quot;.
+<p/>From here, you have to put the JNI library somewhere in your Java library paths (we assume here that you
+have a minimal knowledge of the Java platform).
+<p/><h3><a name="L2_1"></a>2.2 Building the JNI library</h3>
+<p/><h4><a name="L2_2_0"></a>2.2.1 Windows platform</h4>
+<p/>Under Windows, you should find easily the binary of the JNI library to download on the
+<a href="http://www.codeworker.org/Download.html">official Web site of CodeWorker</a>. However, you can recompile
+the JNI library.
+<p/>The Visual C++ 7.1 project is located in &quot;java/CodeWorker.JNI.vcproj&quot;. The include path to your JNI C++ header
+files (&quot;YOUR_JAVA_DISTRIBUTION/include&quot;) must be changed in the properties of the project. Once this small
+adjustment done, you just have to build the project.
+<p/>Note that the Debug configuration generates the JNI library &quot;java/JNICodeWorkerD.dll&quot;.
+<p/><h4><a name="L2_2_1"></a>2.2.2 Other platforms</h4>
+<p/>All sources of the JNI library are located in &quot;java/src&quot;. You could write a little Makefile, which specifies an
+include path to your JNI C++ header files (&quot;YOUR_JAVA_DISTRIBUTION/include&quot;), compiles the sources and links with
+&quot;libcodeworker.a&quot; (the static library of CodeWorker).
+<p/><h3><a name="L2_2"></a>2.3 Activating the JNI library</h3>
+<p/>Before the first call to the CodeWorker API, the software must load the JNI library. Here is an example of
+what you could write at the beginning of your application:
+<br/><pre style="overflow: auto;">// load the JNI library of CodeWorker
+try {
+   System.loadLibrary("JNICodeWorker");
+} catch(Exception exception) {
+   System.out.println("Unable to load the library: '" + exception.toString() + "'");
+}
+</pre>
+<p/><h3><a name="L2_3"></a>2.4 Example</h3>
+<p/>The following Java application behaves like a CodeWorker&#39;s leader script. It asks for the parsing of a file,
+then it generates an HTML file by exploring the parse tree. A very classical process in Design-Specific Modeling.
+<br/><pre style="overflow: auto;">// ... skipping the beginning of main()
+
+// compile a BNF and parse a DSL
+org.codeworker.jni.ParseTree tree = new org.codeworker.jni.ParseTree();
+org.codeworker.jni.CompiledBNFScript BNF = new org.codeworker.jni.CompiledBNFScript();
+BNF.buildFromFile("My_DSL_Parser.cwp");
+theBNF.parse(tree, "requirements.dsl");
+
+// generate the documentation in HTML
+org.codeworker.jni.CompiledTemplateScript genDoc = new org.codeworker.jni.CompiledTemplateScript();
+genDoc.buildFromFile("docHTML.cwp");
+genDoc.generate(tree, "doc.html");
+
+// to finish, display of the whole parse
+// tree, up to depth = 4
+org.codeworker.jni.Runtime.traceObject(tree, 4);
+
+// ... skipping the end of Main()
+</pre>
+<p/>The class &quot;org.codeworker.jni.CompiledBNFScript&quot; allows the precompilation of an extended-BNF script and its execution. The
+execution requires a &quot;org.codeworker.jni.ParseTree&quot; object as the context to populate.
+<p/>The class &quot;org.codeworker.jni.CompiledTemplateScript&quot; precompiles a template-based script and generates an output file,
+traversing the parse tree previously populated by the BNF script.
+<p/>At the end, the parse tree is displayed, up to a depth of 4, using a classical function of the scripting
+language: &quot;traceObject()&quot;. All functions of the scripting language are accessible via the class &quot;org.codeworker.jni.Runtime&quot;.
+<p/>You&#39;ll find more examples in &quot;java/org/codeworker/jni/tests&quot;.
+<p/><h2><a name="L2"></a>3 The Java API of CodeWorker</h2>
+<p/><h3><a name="L3_0"></a>3.1 org.codeworker.jni.ParseTree</h3>
+<p/>This class represents a CodeWorker variable, able to contain an association table, to have some attributes (branches through subtrees),
+to be worth a string value or to point to another parse tree.
+<p/>Example of declaration:
+<br/><pre style="overflow: auto;">org.codeworker.jni.ParseTree tree = new org.codeworker.jni.ParseTree();
+</pre>
+<p/>The equivalent declaration in CodeWorker is:
+<br/><pre style="overflow: auto;">local tree;
+</pre>
+<p/><h4><a name="L3_1_0"></a>3.1.1 public ParseTree()</h4>
+<p/>This constructor creates an internal parse tree, which will be deleted once the garbage collector will free this
+instance. Note that this parse tree will have no name (the property &quot;getName()&quot; will return null).
+<p/><h4><a name="L3_1_1"></a>3.1.2 public ParseTree(ParseTree)</h4>
+<p/>This constructor points to another parse tree, but will never delete the internal parse tree it refers to. It is a
+kind of copy-by-reference.
+<p/>Example:
+<br/><pre style="overflow: auto;">org.codeworker.jni.ParseTree secondTree = new org.codeworker.jni.ParseTree(firstTree);
+</pre>
+<p/>The equivalent declaration in CodeWorker is:
+<br/><pre style="overflow: auto;">localref secondTree = firstTree;
+</pre>
+<h4><a name="L3_1_2"></a>3.1.3 public String getName()</h4>
+<p/>This property returns the name of the node (null if the node was declared on the stack of the Java application).
+<p/><h4><a name="L3_1_3"></a>3.1.4 public String get[String]Value() / void setValue(String)</h4>
+<p/>This property contains the string value attached to the node, which may be null.
+<br/>Note that getValue() may return a null string (no value attached to the node or empty string),
+while getStringValue() always returns a string instance, even if the node doesn&#39;t have a value.
+<p/>Example:
+<br/><pre style="overflow: auto;">tree.setValue("pink elephant");
+System.out.println(tree.getValue());
+</pre>
+<p/>The equivalent in CodeWorker is:
+<br/><pre style="overflow: auto;">tree = "pink elephant";
+traceLine(tree);
+</pre>
+<p/><h4><a name="L3_1_4"></a>3.1.5 public ParseTree getReference()</h4>
+<p/>This property is assigned if the node points to another node.
+<p/>Example:
+<br/><pre style="overflow: auto;">secondTree = firstTree.getReference();
+</pre>
+<p/>The equivalent in CodeWorker is:
+<br/><pre style="overflow: auto;">ref secondTree = firstTree;
+</pre>
+<p/><h4><a name="L3_1_5"></a>3.1.6 public ParseTree[] getArray()</h4>
+<p/>This property returns the association table attached to the node. If there is no table, it returns null.
+<p/>Example:
+<br/><pre style="overflow: auto;">org.codeworker.jni.ParseTree[] nodeArray = tree.getArray();
+if (nodeArray != null) {
+   for (int j = 0; j < nodeArray.length; ++j) {
+     org.codeworker.jni.Runtime.traceObject(nodeArray[j]);
+   }
+}
+</pre>
+<p/>The equivalent in CodeWorker is:
+<br/><pre style="overflow: auto;">foreach j in tree {
+   traceObject(j);
+}
+</pre>
+<p/><h4><a name="L3_1_6"></a>3.1.7 public String[] getAttributeNames()</h4>
+<p/>This property returns all attribute names (branches through subtrees) of the node. This function introspects the
+node.
+<p/>Example:
+<br/><pre style="overflow: auto;">String[] list = tree.getAttributeNames();
+if (list != null) {
+   for (int j = 0; j < list.length; ++j) {
+     System.out.println(list[j]);
+   }
+}
+</pre>
+<p/>The equivalent in CodeWorker is:
+<br/><pre style="overflow: auto;">local list;
+getVariableAttributes(tree, list);
+foreach j in list {
+   traceLine(j);
+}
+</pre>
+<p/><h4><a name="L3_1_7"></a>3.1.8 public ParseTree getNode(String attr)</h4>
+<p/>This function returns the subtree attached to an attribute of the node. If the attribute doesn&#39;t exist,
+it returns null.
+<p/>Example:
+<br/><pre style="overflow: auto;">org.codeworker.jni.ParseTree nextNode = tree.getNode("expression");
+if ((nextNode != null) && (nextNode.getValue() != null)) {
+   System.out.println(nextNode.getValue());
+}
+</pre>
+<p/>The equivalent in CodeWorker is:
+<br/><pre style="overflow: auto;">if tree.expression {
+   traceLine(tree.expression);
+}
+</pre>
+<p/><h4><a name="L3_1_8"></a>3.1.9 public ParseTree insertNode(String attr)</h4>
+<p/>This function inserts a new attribute to the node and returns the subtree newly created. If the attribute
+already exists, it returns the attached subtree.
+<p/>Example:
+<br/><pre style="overflow: auto;">tree.insertNode("expression").setValue("a + b");
+</pre>
+<p/>The equivalent in CodeWorker is:
+<br/><pre style="overflow: auto;">insert tree.expression = "a + b";
+</pre>
+<p/><h3><a name="L3_1"></a>3.2 org.codeworker.jni.CompiledCommonScript</h3>
+<p/>This class represents a CodeWorker common script, so called because it doesn&#39;t process parse tasks and it doesn&#39;t
+generate outputs, like a leader script.
+<p/>It encapsulates a precompiled common script, which can be executed at any time, without requiring a new
+compilation of the script.
+<p/>Do not forget to build the precompiled script before executing it.
+<p/>Example:
+<br/><pre style="overflow: auto;">org.codeworker.jni.ParseTree theContext = new org.codeworker.jni.ParseTree();
+// ... [skipping]
+org.codeworker.jni.CompiledCommonScript script = new org.codeworker.jni.CompiledCommonScript();
+// precompilation of the common script
+script.buildFromFile("my_script.cws");
+// execution of the script
+script.execute(theContext);
+</pre>
+<p/><h4><a name="L3_2_0"></a>3.2.1 public CompiledCommonScript()</h4>
+<p/>The constructor of a common script precompilator.
+<p/><h4><a name="L3_2_1"></a>3.2.2 void buildFromFile(string filename)</h4>
+<p/>It precompiles a common script coming from a file.
+<p/><h4><a name="L3_2_2"></a>3.2.3 void buildFromString(string text)</h4>
+<p/>It precompiles a common script stored in the string argument &quot;text&quot;.
+<p/>Example: precompilation of a script that displays the content of the attribute &#39;message&#39;, belonging to the context.
+<br/><pre style="overflow: auto;">org.codeworker.jni.CompiledCommonScript script = new org.codeworker.jni.CompiledCommonScript();
+script.buildFromString("traceLine(this.message);");
+</pre>
+<p/><h4><a name="L3_2_3"></a>3.2.4 void execute(ParseTree context)</h4>
+<p/>It executes the precompiled common script, passing the argument &quot;context&quot; as &#39;this&#39;.
+<p/>Example:
+<br/><pre style="overflow: auto;">org.codeworker.jni.ParseTree theContext = new org.codeworker.jni.ParseTree();
+// ... skipping creation and precompilation of the script
+script.execute(theContext);
+</pre>
+<p/><h3><a name="L3_2"></a>3.3 org.codeworker.jni.CompiledBNFScript</h3>
+<p/>This class represents a CodeWorker extended-BNF script.
+<p/>It encapsulates a precompiled BNF script, which can be executed at any time, without requiring a new
+compilation of the script.
+<p/>Do not forget to build the precompiled script before executing it.
+<p/>Example:
+<br/><pre style="overflow: auto;">org.codeworker.jni.ParseTree theContext = new org.codeworker.jni.ParseTree();
+// ... [skipping]
+org.codeworker.jni.CompiledBNFScript script = new org.codeworker.jni.CompiledBNFScript();
+// precompilation of the common script
+script.buildFromFile("my_grammar.cwp");
+// execution of the script
+script.parse(theContext, "my_DSL.dsl");
+</pre>
+<p/><h4><a name="L3_3_0"></a>3.3.1 public CompiledBNFScript()</h4>
+<p/>The constructor of an extended-BNF script precompilator.
+<p/><h4><a name="L3_3_1"></a>3.3.2 void buildFromFile(string filename)</h4>
+<p/>It precompiles an extended-BNF script coming from a file.
+<p/><h4><a name="L3_3_2"></a>3.3.3 void buildFromString(string text)</h4>
+<p/>It precompiles an extended-BNF script stored in the string argument &quot;text&quot;.
+<p/>Example: precompilation of a script that extracts all identifiers of an input.
+<br/><pre style="overflow: auto;">org.codeworker.jni.CompiledBNFScript script = new org.codeworker.jni.CompiledBNFScript();
+script.buildFromString("grammar ::= [->[#readIdentifier:id => pushItem this = id;]]*;");
+</pre>
+<p/><h4><a name="L3_3_3"></a>3.3.4 void parse(ParseTree context, string parsedFile)</h4>
+<p/>The precompiled BNF script parses a file, passing the argument &quot;context&quot; as &#39;this&#39;.
+<p/><h4><a name="L3_3_4"></a>3.3.5 void parseString(ParseTree context, string text)</h4>
+<p/>The precompiled BNF script parses a string, passing the argument &quot;context&quot; as &#39;this&#39;.
+<p/><h3><a name="L3_3"></a>3.4 org.codeworker.jni.CompiledTemplateScript</h3>
+<p/>This class represents a CodeWorker template script.
+<p/>It encapsulates a template-based script, which can be executed at any time, without requiring a new
+compilation of the script.
+<p/>Do not forget to build the precompiled script before executing it.
+<p/>Example:
+<br/><pre style="overflow: auto;">org.codeworker.jni.ParseTree theContext = new org.codeworker.jni.ParseTree();
+// ... [skipping]
+org.codeworker.jni.CompiledTemplateScript script = new org.codeworker.jni.CompiledTemplateScript();
+// precompilation of the common script
+script.buildFromFile("my_script.cwt");
+// execution of the script
+script.generate(theContext);
+</pre>
+<p/><h4><a name="L3_4_0"></a>3.4.1 public CompiledTemplateScript()</h4>
+<p/>The constructor of a template-based script precompilator.
+<p/><h4><a name="L3_4_1"></a>3.4.2 void buildFromFile(string filename)</h4>
+<p/>It precompiles a template-based script coming from a file.
+<p/><h4><a name="L3_4_2"></a>3.4.3 void buildFromString(string text)</h4>
+<p/>It precompiles a template-based script stored in the string argument &quot;text&quot;.
+<p/>Example: precompilation of a script that writes all identifiers precedently pushed into the context.
+<br/><pre style="overflow: auto;">org.codeworker.jni.CompiledTemplateScript script = new org.codeworker.jni.CompiledTemplateScript();
+script.buildFromString("list of values:\n<%foreach i in this { %>\t- \"<%i%>\"\n<%}");
+</pre>
+<p/><h4><a name="L3_4_3"></a>3.4.4 void generate(ParseTree context, string outputFile)</h4>
+<p/>The precompiled template-based script generates a file, passing the argument &quot;context&quot; as &#39;this&#39;.
+<p/><h4><a name="L3_4_4"></a>3.4.5 string generateString(ParseTree context, string text)</h4>
+<p/>The precompiled template-based script generates an output, which is returned as a string. The string argument
+&quot;text&quot; contains the precedent version of this output (preserved areas, for instance).
+<p/>It passes the argument &quot;context&quot; as &#39;this&#39;.
+<p/><h4><a name="L3_4_5"></a>3.4.6 void expand(ParseTree context, string outputFile)</h4>
+<p/>The precompiled template-based script expands a file, passing the argument &quot;context&quot; as &#39;this&#39;.
+<p/><h3><a name="L3_4"></a>3.5 org.codeworker.jni.CompiledTranslationScript</h3>
+<p/>This class represents a CodeWorker translation script.
+<p/>It encapsulates a translation script, which can be executed at any time, without requiring a new
+compilation of the script.
+<p/>Do not forget to build the precompiled script before executing it.
+<p/>Example:
+<br/><pre style="overflow: auto;">org.codeworker.jni.ParseTree theContext = new org.codeworker.jni.ParseTree();
+// ... [skipping]
+org.codeworker.jni.CompiledTranslationScript script = new org.codeworker.jni.CompiledTranslationScript();
+// precompilation of the common script
+script.buildFromFile("my_script.cwp");
+// execution of the script
+script.translate(theContext, "my_source.txt", "my_target.txt");
+</pre>
+<p/><h4><a name="L3_5_0"></a>3.5.1 public CompiledTranslationScript()</h4>
+<p/>The constructor of a translation script precompilator.
+<p/><h4><a name="L3_5_1"></a>3.5.2 void buildFromFile(string filename)</h4>
+<p/>It precompiles a translation script coming from a file.
+<p/><h4><a name="L3_5_2"></a>3.5.3 void buildFromString(string text)</h4>
+<p/>It precompiles a translation script stored in the string argument &quot;text&quot;.
+<p/>Example: precompilation of a script that extracts identifiers from an input and writes them on the flow to the
+output. Following a straightforward process, It does something similar to the merge of examples given for the
+BNF and template scripts above.
+<br/><pre style="overflow: auto;">org.codeworker.jni.CompiledTranslationScript script = new org.codeworker.jni.CompiledTranslationScript();
+script.buildFromString("translator ::= =>{%>list of values:\n<%}[->[#readIdentifier:id => {%>- \"<%id%>\"\n<%}]]*;");
+</pre>
+<p/><h4><a name="L3_5_3"></a>3.5.4 void translate(ParseTree context, string parsedFile, string outputFile)</h4>
+<p/>The precompiled translation script translates the file &quot;parsedFile&quot; to another file &quot;outputFile&quot;, passing the
+argument &quot;context&quot; as &#39;this&#39;.
+<p/><h4><a name="L3_5_4"></a>3.5.5 string generateString(ParseTree context, stringBuilder text)</h4>
+<p/>The precompiled template-based script translates the content of the string parameter &quot;inputText&quot; and returns
+the result as a string.
+<p/>It passes the argument &quot;context&quot; as &#39;this&#39;.
+<p/><h2><a name="L3"></a>4 Conclusion</h2>
+<p/>The Java package of CodeWorker allows the developer to drive easily DSL parsing and code generation from the
+Java platform. The parse tree can be traversed and decorated directly in Java, rather
+than only in the scripting language of CodeWorker.
+<br/>   	<hr/>
+	<a href="http://www.xiti.com/xiti.asp?s=134058" TARGET="_top">
+		<script language="JavaScript1.1">
+		<!--
+			hsh = new Date();
+			hsd = document;
+			hsr = hsd.referrer.replace(/[<>]/g, '');
+			hsi = '<img width="39" height="25" border=0 ';
+			hsi += 'src="http://logv24.xiti.com/hit.xiti?s=134058';
+			hsi += '&p=';
+			hsi += '&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+			if(parseFloat(navigator.appVersion)>=4)
+			{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' + Xiti_s.colorDepth;}
+			hsd.writeln(hsi + '&ref=' + hsr.replace(/&/g, '$') + '" title="Mesurez votre audience"><\!--');
+			//-->
+		</script>
+		<noscript>
+			<img width="39" height="25" border=0 src="http://logv24.xiti.com/hit.xiti?s=134058&p=&" title="Mesurez votre audience">
+		</noscript>
+		<!--//-->
+	</a>
+	&nbsp;<I class="CodeWorker">CodeWorker</I> is maintained by <A href="http://www.codeworker.org/CurriculumVitae.html">Cedric Lemaire</A>.
+	Please send a mail to <A href="mailto:codeworker@free.fr">Submit a bug or feature</A><BR />
+</body>
+</html>

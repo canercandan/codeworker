@@ -1,0 +1,78 @@
+@
+//note: the predefined function \samp{getMarkupKey()} returns the name of the markup
+//note: to expand,
+if getMarkupKey() == "classes presentation" {
+//note: the markup is worth "classes presentation", and so, we'll describe all classes
+	foreach i in project.listOfClasses {
+		@
+		<H2><A href="#@i.name@">@i.name@</A></H2>
+@
+//note: a protected area is embedded here, which has to be populated by hand into the
+//note: expanded file for describing the class,
+		setProtectedArea(i.name + ":presentation");
+		if !isEmpty(i.listOfAttributes) {
+//note: attributes are presented into a table,
+			@
+		<TABLE border="1" cellpadding="3" cellspacing="0" width="100%">
+			<TR BGCOLOR="#CCCCFF">
+				<TD><B>Type</B></TD>
+				<TD><B>Attribute name</B></TD>
+				<TD><B>Description</B></TD>
+			</TR>
+@
+			foreach j in i.listOfAttributes {
+//note: the language into which types have to be expressed is given by \samp{this.language},
+//note: and is worth "C++" or "JAVA" ; don't forget to convert the type to the HTML syntax,
+//note: because of \textbf{'<'} or \textbf{'>'} to convert respectively to \textbf{'\&lt'}
+//note: or \textbf{'\&gt'} for instance. Use the predefined function
+//note: \samp{composeHTMLLikeString()} to do this process.
+				@			<TR>
+				<TD>@composeHTMLLikeString(getType<this.language> (j.type))@</TD>
+				<TD>@j.name@</TD>
+				<TD>
+@
+//note: a protected area is embedded here, which has to be populated by hand into the
+//note: expanded file for describing the attribute,
+				setProtectedArea(i.name + "::" + j.name + ":description");
+				@
+				</TD>
+			</TR>
+@
+			}
+			@		</TABLE>
+@
+		}
+		if !isEmpty(i.listOfMethods) {
+			@
+		<UL>
+@
+			foreach j in i.listOfMethods {
+//note: methods are presented into unordered lists,
+				@			<LI>@
+				if existVariable(j.type) {
+					@function @composeHTMLLikeString(getType <this.language>(j.type))@ @
+				} else {
+					@procedure@
+				}
+				@<B>@j.name@</B>(@
+				foreach k in j.listOfParameters {
+					if !first(k) {
+						@, @
+					}
+					@@composeHTMLLikeString(getParameterType <this.language>(k.type, k.mode))@ <I>@getVariableName(k.name, k.type)@</I>@
+				}
+				@)
+				<BR>
+@
+//note: a protected area is embedded here, which has to be populated by hand into the
+//note: expanded file for describing the method,
+				setProtectedArea(i.name + "::" + getMethodID(j) + ":description");
+				@
+			</LI>
+@
+			}
+			@		</UL>
+@
+		}
+	}
+}

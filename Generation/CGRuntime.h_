@@ -1,0 +1,721 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+#ifndef _CGRuntime_h_
+#define _CGRuntime_h_
+
+#include <string>
+#include <list>
+
+#include "UtlException.h"
+#include "CppParsingTree.h"
+
+#ifdef WIN32
+#	pragma warning (disable : 4290)
+#else
+	// Reading of the keyboard under Linux
+	// -----------------------------------
+	// source code: "http://linux-sxs.org/programming/kbhit.html"
+	void   initKeyboard();
+	void   closeKeyboard();
+	int    kbhit();
+	int    readch(); 
+#endif
+
+namespace CodeWorker {
+	#ifndef SEQUENCE_INTERRUPTION_DECLARATION
+	#define SEQUENCE_INTERRUPTION_DECLARATION
+	enum SEQUENCE_INTERRUPTION_LIST { NO_INTERRUPTION, CONTINUE_INTERRUPTION, RETURN_INTERRUPTION, BREAK_INTERRUPTION, EXIT_INTERRUPTION, THROW_INTERRUPTION };
+	#endif
+
+	#ifndef EXECUTE_FUNCTION_TYPE
+	#define EXECUTE_FUNCTION_TYPE
+	typedef void (*EXECUTE_FUNCTION)();
+	#endif
+
+	#ifndef EXTERNAL_FUNCTION_TYPE
+	#define EXTERNAL_FUNCTION_TYPE
+	typedef std::string (*EXTERNAL_FUNCTION)(CppParsingTree_var**);
+	#endif
+
+	#ifndef EXTERNAL_TEMPLATE_DISPATCHER_FUNCTION_TYPE
+	#define EXTERNAL_TEMPLATE_DISPATCHER_FUNCTION_TYPE
+	typedef std::string (*EXTERNAL_TEMPLATE_DISPATCHER_FUNCTION)(const std::string&, CppParsingTree_var**);
+	#endif
+
+	#ifndef READONLYHOOK_FUNCTION_TYPE
+	#define READONLYHOOK_FUNCTION_TYPE
+	typedef std::string (*READONLYHOOK_FUNCTION)(CppParsingTree_value);
+	#endif
+
+	#ifndef WRITEFILEHOOK_FUNCTION_TYPE
+	#define WRITEFILEHOOK_FUNCTION_TYPE
+	typedef std::string (*WRITEFILEHOOK_FUNCTION)(CppParsingTree_value, CppParsingTree_value, CppParsingTree_value);
+	#endif
+
+	class ScpStream;
+	class UtlDirectory;
+
+	class DtaScriptVariable;
+	class DtaScript;
+	class DtaDesignScript;
+	class DtaPatternScript;
+	class DtaTranslateScript;
+	class CGExternalHandling;
+	class DtaOutputFile;
+	class CGBNFRuntimeEnvironment;
+	class DtaProject;
+
+	class CGRuntime {
+		private:
+			static CppParsingTree_var _pThisTree;
+			static std::string _sFrozenTime;
+			static std::string _sLogFile;
+
+			friend class CGThisModifier;
+
+		public:
+			static char _tcHexa[];
+
+		public:
+			static std::string toString(double dValue);
+			static std::string toString(int iValue);
+			static int toInteger(const std::string& sText);
+			static int toInteger(double dValue);
+			static double toDouble(int iValue);
+			static double toDouble(const std::string& sText);
+
+			static const char* getApplicationName();
+			static const char* getVersionNumber();
+
+			inline static CppParsingTree_var getThisTree() { return _pThisTree; }
+			inline static DtaScriptVariable& getThisInternalNode() { return *(_pThisTree._pInternalNode); }
+			static CppParsingTree_var getRootTree();
+
+			inline static CGExternalHandling* getExternalHandling() { return _pExternalHandling; }
+			inline static void setExternalHandling(CGExternalHandling* pExternalHandling) { _pExternalHandling = pExternalHandling; }
+
+			static void registerExternalFunction(const std::string& sKey, EXTERNAL_FUNCTION externalFunction);
+			static void registerExternalTemplateDispatcherFunction(const std::string& sKey, EXTERNAL_TEMPLATE_DISPATCHER_FUNCTION externalFunction);
+			static EXTERNAL_FUNCTION getExternalFunction(const std::string& sKey);
+
+			static void throwBNFExecutionError(const std::string& sBNFToken, const char* tcComment = NULL) throw(UtlException);
+
+			static int entryPoint(int iNargs, char** tsArgs, EXECUTE_FUNCTION executeFunction);
+			static bool executeScript(int iNargs, char** tsArgs, EXECUTE_FUNCTION executeFunction) throw(UtlException);
+			static void registerScript(const char* sRegistration, EXECUTE_FUNCTION executeFunction);
+			static void registerReadonlyHook(READONLYHOOK_FUNCTION readonlyHook);
+			static void registerWritefileHook(WRITEFILEHOOK_FUNCTION writefileHook);
+			static void expand(EXECUTE_FUNCTION executeFunction, CppParsingTree_var pThisTree, const std::string& sFilename);
+			static void expand(const std::string& sScriptFile, CppParsingTree_var pThisTree, const std::string& sFilename);
+			static void autoexpand(const std::string& sFileName, CppParsingTree_var pThisTree);
+			static void generate(EXECUTE_FUNCTION executeFunction, CppParsingTree_var pThisTree, const std::string& sFilename);
+			static void generate(const std::string& sScriptFile, CppParsingTree_var pThisTree, const std::string& sFilename);
+			static void generateString(EXECUTE_FUNCTION executeFunction, CppParsingTree_var pThisTree, CppParsingTree_var pOutput);
+			static void parseFree(EXECUTE_FUNCTION executeFunction, CppParsingTree_var pThisTree, const std::string& sFilename);
+			static void parseAsBNF(EXECUTE_FUNCTION executeFunction, CppParsingTree_var pThisTree, const std::string& sFilename);
+			static void parseAsBNF(const std::string& sGrammarFile, CppParsingTree_var pThisTree, const std::string& sFilename);
+			static void parseStringAsBNF(EXECUTE_FUNCTION executeFunction, CppParsingTree_var pThisTree, const std::string& sContent);
+			static void translate(EXECUTE_FUNCTION executeFunction, CppParsingTree_var pThisTree, const std::string& sInputFilename, const std::string& sOutputFilename);
+
+			static SEQUENCE_INTERRUPTION_LIST writeText(const char* sText);
+			static SEQUENCE_INTERRUPTION_LIST writeText(int iValue);
+			static SEQUENCE_INTERRUPTION_LIST writeText(double dValue);
+			static SEQUENCE_INTERRUPTION_LIST writeText(const CppParsingTree_var& pValue);
+			static SEQUENCE_INTERRUPTION_LIST writeBinaryData(const char* sText, int iLength);
+
+			static std::string readNumeric();
+			static std::string readInteger();
+			static std::string readPositiveInteger();
+			static std::string readCompleteIdentifier();
+			static bool readIfEqualTo(char cChar);
+
+			static std::list<DtaScriptVariable*>::const_iterator nextIteration(std::list<DtaScriptVariable*>::const_iterator i);
+			static std::map<std::string, DtaScriptVariable*>::const_iterator nextIteration(std::map<std::string, DtaScriptVariable*>::const_iterator i);
+
+//##markup##"functions and procedures"
+//##begin##"functions and procedures"
+			static SEQUENCE_INTERRUPTION_LIST appendFile(const std::string& sFilename, const std::string& sContent);
+			static SEQUENCE_INTERRUPTION_LIST clearVariable(DtaScriptVariable* pNode);
+			static SEQUENCE_INTERRUPTION_LIST clearVariable(CppParsingTree_var pNode);
+			static SEQUENCE_INTERRUPTION_LIST compileToCpp(const std::string& sScriptFileName, const std::string& sProjectDirectory, const std::string& sCodeWorkerDirectory);
+			static SEQUENCE_INTERRUPTION_LIST copyFile(const std::string& sSourceFileName, const std::string& sDestinationFileName);
+			static SEQUENCE_INTERRUPTION_LIST copyGenerableFile(const std::string& sSourceFileName, const std::string& sDestinationFileName);
+			static SEQUENCE_INTERRUPTION_LIST copySmartDirectory(const std::string& sSourceDirectory, const std::string& sDestinationPath);
+			static SEQUENCE_INTERRUPTION_LIST cutString(const std::string& sText, const std::string& sSeparator, std::list<std::string>& slList);
+			static SEQUENCE_INTERRUPTION_LIST cutString(const std::string& sText, const std::string& sSeparator, CppParsingTree_var pList);
+			static SEQUENCE_INTERRUPTION_LIST environTable(DtaScriptVariable* pTable);
+			static SEQUENCE_INTERRUPTION_LIST environTable(CppParsingTree_var pTable);
+			static SEQUENCE_INTERRUPTION_LIST insertElementAt(DtaScriptVariable* pList, const std::string& sKey, int iPosition);
+			static SEQUENCE_INTERRUPTION_LIST insertElementAt(CppParsingTree_var pList, const std::string& sKey, int iPosition);
+			static SEQUENCE_INTERRUPTION_LIST invertArray(DtaScriptVariable* pArray);
+			static SEQUENCE_INTERRUPTION_LIST invertArray(CppParsingTree_var pArray);
+			static SEQUENCE_INTERRUPTION_LIST listAllGeneratedFiles(DtaScriptVariable* pFiles);
+			static SEQUENCE_INTERRUPTION_LIST listAllGeneratedFiles(CppParsingTree_var pFiles);
+			static SEQUENCE_INTERRUPTION_LIST openLogFile(const std::string& sFilename);
+			static SEQUENCE_INTERRUPTION_LIST produceHTML(const std::string& sScriptFileName, const std::string& sHTMLFileName);
+			static SEQUENCE_INTERRUPTION_LIST putEnv(const std::string& sName, const std::string& sValue);
+			static SEQUENCE_INTERRUPTION_LIST randomSeed(int iSeed);
+			static SEQUENCE_INTERRUPTION_LIST removeAllElements(DtaScriptVariable* pVariable);
+			static SEQUENCE_INTERRUPTION_LIST removeAllElements(CppParsingTree_var pVariable);
+			static SEQUENCE_INTERRUPTION_LIST removeElement(DtaScriptVariable* pVariable, const std::string& sKey);
+			static SEQUENCE_INTERRUPTION_LIST removeElement(CppParsingTree_var pVariable, const std::string& sKey);
+			static SEQUENCE_INTERRUPTION_LIST removeFirstElement(DtaScriptVariable* pList);
+			static SEQUENCE_INTERRUPTION_LIST removeFirstElement(CppParsingTree_var pList);
+			static SEQUENCE_INTERRUPTION_LIST removeLastElement(DtaScriptVariable* pList);
+			static SEQUENCE_INTERRUPTION_LIST removeLastElement(CppParsingTree_var pList);
+			static SEQUENCE_INTERRUPTION_LIST removeRecursive(DtaScriptVariable* pVariable, const std::string& sAttribute);
+			static SEQUENCE_INTERRUPTION_LIST removeRecursive(CppParsingTree_var pVariable, const std::string& sAttribute);
+			static SEQUENCE_INTERRUPTION_LIST removeVariable(DtaScriptVariable* pNode);
+			static SEQUENCE_INTERRUPTION_LIST removeVariable(CppParsingTree_var pNode);
+			static SEQUENCE_INTERRUPTION_LIST saveBinaryToFile(const std::string& sFilename, const std::string& sContent);
+			static SEQUENCE_INTERRUPTION_LIST saveProject(const std::string& sXMLFileName, DtaScriptVariable* pNodeToSave);
+			static SEQUENCE_INTERRUPTION_LIST saveProject(const std::string& sXMLFileName, CppParsingTree_var pNodeToSave);
+			static SEQUENCE_INTERRUPTION_LIST saveProjectTypes(const std::string& sXMLFileName);
+			static SEQUENCE_INTERRUPTION_LIST saveToFile(const std::string& sFilename, const std::string& sContent);
+			static SEQUENCE_INTERRUPTION_LIST setCommentBegin(const std::string& sCommentBegin);
+			static SEQUENCE_INTERRUPTION_LIST setCommentEnd(const std::string& sCommentEnd);
+			static SEQUENCE_INTERRUPTION_LIST setGenerationHeader(const std::string& sComment);
+			static SEQUENCE_INTERRUPTION_LIST setIncludePath(const std::string& sPath);
+			static SEQUENCE_INTERRUPTION_LIST setNow(const std::string& sConstantDateTime);
+			static SEQUENCE_INTERRUPTION_LIST setProperty(const std::string& sDefine, const std::string& sValue);
+			static SEQUENCE_INTERRUPTION_LIST setTextMode(const std::string& sTextMode);
+			static SEQUENCE_INTERRUPTION_LIST setVersion(const std::string& sVersion);
+			static SEQUENCE_INTERRUPTION_LIST setWriteMode(const std::string& sMode);
+			static SEQUENCE_INTERRUPTION_LIST setWorkingPath(const std::string& sPath);
+			static SEQUENCE_INTERRUPTION_LIST sleep(int iMillis);
+			static SEQUENCE_INTERRUPTION_LIST slideNodeContent(DtaScriptVariable* pOrgNode, ExprScriptVariable& xDestNode);
+			static SEQUENCE_INTERRUPTION_LIST slideNodeContent(CppParsingTree_var pOrgNode, CppParsingTree_varexpr& xDestNode);
+			static SEQUENCE_INTERRUPTION_LIST sortArray(DtaScriptVariable* pArray);
+			static SEQUENCE_INTERRUPTION_LIST sortArray(CppParsingTree_var pArray);
+			static SEQUENCE_INTERRUPTION_LIST traceEngine();
+			static SEQUENCE_INTERRUPTION_LIST traceLine(const std::string& sLine);
+			static SEQUENCE_INTERRUPTION_LIST traceObject(DtaScriptVariable* pObject, int iDepth);
+			static SEQUENCE_INTERRUPTION_LIST traceObject(CppParsingTree_var pObject, int iDepth);
+			static SEQUENCE_INTERRUPTION_LIST traceStack(DtaScriptVariable& visibility);
+			static SEQUENCE_INTERRUPTION_LIST traceText(const std::string& sText);
+			static SEQUENCE_INTERRUPTION_LIST attachInputToSocket(int iSocket);
+			static SEQUENCE_INTERRUPTION_LIST detachInputFromSocket(int iSocket);
+			static SEQUENCE_INTERRUPTION_LIST goBack();
+			static SEQUENCE_INTERRUPTION_LIST setInputLocation(int iLocation);
+			static SEQUENCE_INTERRUPTION_LIST allFloatingLocations(DtaScriptVariable* pList);
+			static SEQUENCE_INTERRUPTION_LIST allFloatingLocations(CppParsingTree_var pList);
+			static SEQUENCE_INTERRUPTION_LIST attachOutputToSocket(int iSocket);
+			static SEQUENCE_INTERRUPTION_LIST detachOutputFromSocket(int iSocket);
+			static SEQUENCE_INTERRUPTION_LIST incrementIndentLevel();
+			static SEQUENCE_INTERRUPTION_LIST insertText(int iLocation, const std::string& sText);
+			static SEQUENCE_INTERRUPTION_LIST insertTextOnce(int iLocation, const std::string& sText);
+			static SEQUENCE_INTERRUPTION_LIST insertTextToFloatingLocation(const std::string& sLocation, const std::string& sText);
+			static SEQUENCE_INTERRUPTION_LIST insertTextOnceToFloatingLocation(const std::string& sLocation, const std::string& sText);
+			static SEQUENCE_INTERRUPTION_LIST overwritePortion(int iLocation, const std::string& sText, int iSize);
+			static SEQUENCE_INTERRUPTION_LIST populateProtectedArea(const std::string& sProtectedAreaName, const std::string& sContent);
+			static SEQUENCE_INTERRUPTION_LIST resizeOutputStream(int iNewSize);
+			static SEQUENCE_INTERRUPTION_LIST setFloatingLocation(const std::string& sKey, int iLocation);
+			static SEQUENCE_INTERRUPTION_LIST setOutputLocation(int iLocation);
+			static SEQUENCE_INTERRUPTION_LIST setProtectedArea(const std::string& sProtectedAreaName);
+			static SEQUENCE_INTERRUPTION_LIST writeBytes(const std::string& sBytes);
+			static SEQUENCE_INTERRUPTION_LIST writeText(const std::string& sText);
+			static SEQUENCE_INTERRUPTION_LIST writeTextOnce(const std::string& sText);
+			static SEQUENCE_INTERRUPTION_LIST closeSocket(int iSocket);
+
+			static bool flushOutputToSocket(int iSocket);
+			static int acceptSocket(int iServerSocket);
+			static double add(double dLeft, double dRight);
+			static std::string addToDate(const std::string& sDate, const std::string& sFormat, const std::string& sShifting);
+			static std::string byteToChar(const std::string& sByte);
+			static unsigned long bytesToLong(const std::string& sBytes);
+			static unsigned short bytesToShort(const std::string& sBytes);
+			static std::string canonizePath(const std::string& sPath);
+			static bool changeDirectory(const std::string& sPath);
+			static int changeFileTime(const std::string& sFilename, const std::string& sAccessTime, const std::string& sModificationTime);
+			static std::string charAt(const std::string& sText, int iIndex);
+			static std::string charToByte(const std::string& sChar);
+			static int charToInt(const std::string& sChar);
+			static bool chmod(const std::string& sFilename, const std::string& sMode);
+			static int ceil(double dNumber);
+			static int compareDate(const std::string& sDate1, const std::string& sDate2);
+			static std::string completeDate(const std::string& sDate, const std::string& sFormat);
+			static std::string completeLeftSpaces(const std::string& sText, int iLength);
+			static std::string completeRightSpaces(const std::string& sText, int iLength);
+			static std::string composeAdaLikeString(const std::string& sText);
+			static std::string composeCLikeString(const std::string& sText);
+			static std::string composeHTMLLikeString(const std::string& sText);
+			static std::string composeSQLLikeString(const std::string& sText);
+			static std::string computeMD5(const std::string& sText);
+			static bool copySmartFile(const std::string& sSourceFileName, const std::string& sDestinationFileName);
+			static std::string coreString(const std::string& sText, int iPos, int iLastRemoved);
+			static int countStringOccurences(const std::string& sString, const std::string& sText);
+			static bool createDirectory(const std::string& sPath);
+			static int createINETClientSocket(const std::string& sRemoteAddress, int iPort);
+			static int createINETServerSocket(int iPort, int iBackLog);
+			static bool createIterator(DtaScriptVariable* pI, DtaScriptVariable* pList);
+			static bool createIterator(CppParsingTree_var pI, CppParsingTree_var pList);
+			static bool createReverseIterator(DtaScriptVariable* pI, DtaScriptVariable* pList);
+			static bool createReverseIterator(CppParsingTree_var pI, CppParsingTree_var pList);
+			static bool createVirtualFile(const std::string& sHandle, const std::string& sContent);
+			static std::string createVirtualTemporaryFile(const std::string& sContent);
+			static std::string decodeURL(const std::string& sURL);
+			static double decrement(double& dNumber);
+			static double decrement(CppParsingTree_var pNumber);
+			static bool deleteFile(const std::string& sFilename);
+			static bool deleteVirtualFile(const std::string& sHandle);
+			static double div(double dDividend, double dDivisor);
+			static bool duplicateIterator(DtaScriptVariable* pOldIt, DtaScriptVariable* pNewIt);
+			static bool duplicateIterator(CppParsingTree_var pOldIt, CppParsingTree_var pNewIt);
+			static std::string encodeURL(const std::string& sURL);
+			static std::string endl();
+			static bool endString(const std::string& sText, const std::string& sEnd);
+			static bool equal(double dLeft, double dRight);
+			static bool equalsIgnoreCase(const std::string& sLeft, const std::string& sRight);
+			static bool equalTrees(DtaScriptVariable* pFirstTree, DtaScriptVariable* pSecondTree);
+			static bool equalTrees(CppParsingTree_var pFirstTree, CppParsingTree_var pSecondTree);
+			static std::string executeStringQuiet(DtaScriptVariable* pThis, const std::string& sCommand);
+			static std::string executeStringQuiet(CppParsingTree_var pThis, const std::string& sCommand);
+			static bool existEnv(const std::string& sVariable);
+			static bool existFile(const std::string& sFileName);
+			static bool existVirtualFile(const std::string& sHandle);
+			static bool existVariable(DtaScriptVariable* pVariable);
+			static bool existVariable(CppParsingTree_var pVariable);
+			static double exp(double dX);
+			static bool exploreDirectory(DtaScriptVariable* pDirectory, const std::string& sPath, bool bSubfolders);
+			static bool exploreDirectory(CppParsingTree_var pDirectory, const std::string& sPath, bool bSubfolders);
+			static std::string extractGenerationHeader(const std::string& sFilename, std::string& sGenerator, std::string& sVersion, std::string& sDate);
+			static std::string extractGenerationHeader(const std::string& sFilename, CppParsingTree_var pGenerator, CppParsingTree_var pVersion, CppParsingTree_var pDate);
+			static std::string fileCreation(const std::string& sFilename);
+			static std::string fileLastAccess(const std::string& sFilename);
+			static std::string fileLastModification(const std::string& sFilename);
+			static int fileLines(const std::string& sFilename);
+			static std::string fileMode(const std::string& sFilename);
+			static int fileSize(const std::string& sFilename);
+			static bool findElement(const std::string& sValue, DtaScriptVariable* pVariable);
+			static bool findElement(const std::string& sValue, CppParsingTree_var pVariable);
+			static int findFirstChar(const std::string& sText, const std::string& sSomeChars);
+			static int findFirstSubstringIntoKeys(const std::string& sSubstring, DtaScriptVariable* pArray);
+			static int findFirstSubstringIntoKeys(const std::string& sSubstring, CppParsingTree_var pArray);
+			static int findLastString(const std::string& sText, const std::string& sFind);
+			static int findNextString(const std::string& sText, const std::string& sFind, int iPosition);
+			static int findNextSubstringIntoKeys(const std::string& sSubstring, DtaScriptVariable* pArray, int iNext);
+			static int findNextSubstringIntoKeys(const std::string& sSubstring, CppParsingTree_var pArray, int iNext);
+			static int findString(const std::string& sText, const std::string& sFind);
+			static int floor(double dNumber);
+			static std::string formatDate(const std::string& sDate, const std::string& sFormat);
+			static int getArraySize(DtaScriptVariable* pVariable);
+			static int getArraySize(CppParsingTree_var pVariable);
+			static std::string getCommentBegin();
+			static std::string getCommentEnd();
+			static std::string getCurrentDirectory();
+			static std::string getEnv(const std::string& sVariable);
+			static std::string getGenerationHeader();
+			static std::string getHTTPRequest(const std::string& sURL, DtaScriptVariable* pHTTPSession, DtaScriptVariable* pArguments);
+			static std::string getHTTPRequest(const std::string& sURL, CppParsingTree_var pHTTPSession, CppParsingTree_var pArguments);
+			static std::string getIncludePath();
+			static double getLastDelay();
+			static std::string getNow();
+			static std::string getProperty(const std::string& sDefine);
+			static std::string getShortFilename(const std::string& sPathFilename);
+			static std::string getTextMode();
+			static int getVariableAttributes(DtaScriptVariable* pVariable, DtaScriptVariable* pList);
+			static int getVariableAttributes(CppParsingTree_var pVariable, CppParsingTree_var pList);
+			static std::string getVersion();
+			static std::string getWorkingPath();
+			static std::string getWriteMode();
+			static int hexaToDecimal(const std::string& sHexaNumber);
+			static std::string hostToNetworkLong(const std::string& sBytes);
+			static std::string hostToNetworkShort(const std::string& sBytes);
+			static double increment(double& dNumber);
+			static double increment(CppParsingTree_var pNumber);
+			static bool indentFile(const std::string& sFile, const std::string& sMode);
+			static bool inf(double dLeft, double dRight);
+			static std::string inputKey(bool bEcho);
+			static std::string inputLine(bool bEcho, const std::string& sPrompt);
+			static bool isEmpty(DtaScriptVariable* pArray);
+			static bool isEmpty(CppParsingTree_var pArray);
+			static bool isIdentifier(const std::string& sIdentifier);
+			static bool isNegative(double dNumber);
+			static bool isNumeric(const std::string& sNumber);
+			static bool isPositive(double dNumber);
+			static std::string joinStrings(DtaScriptVariable* pList, const std::string& sSeparator);
+			static std::string joinStrings(CppParsingTree_var pList, const std::string& sSeparator);
+			static std::string leftString(const std::string& sText, int iLength);
+			static int lengthString(const std::string& sText);
+			static std::string loadBinaryFile(const std::string& sFile, int iLength);
+			static std::string loadFile(const std::string& sFile, int iLength);
+			static std::string loadVirtualFile(const std::string& sHandle);
+			static double log(double dX);
+			static std::string longToBytes(unsigned long ulLong);
+			static std::string midString(const std::string& sText, int iPos, int iLength);
+			static int mod(int iDividend, int iDivisor);
+			static double mult(double dLeft, double dRight);
+			static std::string networkLongToHost(const std::string& sBytes);
+			static std::string networkShortToHost(const std::string& sBytes);
+			static int octalToDecimal(const std::string& sOctalNumber);
+			static std::string pathFromPackage(const std::string& sPackage);
+			static std::string postHTTPRequest(const std::string& sURL, DtaScriptVariable* pHTTPSession, DtaScriptVariable* pArguments);
+			static std::string postHTTPRequest(const std::string& sURL, CppParsingTree_var pHTTPSession, CppParsingTree_var pArguments);
+			static double pow(double dX, double dY);
+			static int randomInteger();
+			static std::string receiveBinaryFromSocket(int iSocket, int iLength);
+			static std::string receiveFromSocket(int iSocket, bool& bIsText);
+			static std::string receiveFromSocket(int iSocket, CppParsingTree_var pIsText);
+			static std::string receiveTextFromSocket(int iSocket, int iLength);
+			static std::string relativePath(const std::string& sPath, const std::string& sReference);
+			static bool removeDirectory(const std::string& sPath);
+			static bool removeGenerationTagsHandler(const std::string& sKey);
+			static std::string repeatString(const std::string& sText, int iOccurrences);
+			static std::string replaceString(const std::string& sOld, const std::string& sNew, const std::string& sText);
+			static std::string replaceTabulations(const std::string& sText, int iTab);
+			static std::string resolveFilePath(const std::string& sFilename);
+			static std::string rightString(const std::string& sText, int iLength);
+			static std::string rsubString(const std::string& sText, int iPos);
+			static bool scanDirectories(DtaScriptVariable* pDirectory, const std::string& sPath, const std::string& sPattern);
+			static bool scanDirectories(CppParsingTree_var pDirectory, const std::string& sPath, const std::string& sPattern);
+			static bool scanFiles(DtaScriptVariable* pFiles, const std::string& sPath, const std::string& sPattern, bool bSubfolders);
+			static bool scanFiles(CppParsingTree_var pFiles, const std::string& sPath, const std::string& sPattern, bool bSubfolders);
+			static bool sendBinaryToSocket(int iSocket, const std::string& sBytes);
+			static std::string sendHTTPRequest(const std::string& sURL, DtaScriptVariable* pHTTPSession);
+			static std::string sendHTTPRequest(const std::string& sURL, CppParsingTree_var pHTTPSession);
+			static bool sendTextToSocket(int iSocket, const std::string& sText);
+			static bool selectGenerationTagsHandler(const std::string& sKey);
+			static std::string shortToBytes(unsigned short ulShort);
+			static double sqrt(double dX);
+			static bool startString(const std::string& sText, const std::string& sStart);
+			static double sub(double dLeft, double dRight);
+			static std::string subString(const std::string& sText, int iPos);
+			static bool sup(double dLeft, double dRight);
+			static std::string system(const std::string& sCommand);
+			static std::string toLowerString(const std::string& sText);
+			static std::string toUpperString(const std::string& sText);
+			static int trimLeft(std::string& sString);
+			static int trimLeft(CppParsingTree_var pString);
+			static int trimRight(std::string& sString);
+			static int trimRight(CppParsingTree_var pString);
+			static int trim(std::string& sString);
+			static int trim(CppParsingTree_var pString);
+			static std::string truncateAfterString(DtaScriptVariable* pVariable, const std::string& sText);
+			static std::string truncateAfterString(CppParsingTree_var pVariable, const std::string& sText);
+			static std::string truncateBeforeString(DtaScriptVariable* pVariable, const std::string& sText);
+			static std::string truncateBeforeString(CppParsingTree_var pVariable, const std::string& sText);
+			static std::string UUID();
+			static int countInputCols();
+			static int countInputLines();
+			static std::string getInputFilename();
+			static std::string getLastReadChars(int iLength);
+			static int getInputLocation();
+			static bool lookAhead(const std::string& sText);
+			static std::string peekChar();
+			static bool readAdaString(std::string& sText);
+			static bool readAdaString(CppParsingTree_var pText);
+			static std::string readByte();
+			static std::string readBytes(int iLength);
+			static std::string readCChar();
+			static std::string readChar();
+			static int readCharAsInt();
+			static std::string readChars(int iLength);
+			static std::string readIdentifier();
+			static bool readIfEqualTo(const std::string& sText);
+			static bool readIfEqualToIgnoreCase(const std::string& sText);
+			static bool readIfEqualToIdentifier(const std::string& sIdentifier);
+			static bool readLine(std::string& sText);
+			static bool readLine(CppParsingTree_var pText);
+			static bool readNextText(const std::string& sText);
+			static bool readNumber(double& dNumber);
+			static bool readNumber(CppParsingTree_var pNumber);
+			static bool readString(std::string& sText);
+			static bool readString(CppParsingTree_var pText);
+			static std::string readUptoJustOneChar(const std::string& sOneAmongChars);
+			static std::string readWord();
+			static bool skipBlanks();
+			static bool skipEmptyCpp();
+			static bool skipEmptyCppExceptDoxygen();
+			static bool skipEmptyHTML();
+			static bool skipEmptyLaTeX();
+			static int countOutputCols();
+			static int countOutputLines();
+			static bool decrementIndentLevel();
+			static bool existFloatingLocation(const std::string& sKey, bool bParent);
+			static int getFloatingLocation(const std::string& sKey);
+			static std::string getLastWrittenChars(int iNbChars);
+			static std::string getMarkupKey();
+			static std::string getMarkupValue();
+			static std::string getOutputFilename();
+			static int getOutputLocation();
+			static std::string getProtectedArea(const std::string& sProtection);
+			static int getProtectedAreaKeys(DtaScriptVariable* pKeys);
+			static int getProtectedAreaKeys(CppParsingTree_var pKeys);
+			static bool indentText(const std::string& sMode);
+			static bool newFloatingLocation(const std::string& sKey);
+			static int remainingProtectedAreas(DtaScriptVariable* pKeys);
+			static int remainingProtectedAreas(CppParsingTree_var pKeys);
+			static int removeFloatingLocation(const std::string& sKey);
+			static bool removeProtectedArea(const std::string& sProtectedAreaName);
+//##end##"functions and procedures"
+
+			static bool extractGenerationHeader(ScpStream& theStream, std::string& sGenerator, std::string& sVersion, std::string& sDate, std::string& sComment);
+
+		private:
+			static void populateDirectory(DtaScriptVariable* pDirectory, UtlDirectory& theDirectory, bool bSubfolders);
+			static void populateFileScan(DtaScriptVariable* pFiles, UtlDirectory& theDirectory, bool bSubfolders);
+			static void copySmartDirectory(UtlDirectory& theDirectory, const std::string& sDestinationPath);
+			static bool convertBytesToChars(const std::string& sBytes, unsigned char* tcBuffer, int iLength);
+			static void convertCharsToBytes(const unsigned char* tcBuffer, char* tcContent, int iLength);
+
+		private:
+			static ScpStream* _pOutputStream;
+			friend class CGRuntimeOutputStream;
+			friend class DtaOutputFile;
+			friend class NetSocket;
+			friend class CGRuntimeOutputFile;
+
+			static ScpStream* _pInputStream;
+			friend class CGRuntimeInputStream;
+			friend class CGRuntimeInputFile;
+			friend class CGRuntimeInputString;
+			friend class DtaDesignScript;
+			friend class DtaBNFScript;
+			friend class BNFTryCatch;
+			friend class BNFScanWindow;
+			friend class CGBNFRuntimeEnvironment;
+			friend class CGBNFRuntimeResizeInput;
+
+			static std::list<DtaPatternScript*> _listOfPatternScripts;
+
+			static CGExternalHandling* _pExternalHandling;
+
+			static std::map<std::string, EXTERNAL_FUNCTION>& getExternalFunctionsRegister();
+			static std::map<std::string, EXTERNAL_TEMPLATE_DISPATCHER_FUNCTION>& getExternalTemplateDispatcherFunctionsRegister();
+	};
+
+
+	class CGThisModifier {
+		private:
+			DtaScriptVariable* _pOldThis;
+
+		public:
+			inline CGThisModifier(CppParsingTree_var& pThisTree) : _pOldThis(&CGRuntime::getThisInternalNode()) {
+				CGRuntime::_pThisTree = pThisTree;
+			}
+			inline CGThisModifier(DtaScriptVariable* pThisTree) : _pOldThis(&CGRuntime::getThisInternalNode()) {
+				CGRuntime::_pThisTree = CppParsingTree_var(pThisTree);
+			}
+			inline ~CGThisModifier() {
+				CGRuntime::_pThisTree = CppParsingTree_var(_pOldThis);
+			}
+	};
+
+	
+	class CGRuntimeInputStream {
+		private:
+			ScpStream* _pOldStream;
+
+		public:
+			CGRuntimeInputStream(ScpStream* pNewStream);
+			~CGRuntimeInputStream();
+	};
+
+	class CGRuntimeOutputStream {
+		private:
+			ScpStream* _pOldStream;
+
+		public:
+			CGRuntimeOutputStream(ScpStream* pNewStream);
+			~CGRuntimeOutputStream();
+	};
+
+	class CGRuntimeInputFile {
+		private:
+			std::string _sFile;
+			ScpStream* _pOldInputStream;
+			ScpStream* _pNewStream;
+
+		public:
+			CGRuntimeInputFile(const std::string& sFile);
+			~CGRuntimeInputFile();
+
+			std::string onCatchedException(const UtlException& exception);
+	};
+
+	class CGRuntimeInputString {
+		private:
+			ScpStream* _pOldInputStream;
+			ScpStream* _pNewStream;
+
+		public:
+			CGRuntimeInputString(const std::string& sText);
+			~CGRuntimeInputString();
+
+			std::string onCatchedException(const UtlException& exception);
+	};
+
+	class CGRuntimeOutputString {
+		private:
+			ScpStream* _pOldOutputStream;
+			DtaOutputFile* _pGeneratedString;
+
+		public:
+			CGRuntimeOutputString();
+			~CGRuntimeOutputString();
+
+			void onCatchedException(UtlException& exception);
+
+			std::string getResult() const;
+	};
+
+	class CGRuntimeOutputFile {
+		private:
+			bool _bAppendMode;
+			ScpStream* _pOldOutputStream;
+			DtaOutputFile* _pGeneratedString;
+
+		public:
+			CGRuntimeOutputFile(const std::string& sFile, bool bAppendMode = false);
+			~CGRuntimeOutputFile();
+
+			void onCatchedException(UtlException& exception);
+			void closeGenerate();
+	};
+
+	class CGRuntimeNewProject {
+		private:
+			DtaProject* _pNewProject;
+		public:
+			CGRuntimeNewProject();
+			~CGRuntimeNewProject();
+	};
+
+	class CGBNFRuntimeIgnore;
+	class CGBNFRuntimeTransformationMode;
+
+	#ifndef EXECUTE_CLAUSE_TYPE
+	#define EXECUTE_CLAUSE_TYPE
+	typedef bool (*EXECUTE_CLAUSE)(CGBNFRuntimeEnvironment&);
+	#endif
+
+	struct CGRuntimeTemporaryMatchingStorage;
+
+	class CGBNFRuntimeEnvironment {
+	public:
+		struct CGMatchingAreas {
+			const char* clause;
+			int beginPosition;
+			int endPosition;
+			std::list<CGMatchingAreas*> childs;
+
+			inline CGMatchingAreas(const char* c, int i) : clause(c), beginPosition(i), endPosition(-1) {}
+			~CGMatchingAreas();
+			inline void pushChild(CGMatchingAreas* pChild) { childs.push_back(pChild); }
+			inline void popChild() { childs.pop_back(); }
+		};
+
+	private:
+		EXECUTE_CLAUSE _executeClause;
+		int  _iIgnoreMode;
+		bool _bImplicitCopy;
+		std::list<std::string> _clauseSignatures;
+		CGMatchingAreas* _pMatchingAreas;
+		friend class CGBNFRuntimeClauseMatchingAreaValidator;
+
+	public:
+		inline CGBNFRuntimeEnvironment(EXECUTE_CLAUSE executeClause, int iIgnoreMode, bool bImplicitCopy) : _executeClause(executeClause), _iIgnoreMode(iIgnoreMode), _bImplicitCopy(bImplicitCopy), _pMatchingAreas(NULL) {}
+		~CGBNFRuntimeEnvironment();
+
+		inline bool implicitCopy() const { return _bImplicitCopy; }
+		void pushIgnoreMode(CGBNFRuntimeIgnore& ignoreMode, int iNewIgnoreMode, EXECUTE_CLAUSE newExecuteClause);
+		void popIgnoreMode(const CGBNFRuntimeIgnore& ignoreMode);
+		void pushImplicitCopy(CGBNFRuntimeTransformationMode& transformationMode, bool bNewImplicitCopy);
+		void popImplicitCopy(const CGBNFRuntimeTransformationMode& transformationMode);
+
+		inline void addClauseSignature(const std::string& sSignature) { _clauseSignatures.push_back(sSignature); }
+		void activateMatchingAreas();
+		inline CGMatchingAreas* getMatchingAreas() const { return _pMatchingAreas; }
+		void storeMatchingAreas(CppParsingTree_var& pStorage);
+
+		int skipEmptyChars();
+		void writeBinaryData(const char* tcText, int iLength);
+	private:
+		void storeClauseMatching(DtaScriptVariable& ruleNames, std::map<int, std::map<int, std::list<CGRuntimeTemporaryMatchingStorage*> > >& mapOfAreas, CGMatchingAreas* pClauseMatching);
+	};
+
+	class CGBNFRuntimeClauseMatchingAreaValidator {
+	private:
+		CGBNFRuntimeEnvironment* pBNFScript_;
+		CGBNFRuntimeEnvironment::CGMatchingAreas* pOld_;
+
+	public:
+		CGBNFRuntimeClauseMatchingAreaValidator(const char* tcClause, CGBNFRuntimeEnvironment* pBNFScript);
+		~CGBNFRuntimeClauseMatchingAreaValidator();
+		void validate();
+	};
+
+	class CGBNFRuntimeIgnore {
+	private:
+		CGBNFRuntimeEnvironment* _pBNFRuntimeEnvironment;
+
+	public:
+		EXECUTE_CLAUSE _executeClause;
+		int _iIgnoreMode;
+
+	public:
+		inline CGBNFRuntimeIgnore(CGBNFRuntimeEnvironment& theBNFRuntimeEnvironment, int iNewIgnoreMode, EXECUTE_CLAUSE newExecuteClause) : _pBNFRuntimeEnvironment(&theBNFRuntimeEnvironment) { _pBNFRuntimeEnvironment->pushIgnoreMode(*this, iNewIgnoreMode, newExecuteClause); }
+		inline ~CGBNFRuntimeIgnore() { _pBNFRuntimeEnvironment->popIgnoreMode(*this); }
+	};
+
+	class CGBNFRuntimeTransformationMode {
+	private:
+		CGBNFRuntimeEnvironment* _pBNFRuntimeEnvironment;
+
+	public:
+		bool _bImplicitCopy;
+
+	public:
+		inline CGBNFRuntimeTransformationMode(CGBNFRuntimeEnvironment& theBNFRuntimeEnvironment, bool bNewImplicitCopy) : _pBNFRuntimeEnvironment(&theBNFRuntimeEnvironment) { _pBNFRuntimeEnvironment->pushImplicitCopy(*this, bNewImplicitCopy); }
+		inline ~CGBNFRuntimeTransformationMode() { _pBNFRuntimeEnvironment->popImplicitCopy(*this); }
+	};
+
+	class CGBNFRuntimeResizeInput {
+	private:
+		void* _pSizeAttributes;
+	public:
+		CGBNFRuntimeResizeInput(int iFinalLocation);
+		~CGBNFRuntimeResizeInput();
+	};
+
+	class CGBNFClauseScope {
+	private:
+		mutable DtaScriptVariable* _pLocalVariables;
+
+	public:
+		inline CGBNFClauseScope() : _pLocalVariables(NULL) {}
+		~CGBNFClauseScope();
+
+		CppParsingTree_var getNode(const std::string& sName) const;
+		CppParsingTree_var getEvaluatedNode(const std::string& sDynamicVariable) const;
+		CppParsingTree_var insertNode(const std::string& sName);
+		CppParsingTree_var insertEvaluatedNode(const std::string& sDynamicVariable);
+		CppParsingTree_var insertClassicalNode(const std::string& sName);
+		CppParsingTree_var insertClassicalEvaluatedNode(const std::string& sDynamicVariable);
+		CppParsingTree_var getOrCreateLocalNode(const std::string& sName);
+
+	private:
+		CGBNFClauseScope(const CGBNFClauseScope&);
+	};
+}
+
+#endif

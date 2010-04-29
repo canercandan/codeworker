@@ -1,0 +1,405 @@
+@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+function writeFunctionDescription(myFunction : node, myHTMLDoc : node) {
+	@<ul>
+	<li> @
+	if myFunction.return_type {
+		@function @
+	} else {
+		@procedure @
+	}
+	@<b>@myFunction.name@(</b>@
+	foreach i in myFunction.parameterList {
+		if !first(i) {
+			@<b>,&nbsp;</b>@
+		}
+		@<em>@i.name@</em> <b>:</b> <i>@i.type@</i>@
+	}
+	if myFunction.return_type {
+		@<b>) :</b> <i>@myFunction.return_type@</i><br/>
+@
+	} else {
+		@<b>)</b><br/>
+@
+	}
+	if !isEmpty(myFunction.parameterList) {
+		@<table border="1" cellpadding="7" cellspacing="0"><tr><td class="company"><b>Parameter</b></td><td class="company"><b>Type</b></td><td class="company"><b>Description</b></td></tr>
+@
+		foreach i in myFunction.parameterList {
+			@	<tr><td><em>@i.name@</em></td><td><i>@i.type@</i></td><td>@i.documentation@</td></tr>
+@
+		}
+		@</table>
+<p/>
+@
+	}
+	if myFunction.documentation {
+		createVirtualFile(".#f1", myFunction.documentation);
+		createVirtualFile(".#f2", "");
+		try {
+			translate("LaTeX2HTML.cwp", myHTMLDoc, ".#f1", ".#f2");
+		} catch(sError) {
+			traceLine("error in the description of function '" + myFunction.name + "':");
+			traceLine(myFunction.documentation);
+			error(sError);
+		}
+		@@loadVirtualFile(".#f2")@
+@
+		deleteVirtualFile(".#f2");
+		deleteVirtualFile(".#f1");
+	}
+	@	</li>
+</ul>
+@
+}
+
+
+function generateJavaDotNet() {
+	local sFileVersion = getVersion();
+	sFileVersion = sFileVersion.replaceString('.', '_');
+@							<table border="1" cellpadding="7" cellspacing="0" width="100%">
+								<tr>
+									<td class="changes" valign="top" colspan="3">Documentation</td>
+								</tr>
+								<tr>
+									<td class="role" valign="top">Type</td>
+									<td class="role" valign="top">Size</td>
+									<td class="role" valign="top">Document</td>
+								</tr>
+								<tr>
+									<td class="content" valign="top">Reference Manual</td>
+									<td class="content" valign="top">@fileSize("WebSite/CodeWorker.pdf")@</td>
+									<td class="content" valign="top"><a href="CodeWorker.pdf">CodeWorker.pdf</a></td>
+								</tr>
+								<tr>
+									<td class="content" valign="top">Reference Manual</td>
+									<td class="content" valign="top">-</td>
+									<td class="content" valign="top"><a href="Documentation.html">Online documentation</a></td>
+								</tr>
+								<tr>
+									<td class="content" valign="top">Tutorial</td>
+									<td class="content" valign="top">-</td>
+									<td class="content" valign="top"><a href="tutorials/DesignSpecificModeling/tutorial.html">Practice of parsing and code generation for generative programming</a></td>
+								</tr>
+								<tr>
+									<td class="content" valign="top">Tutorial</td>
+									<td class="content" valign="top">French</td>
+									<td class="content" valign="top"><a href="http://cedric-lemaire.developpez.com/DecouverteCW/index.php">Automatiser le développement d'applications; parcours découverte</a></td>
+								</tr>
+							</table>
+							<table border="1" cellpadding="7" cellspacing="0" width="100%">
+								<tr>
+									<td class="changes" valign="top" colspan="4">Last Java interface for CodeWorker (version @getVersion()@)</td>
+								</tr>
+								<tr>
+									<td class="role" valign="top">Platform</td>
+									<td class="role" valign="top">Type</td>
+									<td class="role" valign="top">Size</td>
+									<td class="role" valign="top">Archive</td>
+								</tr>
+								<tr>
+									<td class="content" valign="top">WINDOWS 98/2000/NT/XP</td>
+									<td class="content" valign="top">binaries</td>
+									<td class="content" valign="top">@fileSize("WebSite/downloads/CodeWorker_Java.zip")@</td>
+									<td class="content" valign="top"><a href="downloads/CodeWorker_Java.zip">CodeWorker_Java.zip</a></td>
+								</tr>
+								<tr>
+									<td class="content" valign="top">Any platform (?)</td>
+									<td class="content" valign="top" colspan="3">The sources are located in the directory <kbd>"java/src"</kbd> (download <a href="downloads/CodeWorker_SRC@sFileVersion@.zip">CodeWorker sources</a>). Please read <a href="JAVAAPI.html">this page about the Java interface</a> for more information.</td>
+								</tr>
+							</table>
+							<table border="1" cellpadding="7" cellspacing="0" width="100%">
+								<tr>
+									<td class="changes" valign="top" colspan="4">Last .NET assembly of CodeWorker (version @getVersion()@)</td>
+								</tr>
+								<tr>
+									<td class="role" valign="top">Platform</td>
+									<td class="role" valign="top">Type</td>
+									<td class="role" valign="top">Size</td>
+									<td class="role" valign="top">Archive</td>
+								</tr>
+								<tr>
+									<td class="content" valign="top">WINDOWS 98/2000/NT/XP</td>
+									<td class="content" valign="top">binaries</td>
+									<td class="content" valign="top">@fileSize("WebSite/downloads/CodeWorker_NET.zip")@</td>
+									<td class="content" valign="top"><a href="downloads/CodeWorker_NET.zip">CodeWorker_NET.zip</a></td>
+								</tr>
+								<tr>
+									<td class="content" valign="top">Any platform (?)</td>
+									<td class="content" valign="top" colspan="3">To compile it for <a href="http://www.mono-project.com/Main_Page">Mono</a>, the sources are located in the directory <kbd>"cs/src"</kbd> (download <a href="downloads/CodeWorker_SRC@sFileVersion@.zip">CodeWorker sources</a>). Please read <a href="DOTNET.html">this page about the .NET assembly</a> for more information.</td>
+								</tr>
+							</table>
+@
+}
+
+function generateVersionChanges(theVersion : node, bLastChanges : value) {
+	@							<table border="1" cellpadding="7" cellspacing="0" width="100%">
+								<tr>
+									<td class="changes" valign="top" colspan="4">Changes@
+	if bLastChanges {
+		@ on version @theVersion@@
+	} else if theVersion.private {
+		@ on private version @theVersion@@
+	}
+		@</td>
+								</tr>
+@
+	if existVariable(theVersion.description) {
+		@								<tr>
+									<td class="content" valign="top" colspan="4">@
+		local myHTMLDoc;
+		insert myHTMLDoc.sParsingMode = "description";
+		createVirtualFile(".#f1", theVersion.description);
+		createVirtualFile(".#f2", "");
+		try {
+			translate("LaTeX2HTML.cwp", myHTMLDoc, ".#f1", ".#f2");
+		} catch(sError) {
+			traceLine("error in the description of the version '" + theVersion + "':");
+			traceLine(theVersion.description);
+			error(sError);
+		}
+		@@loadVirtualFile(".#f2")@@
+		deleteVirtualFile(".#f2");
+		deleteVirtualFile(".#f1");
+		@</td>
+								</tr>
+@
+	}
+	@								<tr>
+									<td class="role" valign="top">Date</td>
+									<td class="role" valign="top">Type</td>
+									<td class="role" valign="top">Caller</td>
+									<td class="role" valign="top">Description</td>
+								</tr>
+@
+	foreach i in theVersion.listOfChanges {
+		@								<tr>
+									<td class="content" valign="top">@i.date@</td>
+									<td class="content" valign="top">@i.type@</td>
+									<td class="content" valign="top">@
+		switch(i.caller) {
+			case "":
+				@-@
+				break;
+			case "Gwenael CHAZAL":
+				@<a href="http://perso.wanadoo.fr/famille-chazal/gwenaelindexenglish.htm">Gwenael CHAZAL</a>@
+				break;
+			case "Alan CYMENT":
+				@<a href="http://dependex.dc.uba.ar/setpoint/">Alan CYMENT</a>@
+				break;
+			case "Eric NICOLAS":
+				@<a href="http://www.erik-n.net/">Eric NICOLAS</a>@
+				break;
+			case "Laurent RIESTERER":
+				@<a href="http://laurent.riesterer.free.fr">Laurent RIESTERER</a>@
+				break;
+			case "Patrick BRANNAN":
+				@<a href="http://www.cs-express.net/">Patrick BRANNAN</a>@
+				break;
+			case "David JOBET":
+				@<a href="http://www.nosica.net/">David JOBET</a>@
+				break;
+			case "Thierry WILMOT":
+				@<a href="http://www.mktools.com/index.html">Thierry WILMOT</a>@
+				break;
+			case "DSM workshop/OOPSLA 2005":
+				@<a href="http://www.dsmforum.org/events/DSM05/index.html">DSM workshop/OOPSLA 2005</a>@
+				break;
+			default:
+				@@i.caller@@
+		}
+		@</td>
+									<td class="content" valign="top">@
+		local myHTMLDoc;
+		insert myHTMLDoc.sParsingMode = "description";
+		if i.type == "function" {
+			local myFunction;
+			foreach j in i.listOfFunctions {
+				if findElement(j, project.procedureList) ref myFunction = project.procedureList[j];
+				else if findElement(j, project.functionList) ref myFunction = project.functionList[j];
+				else error("'changes.log': unknown function '" + j + "'");
+				writeFunctionDescription(myFunction, myHTMLDoc);
+			}
+		} else if i.type == "option" {
+			if $getArraySize(i.listOfOptions) > 1$ {
+				@						Add of @i.listOfOptions.size()@ new options on the command line:
+						<ul>
+@
+				foreach j in i.listOfOptions {
+				@							<li><b>-@j@</b></li>
+@
+				}
+				@						</ul>
+@
+			} else {
+				@						Add of a new option on the command line: <b>-@i.listOfOptions#front@</b>@
+			}
+		} else {
+			createVirtualFile(".#f1", i.description);
+			createVirtualFile(".#f2", "");
+			try {
+				translate("LaTeX2HTML.cwp", myHTMLDoc, ".#f1", ".#f2");
+			} catch(sError) {
+				traceLine("error in the description of a '" + i.type + ":" + i.date + "' change:");
+				traceLine(i.description);
+				error(sError);
+			}
+			@@loadVirtualFile(".#f2")@@
+			deleteVirtualFile(".#f2");
+			deleteVirtualFile(".#f1");
+		}
+		@</td>
+								</tr>
+@
+	}
+	@							</table>
+@
+}
+
+
+	local sThisVersion;
+	if findElement("current", project.listOfVersions) set sThisVersion = "current";
+	else set sThisVersion = getVersion();
+	local sVersion = replaceString(".", "_", sThisVersion);
+	local bLastChanges = !getMarkupKey();
+	local bGPGWINSignature = existFile("WebSite/downloads/CodeWorker_WIN" + sVersion + ".zip.asc");
+	local bGPGSRCSignature = existFile("WebSite/downloads/CodeWorker_SRC" + sVersion + ".zip.asc");
+	local bGPGSignature = bGPGWINSignature || bGPGSRCSignature;
+
+	if bLastChanges {
+		@<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+	<title>Last changes of CodeWorker</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+	<meta name="Description" content="Last changes of CodeWorker, a universal parsing tool and source code generator that interprets a scripting language to drive the parsing and the generation. It insists on offering powerful functionalities to do intensive code generation.">
+	<meta http-equiv="pragma" content="no-cache" />
+	<meta http-equiv="cache-control" content="no-cache" />
+
+<link rel="stylesheet" type="text/css" href="CodeWorker.css" />
+
+</head>
+<body>
+	<h1>CodeWorker</h1>
+	<br />
+	<br />
+@
+	} else {
+		@
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top" colspan="@(bGPGSignature ? 5 : 4)@">
+							<i class="CodeWorker">CodeWorker</i> @sThisVersion@, @formatDate(getNow(), "%d%b%Y")@
+						</td>
+					</tr>
+					<tr>
+						<td class="role" valign="top">Platform</td>
+						<td class="role" valign="top">Type</td>
+						<td class="role" valign="top">Size</td>
+						<td class="role" valign="top">Archive</td>
+@
+		if bGPGSignature {
+@						<td class="role" valign="top">GnuPG signature</td>
+@
+		}
+@					</tr>
+					<tr>
+						<td class="content" valign="top">WINDOWS 98/2000/NT/XP</td>
+						<td class="content" valign="top">binaries</td>
+						<td class="content" valign="top">@fileSize("WebSite/downloads/CodeWorker_WIN" + sVersion + ".zip")@</td>
+						<td class="content" valign="top"><a href="downloads/CodeWorker_WIN@sVersion@.zip">CodeWorker_WIN@sVersion@.zip</a></td>
+@
+		if bGPGWINSignature {
+			@						<td class="content" valign="top"><a href="downloads/CodeWorker_WIN@sVersion@.zip.asc">CodeWorker_WIN@sVersion@.zip.asc</a></td>
+@
+		}
+@					</tr>
+					<tr>
+						<td class="content" valign="top">Any platform (?)</td>
+						<td class="content" valign="top">sources</td>
+						<td class="content" valign="top">@fileSize("WebSite/downloads/CodeWorker_SRC" + sVersion + ".zip")@</td>
+						<td class="content" valign="top"><a href="downloads/CodeWorker_SRC@sVersion@.zip">CodeWorker_SRC@sVersion@.zip</a></td>
+@
+		if bGPGSRCSignature {
+			@						<td class="content" valign="top"><a href="downloads/CodeWorker_SRC@sVersion@.zip.asc">CodeWorker_SRC@sVersion@.zip.asc</a></td>
+@
+		}
+@					</tr>
+					<tr>
+						<td class="content" valign="top" colspan="@(bGPGSRCSignature ? 5 : 4)@">
+@
+	}
+
+	if this == "last download" {
+		generateJavaDotNet();
+	}
+	if getProperty("makeChanges") && (getProperty("makeChanges") != true) {
+		local bStopAfterPrivates;
+		foreach i in project.listOfVersions {
+			if bStopAfterPrivates && !i.private break;
+			generateVersionChanges(i, bLastChanges);
+			if key(i) == getProperty("makeChanges") set bStopAfterPrivates = true;
+		}
+	} else {
+		local bPointer = false;
+		foreach i in project.listOfVersions {
+			if !bPointer {
+				if key(i) != sThisVersion continue;
+				generateVersionChanges(i, bLastChanges);
+				set bPointer = true;
+			} else if i.private {
+				generateVersionChanges(i, bLastChanges);
+			} else break;
+		}
+	}
+
+	if bLastChanges {
+		@		<a href="http://www.xiti.com/xiti.asp?s=134058" target="_top">
+			<script language="JavaScript1.1">
+			<!--
+				hsh = new Date();
+				hsd = document;
+				hsr = hsd.referrer.replace(/[<>]/g, '');
+				hsi = '<img width="39" height="25" border=0 ';
+				hsi += 'src="http://logv24.xiti.com/hit.xiti?s=134058';
+				hsi += '&p=';
+				hsi += '&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+				if(parseFloat(navigator.appVersion)>=4)
+				{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' + Xiti_s.colorDepth;}
+				hsd.writeln(hsi + '&ref=' + hsr.replace(/&/g, '$') + '" title="Mesurez votre audience"><\!--');
+				//-->
+			</script>
+			<noscript>
+				<img width="39" height="25" border=0 src="http://logv24.xiti.com/hit.xiti?s=134058&p=&" title="Mesurez votre audience">
+			</noscript>
+			<!--//-->
+		</a>
+	</body>
+</html>
+@
+	} else {
+		@						</td>
+					</tr>
+				</table>
+@
+	}

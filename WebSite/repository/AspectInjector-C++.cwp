@@ -1,0 +1,240 @@
+/*
+
+Limitations:
+	- For the moment, apects apply to class members only: the weaver
+	  ignores functions, for instance.
+*/
+
+#implicitCopy
+
+#include "LightC++Parser.cwp"
+
+function matchPatternType(myType : node, myPattern : node) {
+	return myPattern.id == myType;
+}
+
+function getSmartCppType(theType : node) {
+	local sType;
+	if theType.is_const set sType = "const ";
+	foreach i in theType.nested_names {
+		set sType += i + "::";
+	}
+	set sType += theType;
+	switch(theType) {
+		case "vector":
+		case "string":
+			// consider that it is a STL class
+			insertTextOnceToFloatingLocation("INCLUDE AREA", "#include <" + theType + ">" + endl());
+			break;
+		case "stream":
+		case "istream":
+		case "ostream":
+			// consider that it is a STL class
+			insertTextOnceToFloatingLocation("INCLUDE AREA", "#include <iostream>" + endl());
+			break;
+		default:
+	}
+	if !theType.template_parameters.empty() {
+		set sType += '<';
+		foreach i in theType.template_parameters {
+			if !first(i) set sType += ", ";
+			set sType += getSmartCppType(i);
+		}
+		set sType += '>';
+	}
+	local bByValue = true;
+	foreach i in theType.suffix {
+		switch(i) {
+			case "pointer":
+				set bByValue = false;
+				set sType += '*';
+				break;
+			case "reference":
+				set bByValue = false;
+				set sType += '&';
+				break;
+			case "array": set sType += '[' + i.size + ']';break;
+		}
+		if i.is_const set sType += " const";
+	}
+	if this.classes.findElement(theType) {
+		if bByValue {
+			insertTextOnceToFloatingLocation("INCLUDE AREA", "#include \"" + theType + ".h\"" + endl());
+		} else {
+			// doesn't take into account namespaces yet
+			insertTextOnceToFloatingLocation("INCLUDE AREA", "class " + theType + ";" + endl());
+		}
+	}
+	return sType;
+}
+
+#overload translation_unit ::=
+		#ignore
+		=> local myContext;
+		=> insert this.scan_only = true;
+		[->remarkablePoint<"outside">(myContext)]*
+		->#empty
+		=> removeVariable(this.scan_only);
+		;
+
+
+// Defines how to ignore insignificant characters between C++ tokens.
+#ignore	::= [' ' | '\t' | '\r' | '\n' | "/*" ignoreEmbeddedComment | inlineComment]*;
+
+// Called by '#ignore'.
+ignoreEmbeddedComment ::= ->["*/" | "/*" ignoreEmbeddedComment | "//"->'\n' ignoreEmbeddedComment];
+inlineComment ::=
+		"//"
+		[
+				"##aspect##"
+				#continue
+				#explicitCopy
+				=> setOutputLocation($getOutputLocation() - 12$);
+				"begin"
+				->'\n'
+				->"//##aspect##"
+				"end"
+				->'\n'
+			|
+				->'\n'
+		];
+
+
+#overload CLASS ::=
+		=> local iPosition = getOutputLocation();
+		#readIdentifier:"class"
+		=> if !existFloatingLocation("INCLUDE AREA", false) {
+			setFloatingLocation("INCLUDE AREA", iPosition);
+			local sBeginningTag = "//##aspect##begin" + endl() + "//INCLUDE AREA" + endl();
+			insertTextToFloatingLocation("INCLUDE AREA", sBeginningTag + "//##aspect##end" + endl());
+			setFloatingLocation("INCLUDE AREA", $iPosition + sBeginningTag.length()$);
+		}
+		;
+
+#overload class_definition_header(sClassName : node, myParents : node) ::=
+		#super::class_definition_header(sClassName, myParents)
+		=> {
+			local bAttributes;
+			foreach i in this.aspects {
+				foreach j in i.members {
+					if j.attribute_name && j.member_type#back == sClassName {
+						if !j.modifiers.findElement("static") {
+							if !bAttributes {
+								set bAttributes = true;
+								@//##aspect##begin
+// ATTRIBUTES
+@
+								newFloatingLocation(sClassName + "::ATTRIBUTES");
+								@//##aspect##end
+@
+							}
+							insertTextToFloatingLocation(sClassName + "::ATTRIBUTES", getSmartCppType(j.target_type) + ' ' + j.attribute_name + ';' + endl());
+							insertTextOnceToFloatingLocation(sClassName + "::ATTRIBUTES", "friend class aspects::" + key(i) + "; // class '" + sClassName + "'" + endl());
+							insertTextOnceToFloatingLocation("INCLUDE AREA", "namespace aspects { class " + key(i) + "; }" + endl());
+						}
+					}
+				}
+			}
+		}
+		;
+
+function existParent(myClass : node, myAspectParent : node) {
+	foreach i in myClass.inheritance {
+		if i.name == myAspectParent return true;
+	}
+	return false;
+}
+
+#overload declare<"parent">(myContext : node)	::=
+		#super::declare<"parent">(myContext)
+		=> {
+			local listOfImplementations;
+			local listOfInterfaces;
+			foreach i in this.aspects {
+				foreach j in i.declare.parents {
+					if matchPatternType(myContext, j.class_pattern) {
+						if existVariable(j.extends) && !existParent(myContext, j.extends) {
+							pushItem myContext.inheritance;
+							insert myContext.inheritance#back.name = j.extends;
+							pushItem listOfImplementations = j.extends;
+						}
+						foreach k in j.implements if !existParent(myContext, k) {
+							pushItem myContext.inheritance;
+							insert myContext.inheritance#back.name = k;
+							pushItem listOfInterfaces = k;
+						}
+					}
+				}
+			}
+			if $listOfImplementations.size() + listOfInterfaces.size() > 0$ {
+				@//##aspect##begin
+@
+				local bFirstParent = $listOfImplementations.size() + listOfInterfaces.size() == myContext.inheritance.size()$;
+				foreach i in listOfImplementations {
+					if bFirstParent {
+						set bFirstParent = false;
+						@ : @
+					} else {
+						@, @
+					}
+					@public @i@@
+					insertTextOnceToFloatingLocation("INCLUDE AREA", "#include \"" + i + ".h\"" + endl());
+				}
+				foreach i in listOfInterfaces {
+					if bFirstParent {
+						set bFirstParent = false;
+						@ : @
+					} else {
+						@, @
+					}
+					@public virtual @i@@
+					insertTextOnceToFloatingLocation("INCLUDE AREA", "#include \"" + i + ".h\"" + endl());
+				}
+				@//##aspect##end
+@
+			}
+		}
+		;
+
+#overload constructor_initializers(listOfInitializations : node) ::=
+		[
+				#super::constructor_initializers(listOfInitializations)
+			|
+				#check(true)
+		]
+		=> {
+			local bAttributes;
+			foreach i in this.aspects {
+				foreach j in i.members {
+					if j.attribute_name && j.member_type#back == listOfInitializations.class_name && !j.modifiers.findElement("static") {
+						if !bAttributes {
+							set bAttributes = true;
+							@//##aspect##begin
+// INITIALIZER
+@
+							if listOfInitializations.empty() {
+								@ : @
+							} else {
+								@, @
+							}
+							@@j.attribute_name@@
+							newFloatingLocation(listOfInitializations.class_name + "::INITIALIZER");
+							@//##aspect##end
+@
+						} else {
+							insertTextToFloatingLocation(listOfInitializations.class_name + "::INITIALIZER", ", " + j.attribute_name);
+						}
+						local sValue = j.expression;
+						if sValue.endString(')') {
+							if sValue.startString(j.target_type + '(') {
+								set sValue = sValue.subString(sValue.findString('('));
+							}
+						} else {
+							set sValue = '(' + sValue + ')';
+						}
+						insertTextToFloatingLocation(listOfInitializations.class_name + "::INITIALIZER", sValue);
+					}
+				}
+			}
+		}
+		;

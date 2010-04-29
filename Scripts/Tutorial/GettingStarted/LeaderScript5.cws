@@ -1,0 +1,31 @@
+//command: -I Scripts/Tutorial -path .
+//command: -define DESIGN_FILE=GettingStarted/SolarSystem0.sml
+//command: -script GettingStarted/LeaderScript5.cws
+//command: -stdin GettingStarted/Debugger.cmd -debug
+if !getProperty("DESIGN_FILE")
+	error("'-define DESIGN_FILE=file' expected on the command line");
+traceLine("'Simple Modeling' design file to parse = \""
+		  + getProperty("DESIGN_FILE") + "\"");
+//hide:
+clearVariable(project.listOfClasses);
+parseAsBNF("GettingStarted/SimpleML-parsing.cwp",
+		   project, getProperty("DESIGN_FILE"));
+#include "TreeDecoration.cws"
+
+#include "SharedFunctions.cws"
+foreach myClass in project.listOfClasses {
+	traceLine("generating class '" + myClass.name + "' ...");
+	generate("GettingStarted/CppObjectHeader.cwt", myClass, getWorkingPath() + "Scripts/Tutorial/GettingStarted/Cpp/" + myClass.name + ".h");
+	generate("GettingStarted/CppObjectBody.cwt", myClass, getWorkingPath() + "Scripts/Tutorial/GettingStarted/Cpp/" + myClass.name + ".cpp");
+	generate("GettingStarted/JAVAObject.cwt", myClass, getWorkingPath() + "Scripts/Tutorial/GettingStarted/JAVA/solarsystem/" + myClass.name + ".java");
+}
+
+local myDocumentationContext;
+insert myDocumentationContext.language = "C++";
+traceLine("generating the HTML documentation...");
+setCommentBegin("<!--");
+setCommentEnd("-->");
+expand("GettingStarted/HTMLDocumentation.cwt",
+		myDocumentationContext, getWorkingPath()
+		+ "Scripts/Tutorial/GettingStarted/SolarSystem1.html");
+translate("GettingStarted/HTML2LaTeX.cwp", project, "GettingStarted/SolarSystem1.html", getWorkingPath() + "Scripts/Tutorial/GettingStarted/SolarSystem.tex");

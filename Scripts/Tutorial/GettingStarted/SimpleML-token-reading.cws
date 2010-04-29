@@ -1,0 +1,112 @@
+//note: forward declaration of method \samp{readType()}, so as to start explanations
+//note: about how to implement BNF clause \samp{\textit{world} ::= [\textit{class_declaration}]*},
+declare function readType();
+
+//note: do a loop while the end of file hasn't been reached,
+//note: skipping blanks and C++ comments: \samp{skipEmptyCpp()} returns \samp{false}
+//note: only if an error occurs while reading the stream or the file has completed,
+while skipEmptyCpp() {
+//note: waiting for token \samp{"class"} as an identifier (doesn't accept \samp{"class"} as
+//note: the beginning of another identifier, such as \samp{"\textit{class}es"}). If not found,
+//note: an error occurs. This token announces a class declaration.
+	if !readIfEqualToIdentifier("class") error("'class' expected");
+//note: a disadvantage of writing a procedure-driven reading/parsing: don't forget to
+//note: skip explicitly blanks and comments by yourself,
+	skipEmptyCpp();
+//note: populates a local variable with an identifier token that represents the name of the class
+	local sClassName = readIdentifier();
+//note: if an identifier token hasn't been found (token is empty), an error is thrown,
+	if !sClassName error("class name expected");
+	skipEmptyCpp();
+//note: if the file location points to \samp{":"}, announcing the inheritance, function
+//note: \samp{readIfEqualTo(":")} returns \samp{true}, and the location moves after the
+//note: matched expression. If it fails, the file location remains the same.
+	if readIfEqualTo(":") {
+		skipEmptyCpp();
+		local sParentName = readIdentifier();
+		if !sParentName error("parent name expected for class '" + sClassName + "'");
+		skipEmptyCpp();
+	}
+//note: body of the class declaration expected
+	if !readIfEqualTo("{") error("'{' expected");
+	skipEmptyCpp();
+//note: while inside the class body, reading of attribute and method members,
+	while !readIfEqualTo("}") {
+		skipEmptyCpp();
+//note: we don't conform exactly to the BNF: beginning of method and attribute declaration
+//note: is factorized,
+		readType();
+		skipEmptyCpp();
+//note: name of the attribute or method member,
+		local sMemberName = readIdentifier();
+		if !sMemberName error("attribute or method name expected");
+		skipEmptyCpp();
+//note: not any more ambiguity : it starts by a parenthesis when the members is a method,
+		if readIfEqualTo("(") {
+			skipEmptyCpp();
+			if !readIfEqualTo(")") {
+//note: the method expects at least one parameter,
+				do {
+					skipEmptyCpp();
+//note: we keep the current file position, to be able to come back if the next token
+//note: isn't an access mode (\samp{"in"}, \samp{"out"} or \samp{"inout"}),
+					local iPosition = getInputLocation();
+					local sMode = readIdentifier();
+					if !sMode error("parameter type or mode expected");
+					if (sMode != "in") && (sMode != "out") && (sMode != "inout") {
+//note: we were reading a basic type, instead of a parameter access mode: we come
+//note: back to the beginning of this token and the mode is set as empty (no mode).
+//note: Of course, it is possible not to waste time like this, and to optimize
+//note: function \samp{readType()} by passing the token as a parameter. But here is
+//note: the occasion of discovering how to handle the file position.
+						setInputLocation(iPosition);
+						set sMode = "";
+					}
+					skipEmptyCpp();
+//note: type of the current parameter is expected,
+					readType();
+					skipEmptyCpp();
+//note: name of the current parameter is expected,
+					local sParameterName = readIdentifier();
+					if !sParameterName error("parameter name expected");
+					skipEmptyCpp();
+//note: parameters are separated by commas,
+				} while readIfEqualTo(",");
+				if !readIfEqualTo(")") error("')' expected");
+			}
+			skipEmptyCpp();
+		}
+//note: both attributes and methods must finish with a semi colon,
+		if !readIfEqualTo(";") {
+//note: function \samp{readChar()} reads just one character, or returns an empty string
+//note: if the end of file has been reached,
+			error("';' expected to close an attribute, instead of '" + readChar() + "'");
+		}
+		skipEmptyCpp();
+	}
+}
+//note: once the read of file has completed, a message of success is written,
+traceLine("the file has been read successfully");
+
+//note: user-defined function ; may return a value or not. The declaration always starts
+//note: with keyword \samp{function}, even if it announces a procedure (no return value).
+//note: Reading a type is called at several points of the grammar, so the code is
+//note: factorized in the procedure \samp{readType()}. It doesn't return any value about
+//note: success or failure, because an error is thrown in case of syntax mismatch.
+function readType() {
+	local sType = readIdentifier();
+	if !sType error("type modifier or name expected, instead of '" + readChar() + "'");
+//note: does the keyword is a modifier? If not \samp{sType} contains a basic type or a class name
+	if sType == "aggregate" {
+		skipEmptyCpp();
+//note: reads the name of the aggregated class
+		sType = readIdentifier();
+		if !sType error("aggregated class name expected");
+	}
+	skipEmptyCpp();
+//note: perhaps that the type is an array, represented by \samp{\textbf{[]}},
+	if readIfEqualTo("[") {
+		skipEmptyCpp();
+		if !readIfEqualTo("]") error("']' expected to close an array declaration");
+	}
+}

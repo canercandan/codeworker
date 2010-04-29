@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><span class="comment">//--------------------------------------------------------------</span>
+<span class="comment">//                     Translation script</span>
+<span class="comment">//</span>
+<span class="comment">//</span>
+<span class="comment">// Searches SQL markup and replaces them by a C++ equivalent</span>
+<span class="comment">// implementation.</span>
+<span class="comment">//</span>
+<span class="comment">// A translation script is an extended-BNF script that allows</span>
+<span class="comment">// generating code in the same time.</span>
+<span class="comment">//--------------------------------------------------------------</span>
+
+<span class="comment">// We want to put all scanned characters in the output</span>
+<a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_implicitCopy">#implicitCopy</a>
+
+<span class="comment">// The head of the grammar is the first production rule</span>
+<span class="comment">// encountered</span>
+<i>inlineCodeExpander</i>    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+        <span class="comment">// ignore C++ comments and whitespaces between terminals</span>
+        <span class="comment">// and non-terminals.</span>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_ignore">#ignore</a>(<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_directives__ignore">C++</a>)
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+                <span class="comment">// Jump over strings</span>
+                <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+                <span class="comment">// Handle a SQL markup</span>
+                <span class="string">&#39;&lt;&#39;</span>
+                <span class="comment">// The script keeps the position just before &#39;&lt;&#39;</span>
+                <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#local">local</A> iStartPosition = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a><A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#getOutputLocation">getOutputLocation</A>() - <span class="numeric">1</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>;
+                <span class="comment">// from now, scanned tokens aren&#39;t put in the output</span>
+                <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_explicitCopy">#explicitCopy</a>
+                <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;SQL&quot;</span>
+                <span class="comment">// The output file position stands just before &#39;&lt;&#39;</span>
+                <span class="comment">// to erase the markup</span>
+                <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#setOutputLocation">setOutputLocation</A>(iStartPosition);
+                <span class="comment">// Call of a non-terminal that takes in charge of</span>
+                <span class="comment">// replacing the markup with C++ code</span>
+                <i>expandSQLMarkup</i>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+                <span class="comment">// If not a string and not a markup, reading of any</span>
+                <span class="comment">// character</span>
+                <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readChar">#readChar</a>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a>;
+
+<span class="comment">// Replaces a SQL markup with the C++ corresponding code</span>
+<i>expandSQLMarkup</i>    <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {
+            <span class="raw_text">@</span><span class="raw_text">DBHandle* db_handle = db_connect();
+    DBQueryData* db_data = db_query(db_handle, &quot;@</span>
+        }
+        <span class="comment">// Copy of the query in the output</span>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_implicitCopy">#implicitCopy</a>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_complementary">^</a><span class="string">&#39;&gt;&#39;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a>
+        <span class="comment">// ignore the end of the markup</span>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_explicitCopy">#explicitCopy</a>
+        <span class="string">&#39;&gt;&#39;</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> {
+            <span class="raw_text">@</span><span class="raw_text">&quot;);
+    for (int record = 0; record &lt; db_data-&gt;length; record++) {
+        // fetch and process data
+    }@</span>
+        }
+        ;
+</pre><hr />
+		<div style="background-color: #eeeedd">Generated by <a href="http://www.codeworker.org/index.html"><img border=0 src="http://www.codeworker.org/CodeWorker99x38.png"/></a> v4.5.3 from <a href="CWscript2HTML.html">CWscript2HTML.cwp</a>.</div>
+	</body>
+</html>

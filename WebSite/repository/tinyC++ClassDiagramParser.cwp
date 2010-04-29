@@ -1,0 +1,129 @@
+class_diagrams	::=
+		#ignore(C++) #continue
+		[documentation(this)]?
+		[parse_filter(this)]+
+		[class_diagram(this)]*
+		#empty
+		;
+
+parse_filter(theSession : node)	::=
+		#readIdentifier:"parse"
+		=> local bSubFolders;
+		[#readIdentifier:"subfolders":bSubFolders]?
+		#ignore(blanks)
+		->';':sFilter
+		=> {
+			set sFilter = sFilter.rsubString(1);
+			if bSubFolders {
+				forfile i in cascading sFilter {
+					traceLine("parsing file '" + i + "'...");
+					parseAsBNF("LightC++Parser.cwp", theSession, i);
+				}
+			} else {
+				forfile i in sFilter {
+					traceLine("parsing file '" + i + "'...");
+					parseAsBNF("LightC++Parser.cwp", theSession, i);
+				}
+			}
+		}
+		;
+
+class_diagram(theSession : node)	::=
+		"diagram" #continue '{'
+		=> pushItem theSession.diagrams;
+		=> localref theDiagram = theSession.diagrams#back;
+		[documentation(theDiagram)]?
+		[
+				associations_description(theDiagram)
+			|
+				classes_description(theDiagram)
+			|
+				class_description(theDiagram)
+		]*
+		'}'
+		;
+
+associations_description(theDiagram : node)	::=
+		'('
+		#pushItem(theDiagram.associations)
+		squeezeParenthesis:theDiagram.associations#back.origin_filter
+		')'
+		"->"
+		#continue
+		'('
+		squeezeParenthesis:theDiagram.associations#back.destination_filter
+		')'
+		association_properties(theDiagram)
+		;
+
+association_properties(theDiagram : node)	::=
+		'{' #continue
+		[
+			#readIdentifier:sProperty
+			#continue
+			'='
+			#readIdentifier:{"ON", "OFF"}:sValue
+			association_property<sProperty>(theDiagram, sValue)
+		]*
+		'}'
+		;
+
+association_property<"duplicate">(theDiagram : node, sValue : value) ::=
+		=> if sValue == "OFF" insert theDiagram.associations#back.no_duplicate = true;
+		;
+
+classes_description(theDiagram : node)	::=
+		'(' #continue
+		=> pushItem theDiagram.descriptions;
+		squeezeParenthesis:theDiagram.descriptions#back.filter
+		')'
+		properties(theDiagram)
+		;
+
+class_description(theDiagram : node)	::=
+		#readIdentifier:sClassName #continue
+		=> pushItem theDiagram.descriptions = sClassName;
+		properties(theDiagram)
+		;
+
+properties(theDiagram : node)	::=
+		'{' #continue
+		[
+			#readIdentifier:sProperty
+			#continue
+			'='
+			#readIdentifier:{"ON", "OFF"}:sValue
+			property<sProperty>(theDiagram, sValue)
+		]*
+		'}'
+		;
+
+property<"associations">(theDiagram : node, sValue : value) ::=
+		=>	if sValue == "ON" insert theDiagram.descriptions#back.associations = true;
+		;
+property<"attributes">(theDiagram : node, sValue : value) ::=
+		=> if sValue == "ON" insert theDiagram.descriptions#back.attributes = true;
+		;
+property<"inheritance">(theDiagram : node, sValue : value) ::=
+		=> if sValue == "ON" insert theDiagram.descriptions#back.inheritance = true;
+		;
+property<"methods">(theDiagram : node, sValue : value) ::=
+		=> if sValue == "ON" insert theDiagram.descriptions#back.methods = true;
+		;
+
+documentation(theDiagram : node)	::=
+		'<' #continue "documentation"
+		[
+				"name" #continue '=' #readCString:theDiagram.name
+			|
+				"title" #continue '=' #readCString:theDiagram.title
+			|
+				"doxygen" #continue '=' #readCString:theDiagram.doxygen_class
+		]*
+		'>'
+		[~['<' '/' "documentation" '>']]*:sDocumentation
+		'<' '/' "documentation" '>'
+		=> insert theDiagram.documentation += sDocumentation;
+		;
+
+squeezeParenthesis	::= [#readCString | '\''->'\'' | '(' squeezeParenthesis ')' | ~')']*;

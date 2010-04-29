@@ -1,0 +1,13 @@
+//command: -script Scripts/Tutorial/GettingStarted/Tiny-leaderScript1.cws
+parseAsBNF("Scripts/Tutorial/GettingStarted/Tiny-BNFparsing1.cwp", project, "Scripts/Tutorial/GettingStarted/Tiny.tml");
+
+foreach i in project.listOfClasses {
+//note: the second argument is waiting for a tree node that will be accessed into the \textit{pattern script}
+//note: via the predefined variable \samp{this}, which has been encountered above,
+//highlight:
+	generate("Scripts/Tutorial/GettingStarted/Tiny-JAVA.cwt", i, "Scripts/Tutorial/GettingStarted/tiny/" + i.name + ".java");
+//normal:
+}
+
+//hide:
+clearVariable(project.listOfClasses);

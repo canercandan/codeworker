@@ -1,0 +1,162 @@
+//Source file: hosa_ui.idl
+//For H-OSA version 1.0.2
+
+#ifndef __HOSA_UI_DEFINED
+#define __HOSA_UI_DEFINED
+
+#include "osa.idl"
+#include "ui_interfaces.idl"
+#include "ui_data.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			
+				struct TpHosaUIIdentifier {
+					org::csapi::TpSessionID UserInteractionSessionID;
+				};
+				
+				enum TpHosaUIMessageDeliveryType {
+
+					P_HUI_SMS,
+					P_HUI_SMS_BINARY,
+					P_HUI_MMS,
+					P_HUI_WAP_PUSH,
+					P_HUI_EMAIL					
+				};
+				
+				enum TpHosaDeliveryTimeType {
+
+					P_HUI_SEND_IMMEDIATE,
+					P_HUI_DELIVERY_TIME					
+				};
+				
+				union TpHosaDeliveryTime switch(TpHosaDeliveryTimeType) {
+					case P_HUI_DELIVERY_TIME: org::csapi::TpDateAndTime DeliveryTime;
+					default: short Dummy;
+				};
+				
+				exception P_HOSA_INVALID_VALIDITY_TIME {
+					org::csapi::TpString ExtraInformation;
+				};
+				
+				exception P_HOSA_INVALID_DELIVERY_TIME {
+					org::csapi::TpString ExtraInformation;
+				};
+				
+				exception P_HOSA_MAX_MESSAGE_SIZE_EXCEEDED {
+					org::csapi::TpString ExtraInformation;
+				};
+				
+				exception P_HOSA_MAX_SUBJECT_SIZE_EXCEEDED {
+					org::csapi::TpString ExtraInformation;
+				};
+				
+				struct TpHosaTerminatingAddressList {
+					org::csapi::TpAddressSet ToAddressList;
+					org::csapi::TpAddressSet CcAddressList;
+					org::csapi::TpAddressSet BccAddressList;
+				};
+				
+				struct TpHosaSendMessageReport {
+					org::csapi::TpAddress UserAddress;
+					org::csapi::ui::TpUIReport Response;
+					org::csapi::TpDateAndTime TimeStamp;
+				};
+				
+				
+				typedef sequence <TpHosaSendMessageReport> TpHosaSendMessageReportSet;
+				
+				struct TpHosaSendMessageError {
+					org::csapi::TpAddress UserAddress;
+					org::csapi::ui::TpUIError Error;
+				};
+				
+				typedef sequence <TpHosaSendMessageError> TpHosaSendMessageErrorSet;
+				
+				enum TpHosaMessageType {
+
+					P_HUI_ALPHANUMERIC_DATA,
+					P_HUI_BINARY_DATA					
+				};
+				
+				union TpHosaMessage switch(TpHosaMessageType) {
+					case P_HUI_ALPHANUMERIC_DATA: org::csapi::TpString Text;
+					case P_HUI_BINARY_DATA: org::csapi::TpOctetSet BinaryData;
+				};
+				
+				enum TpHosaUIMessageDeliveryStatus {
+
+					P_HUI_MESSAGE_DELIVERED,
+					P_HUI_MESSAGE_NOT_DELIVERED,
+					P_HUI_MESSAGE_EXPIRED					
+				};
+
+				exception P_HOSA_DELIVERY_TYPE_ADDRESS_TYPE_MISMATCH {
+					org::csapi::TpString ExtraInformation;
+				};
+				
+				exception P_HOSA_DELIVERY_TYPE_MESSAGE_TYPE_MISMATCH {
+					org::csapi::TpString ExtraInformation;
+				};
+
+				
+			module hui {
+				
+				
+				interface IpAppHosaUIManager : org::csapi::ui::IpAppUIManager {
+
+					void hosaSendMessageRes (
+						in org::csapi::TpAssignmentID assignmentID,	
+						in TpHosaSendMessageReportSet responseList	
+						);
+						
+
+					void hosaSendMessageErr (
+						in org::csapi::TpAssignmentID assignmentID,	
+						in TpHosaSendMessageErrorSet errorList	
+						);
+						
+
+					void hosaMessageDeliveryNotification (
+						in org::csapi::TpAssignmentID assignmentID,	
+						in org::csapi::TpDateAndTime timeStamp,	
+						in org::csapi::TpAddress userAddress,	
+						in TpHosaUIMessageDeliveryStatus  deliveryStatus
+						);
+						
+				};
+				
+				
+				interface IpHosaUIManager : org::csapi::ui::IpUIManager {
+
+					org::csapi::TpAssignmentID hosaSendMessageReq (
+						in IpAppHosaUIManager appUIManager,	
+						in org::csapi::TpAddress originatingAddress,	
+						in TpHosaTerminatingAddressList terminatingAddressList,	
+						in org::csapi::TpString subject,	
+						in TpHosaMessage message,	
+						in TpHosaUIMessageDeliveryType deliveryType,	
+						in org::csapi::TpString billingID,	
+						in org::csapi::ui::TpUIResponseRequest responseRequested,	
+						in org::csapi::TpBoolean deliveryNotificationRequested,	
+						in TpHosaDeliveryTime deliveryTime,	
+						in org::csapi::TpDateAndTime validityTime	
+						)						
+						raises (org::csapi::TpCommonExceptions,org::csapi::P_INVALID_SESSION_ID,org::csapi::P_INVALID_NETWORK_STATE,org::csapi::ui::P_ILLEGAL_ID,org::csapi::ui::P_ID_NOT_FOUND,P_HOSA_INVALID_DELIVERY_TIME,P_HOSA_INVALID_VALIDITY_TIME, P_HOSA_MAX_MESSAGE_SIZE_EXCEEDED,P_HOSA_MAX_SUBJECT_SIZE_EXCEEDED,P_HOSA_DELIVERY_TYPE_ADDRESS_TYPE_MISMATCH,P_HOSA_DELIVERY_TYPE_MESSAGE_TYPE_MISMATCH);
+						
+				};
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif
+
+

@@ -1,0 +1,71 @@
+#implicitCopy
+
+jeffcovey ::=
+	[
+		->[
+				=> local sId;
+				!![#readIdentifier:sId]
+				[
+						[
+								#check(sId == "titre_code")
+								=> {@code_title@}
+							|
+								#check(sId == "colonne")
+								=> {@inset_content@}
+							|
+								#check(sId == "entete")
+								=> {@inset_headline@}
+							|
+								#check(sId == "colonne_entete")
+								=> {@inset_header_column@}
+							|
+								#check(sId == "tableau")
+								=> {@inset@}
+						]
+						#explicitCopy
+						#readIdentifier
+					|
+						#readIdentifier
+				]
+			|
+				"<kbd>"
+				=> local iLocation = getOutputLocation();
+				#explicitCopy
+				=> local bPre;
+				[
+						"<pre>"
+						=> bPre = true;
+						=> overwritePortion($iLocation - 4$, "pre style=\"overflow: auto;\"", 3);
+					|
+						"</pre>"
+					|
+						"&nbsp;" => {@ @}
+					|
+						"\"titre_code\"" => {@"code_title"@}
+					|
+						"\"xml_balise\"" => {@"xml_tag"@}
+					|
+						"\"php_type\"" => {@"php_attribute"@}
+					|
+						"\"php_ch\"" => {@"xml_ch"@}
+					|
+						"<br/>"
+						=> if !bPre {
+							bPre = true;
+							overwritePortion($iLocation - 4$, "pre style=\"overflow: auto;\"", 3);
+						}
+					|
+						#implicitCopy
+						~"</kbd>"
+				]*
+				"</kbd>"
+				[
+						#check(bPre)
+						=> {@</pre>@}
+					|
+						=> {@</kbd>@}
+				]
+		]
+	]*
+	->#empty
+	;

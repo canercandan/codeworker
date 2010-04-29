@@ -1,0 +1,11 @@
+@
+if getMarkupKey() == "copy C++ headers" {
+	@	ScpStream* pHeader = ScpStream::createFile(_sDirectory + "UtlException.h");
+	if (pHeader == NULL) CGRuntime::traceLine("WARNING: unable to create file \"" + _sDirectory + "UtlException.h\"");
+	else {
+		pHeader->writeBinaryData(_tcUtlExceptionContent, _iUtlExceptionLength);
+		pHeader->saveIntoFile(_sDirectory + "UtlException.h");
+	}
+@
+} else if getMarkupKey() == "build C++ headers" {
+}

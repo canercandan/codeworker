@@ -1,0 +1,5 @@
+	DBHandle* db_handle = db_connect();
+	DBQueryData* db_data = db_query(db_handle, "@getMarkupKey()@");
+	for (int record = 0; record < db_data->length; record++) {
+		// fetch and process data
+	}

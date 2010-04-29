@@ -1,0 +1,327 @@
+@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+function LaTeX2HTML(sLaTeX : value) {
+	local myHTMLDoc;
+	insert myHTMLDoc.sParsingMode = "description";
+	createVirtualFile(".#f1", sLaTeX);
+	createVirtualFile(".#f2", "");
+	try {
+		translate("LaTeX2HTML.cwp", myHTMLDoc, ".#f1", ".#f2");
+	} catch(sError) {
+		traceLine("error in the piece of LaTeX:");
+		traceLine(sLaTeX);
+		error(sError);
+	}
+	local sResult = loadVirtualFile(".#f2");
+	deleteVirtualFile(".#f2");
+	deleteVirtualFile(".#f1");
+	return sResult;
+}
+
+function HTMLAnchor(sLabel) {
+	set sLabel = replaceString("#",  "_", sLabel);
+	set sLabel = replaceString("&",  "_", sLabel);
+	set sLabel = replaceString(";",  "_", sLabel);
+	set sLabel = replaceString(" ",  "_", sLabel);
+	set sLabel = replaceString("%",  "_", sLabel);
+	set sLabel = replaceString("@",  "_", sLabel);
+	set sLabel = replaceString("=",  "_", sLabel);
+	set sLabel = replaceString("<",  "_", sLabel);
+	set sLabel = replaceString(">",  "_", sLabel);
+	set sLabel = replaceString("\"", "_", sLabel);
+	set sLabel = replaceString("'",  "_", sLabel);
+	set sLabel = replaceString("/",  "_", sLabel);
+	set sLabel = replaceString("-",  "_", sLabel);
+	set sLabel = replaceString("+",  "_", sLabel);
+	set sLabel = replaceString(".",  "_", sLabel);
+	return sLabel;
+}
+
+function fileDescription(sFilename : value) {
+	local myFile;
+	parseAsBNF("fileDescription.cwp", myFile, sFilename);
+	local sResult;
+	if myFile.description set sResult = LaTeX2HTML(myFile.description);
+	if existVariable(myFile.input) {
+		set sResult += endl() + "<o/>" + endl() + "<b>Input files:</b>";
+		set sResult += endl();
+		foreach i in myFile.input {
+			if !first(i) set sResult += ", ";
+			set sResult += "<a href=\"" + i + "\">" + i + "</a>";
+		}
+		set sResult += "." + endl();
+	}
+	if existVariable(myFile.file) {
+		set sResult += endl() + "<p/>" + endl() + "<b>quoted files:</b>";
+		set sResult += endl();
+		foreach i in myFile.file {
+			if !first(i) set sResult += ", ";
+			set sResult += "<a href=\"" + i + "\">" + i + "</a>";
+		}
+		set sResult += "." + endl();
+	}
+	if existVariable(myFile.output) {
+		set sResult += endl() + "<p/>" + endl() + "<b>output files:</b>";
+		set sResult += endl();
+		foreach i in myFile.output {
+			if !first(i) set sResult += ", ";
+			set sResult += "<a href=\"" + i + "\">" + i + "</a>";
+		}
+		set sResult += "." + endl();
+	}
+	return sResult;
+}
+
+
+if getMarkupKey() == "today" {
+	@@formatDate(getNow(), "%B %d, %Y")@
+@
+} else if getMarkupKey() == "aujourd'hui" {
+	local frenchMonths;
+	insert frenchMonths["jan"] = "janvier";
+	insert frenchMonths["feb"] = "février";
+	insert frenchMonths["mar"] = "mars";
+	insert frenchMonths["apr"] = "avril";
+	insert frenchMonths["may"] = "mai";
+	insert frenchMonths["jun"] = "juin";
+	insert frenchMonths["jul"] = "juillet";
+	insert frenchMonths["aug"] = "août";
+	insert frenchMonths["sep"] = "septembre";
+	insert frenchMonths["oct"] = "octobre";
+	insert frenchMonths["nov"] = "novembre";
+	insert frenchMonths["dec"] = "décembre";
+	@@formatDate(getNow(), "%d")@ @frenchMonths[formatDate(getNow(), "%b")]@ @formatDate(getNow(), "%Y")@
+@
+} else if getMarkupKey() == "version" {
+	@@getVersion()@
+@
+} else if startString(getMarkupKey(), "size:") {
+	local iSize = fileSize(getWorkingPath() + "WebSite/" + subString(getMarkupKey(), 5));
+	@ (@floor($iSize / 1024$)@kb)@
+} else if getMarkupKey() == "repository-content" {
+	@
+						<ul>
+@
+	foreach i in this.theme {
+		local sHTML = LaTeX2HTML(i);
+		@							<li><a class="left" href="#@HTMLAnchor(sHTML)@">@sHTML@</a></li>
+@
+	}
+	@
+						</ul>
+@
+} else if getMarkupKey() == "repository" {
+	local listOfFileAnchors;
+	foreach i in this.theme {
+		local sHTMLTheme = LaTeX2HTML(i);
+		@
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top"><a name="@HTMLAnchor(sHTMLTheme)@"/>@sHTMLTheme@</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top">@LaTeX2HTML(i.description)@</td>
+					</tr>
+@
+		foreach j in i.subject {
+			local sHTMLSubject = LaTeX2HTML(j);
+			local sSubjectAnchor = HTMLAnchor(sHTMLTheme + '_' + sHTMLSubject);
+			@					<tr>
+						<td>
+							<a name="@sSubjectAnchor@"/>
+							<table border="1" cellpadding="7" cellspacing="0" width="100%">
+								<tr>
+									<td class="role" valign="top" width="60">@j.state@&nbsp;</td>
+									<td class="role" valign="top" colspan="2">@sHTMLSubject@</td>
+								</tr>
+								<tr>
+									<td class="content" valign="top" colspan="3">@LaTeX2HTML(j.description)@</td>
+								</tr>
+@
+			if existVariable(j.script) {
+				@					<tr>
+						<td class="content" valign="top" width="60">&nbsp;</td>
+						<td class="role" valign="top" width="90">Script</td>
+						<td class="role" valign="top">Description</td>
+					</tr>
+@
+				foreach k in j.script {
+					local sFileAnchor = "repository_" + HTMLAnchor(k);
+					local sScriptLink;
+					if k.rightString(4) in {".cws", ".cwt", ".cwp"} {
+						local theHTMLTranslation;
+						insert theHTMLTranslation.docURL = "../";
+						set sScriptLink = "highlighting/" + replaceString(k.rightString(4), ".html", k);
+						translate("WebSite/repository/CWscript2HTML.cwp", theHTMLTranslation, "WebSite/repository/" + k, "WebSite/" + sScriptLink);
+					} else {
+						set sScriptLink = "repository/" + k;
+					}
+					@					<tr>
+						<td class="content" valign="top">&nbsp;</td>
+						<td class="content" valign="top"><a href="@sScriptLink@">@k@</a></td>
+						<td class="content" valign="top">@
+					if k.link || findElement(sFileAnchor, listOfFileAnchors) {
+						@see <a href="#@sFileAnchor@">@LaTeX2HTML(i + "::" + j)@</a>@
+					} else {
+						insert listOfFileAnchors[sFileAnchor] = sFileAnchor;
+						@						<a name="@sFileAnchor@"/>
+@fileDescription("WebSite/repository/" + k)@@
+					}
+					@
+						</td>
+					</tr>
+@
+				}
+			}
+			if existVariable(j.file) {
+				@					<tr>
+						<td class="content" valign="top" width="60">&nbsp;</td>
+						<td class="role" valign="top" width="90">File</td>
+						<td class="role" valign="top">Description</td>
+					</tr>
+@
+				foreach k in j.file {
+					local sScriptLink;
+					if k.rightString(4) in {".cws", ".cwt", ".cwp"} {
+						local theHTMLTranslation;
+						insert theHTMLTranslation.docURL = "../";
+						set sScriptLink = "highlighting/" + k.rsubString(4) + ".html";
+						translate("WebSite/repository/CWscript2HTML.cwp", theHTMLTranslation, "WebSite/repository/" + k, "WebSite/" + sScriptLink);
+					} else {
+						set sScriptLink = "repository/" + k;
+					}
+					@					<tr>
+						<td class="content" valign="top">&nbsp;</td>
+						<td class="content" valign="top"><a href="@sScriptLink@">@k@</a></td>
+						<td class="content" valign="top">@fileDescription("WebSite/repository/" + k)@</td>
+					</tr>
+@
+				}
+			}
+			if existVariable(j.example) {
+				@					<tr>
+						<td class="content" valign="top">&nbsp;</td>
+						<td class="role" valign="top">Example</td>
+						<td class="role" valign="top">Description</td>
+					</tr>
+@
+				foreach k in j.example {
+					local sScriptLink;
+					if k.rightString(4) in {".cws", ".cwt", ".cwp"} {
+						local theHTMLTranslation;
+						insert theHTMLTranslation.docURL = "../";
+						set sScriptLink = "highlighting/" + k.rsubString(4) + ".html";
+						translate("WebSite/repository/CWscript2HTML.cwp", theHTMLTranslation, "WebSite/examples/" + k, "WebSite/" + sScriptLink);
+					} else {
+						set sScriptLink = "examples/" + k;
+					}
+					@					<tr>
+						<td class="content" valign="top">&nbsp;</td>
+						<td class="content" valign="top"><a href="@sScriptLink@">@k@</a></td>
+						<td class="content" valign="top">@fileDescription("WebSite/examples/" + k)@@
+					try {
+						traceLine("executing example '" + k + "' of the repository...");
+						local sOldIncludePath = getIncludePath();
+						setIncludePath("WebSite/");
+						local sOldWorkingPath = getWorkingPath();
+						setWorkingPath("WebSite/");
+						setCommentBegin("//");
+						setCommentEnd("\n");
+						executeString(this, loadFile("examples/" + k));
+						setCommentBegin("<!--");
+						setCommentEnd("-->");
+						setWorkingPath(sOldWorkingPath);
+						setIncludePath(sOldIncludePath);
+					} catch(sError) {
+						error("on Web site, example '" + k + "':" + endl() + sError);
+					}
+					@</td>
+					</tr>
+@
+				}
+			}
+			@							</table>
+						</td>
+					</tr>
+@
+		}
+@				</table>
+@
+	}
+} else if getMarkupKey() == "repository-working" {
+	foreach i in this.working {
+		local sHTMLVersion = LaTeX2HTML(i);
+		@
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top" colspan="2">@sHTMLVersion@</td>
+					</tr>
+					<tr>
+						<td class="role" valign="top" width="80">State</td>
+						<td class="role" valign="top">Description</td>
+					</tr>
+					<tr>
+						<td class="content" valign="top">@
+		switch(i.state) {
+			case "progress":
+				@in progress@
+				break;
+			case "pending":
+			case "complete":
+				@@i.state@@
+				break;
+		}
+		@</td>
+						<td class="content" valign="top">@LaTeX2HTML(i.description)@</td>
+					</tr>
+				</table>
+@
+	}
+} else if startString(getMarkupKey(), "quick access:") {
+	local sMode = subString(getMarkupKey(), 14);
+	foreach i in project.headings if i.modes.findElement(sMode) {
+		@				@repeatString("&nbsp", 8)@<a href="#category_@key(i)@"><B>Category <I>@key(i)@</I></B></a><BR/>
+@
+	}
+	@				<P/>
+@
+	foreach i in project.headings if i.modes.findElement(sMode) {
+		@				<a name="category_@key(i)@" />
+				<table border="1" cellpadding="7" cellspacing="0" width="100%">
+					<tr>
+						<td class="company" valign="top">Category <I>@key(i)@</I></td>
+						<td class="company" valign="top">@LaTeX2HTML(i.description)@</td>
+					</tr>
+@
+		foreach j in sorted i.members if !j.mode  || j.mode == sMode {
+			@					<tr>
+						<td class="content" valign="top"><a href="manual_The_scripting_language.html#@j.name@"><CODE>@j.name@</CODE></a></td>
+						<td class="content" valign="top">@LaTeX2HTML(j.abstract)@</td>
+					</tr>
+@
+		}
+		@				</table>
+				<BR/>
+@
+	}
+}

@@ -1,0 +1,18 @@
+function f(v : value) {
+	traceLine("BEGIN f(v)");
+//note: the \samp{finally} statement is put anywhere in the body,
+	finally {
+//note: this statement will be executed while exiting the function, even if an exception was
+//note: raised,
+		traceLine("END f(v)");
+	}
+	// the body of the function, with more than
+	// one way to exit the function, for example:
+	if !v return "empty";
+	if v == "1" return "first";
+	if v == "2" return "second";
+	if v == "3" return "third";
+	return "other";
+}
+
+traceLine("...f(1) has been executed and returned '" + f(1) + "'");

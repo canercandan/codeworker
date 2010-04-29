@@ -1,0 +1,60 @@
+#implicitCopy
+
+jeffcovey ::=
+	[
+		->[
+				=> local iDepth;
+				[
+					#explicitCopy
+					"<div class=\"TitreSection" #continue #readInteger:iDepth "\">"
+				]
+				#continue
+				=> {@<h@$iDepth + 2$@>@}
+				[~"</div>"]*
+				[
+					#explicitCopy
+					"</div>"
+				]
+				=> {@</h@$iDepth + 2$@>@}
+			|
+				"<kbd>"
+				=> local iLocation = getOutputLocation();
+				#explicitCopy
+				=> local bPre;
+				[
+						"<pre>"
+						=> bPre = true;
+						=> overwritePortion($iLocation - 4$, "pre", 3);
+					|
+						"</pre>"
+					|
+						"&nbsp;" => {@ @}
+					|
+						"<span class=\"raw_text\"></span>"
+					|
+						"\"xml_balise\"" => {@"xml_tag"@}
+					|
+						"\"php_type\"" => {@"php_attribute"@}
+					|
+						"\"php_ch\"" => {@"xml_ch"@}
+					|
+						"<br/>"
+						=> if !bPre {
+							bPre = true;
+							overwritePortion($iLocation - 4$, "pre style=\"overflow: auto;\"", 3);
+						}
+					|
+						#implicitCopy
+						~"</kbd>"
+				]*
+				"</kbd>"
+				[
+						#check(bPre)
+						=> {@</pre>@}
+					|
+						=> {@</kbd>@}
+				]
+		]
+	]*
+	->#empty
+	;

@@ -1,0 +1,33 @@
+//--------------------------------------------------
+//          Specification on equity markets
+//
+//
+// The format conforms to the syntax expressed by the
+// extended-BNF script "tinyDSL_scanning.cwp" and is
+// parsed thanks to "tinyDSL_parsing.cwp".
+//
+// Used by "tinyDSL_leader.cws".
+//--------------------------------------------------
+
+class Volatility {
+	constant : double;
+}
+
+class Equity {
+	name : string;
+	spot : double;
+	RIC  : string;
+	volatility : aggregate Volatility;
+}
+
+class Stock : Equity {
+	ISIN : string;
+}
+
+class Index : Equity {
+	composition : Stock[];
+}
+
+class Market {
+	equities : aggregate Equity[];
+}

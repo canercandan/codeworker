@@ -1,0 +1,129 @@
+translation_unit	::=
+		#ignore(C++)
+		#continue
+		[declare_type]*
+		#empty
+		;
+
+declare_type : value	::=
+			"/*!"->"*/":declare_type
+		|
+			"//!"->"\n":declare_type
+		|
+			#readIdentifier:sKeyword
+			declare_type<sKeyword>:declare_type
+		|
+			C1_declaration
+		;
+
+C1_declaration	::=	#readIdentifier:{"public", "private"} body_definition;
+
+declare_type<T> : value	::= #check(false);
+
+declare_type<"namespace"> : value	::=
+		#readIdentifier:declare_type
+		#continue
+		'{'
+		[declare_type]*
+		'}'
+		;
+
+declare_type<"class"> : value	::=
+		class_header:declare_type
+		class_body
+		->';'
+		;
+
+declare_type<"struct"> : value	::=
+		class_header
+		class_body
+		->';'
+		;
+
+declare_type<"typedef"> : value	::= ->';' ;
+
+class_header : value	::=
+		[#readIdentifier:class_header]+
+		[~['{' | ';']]*;
+
+class_body	::=
+		'{'
+		#continue
+		[class_body_item]*
+		'}'
+		;
+
+class_body_item ::=
+			#readIdentifier:sIdentifier
+			#continue
+			[
+					[
+						':' !':'
+						#continue
+						#check(sIdentifier == "public" || sIdentifier == "protected" || sIdentifier == "private")
+					]
+				|
+					declare_type<sIdentifier>
+				|
+					class_member<sIdentifier>
+			]
+		|
+			preprocessor_directive
+		|
+			'~' class_member<"~">
+		;
+
+class_member<T>	::=
+		signature
+		[
+				';'
+			|
+				[constructor_initializer]?
+				body_definition
+		]
+		;
+
+class_member<"inline">	::= #continue class_body_item;
+
+class_member<"virtual">	::=
+	#continue
+	signature
+	body_definition
+	;
+
+class_member<"friend">	::= #continue class_body_item;
+
+class_member<"static">	::=
+	#continue
+	common_member_declaration
+	[
+			'=' #continue static_member_initialization ';'
+		|
+			'(' #continue parameters ')' body_definition
+	]
+	;
+
+
+block_definition	::= '{' #continue body_internal_definition '}';
+body_definition	::= '{' #continue body_internal_definition '}';
+body_internal_definition	::= [!'}' instruction [';']?]*;
+
+instruction	::=
+			#readIdentifier:sIdentifier
+			instruction<sIdentifier>
+		|
+			internal_instruction
+		;
+
+internal_instruction	::= ['{' #continue body_internal_definition '}' | #readCString | ~[';' | '}']]*;
+
+instruction<T>	::= internal_instruction;
+
+parameters	::= ['(' #continue parameters ')' | #readCString | ~')']*;
+common_member_declaration	::= [#readCString | ~['(' | ';' | '=' | '{']]*;
+signature	::= [#readCString | "::" | ~['{' | ';' | ':']]*;
+constructor_initializer	::= ':' #continue signature;
+
+preprocessor_directive	::= '#' #!ignore ->'\n';
+
+//codeworker -I WebSite/repository -I Bugs -parseBNF C1-parser.cws LogMediaManager.c1

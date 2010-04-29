@@ -1,0 +1,32 @@
+//note: the clause \samp{TinyBNF} takes in charge of reading our design,
+TinyBNF ::=
+//note: blanks and comments are allowed between tokens, conforming to the JAVA syntax
+//note: (\textbf{'/*'} \textbf{'*/'} and \textbf{'//'}),
+	#ignore(JAVA)
+//note: the clause \samp{classDeclaration} is repeated as long as class declarations are
+//note: encountered into the design,
+	[classDeclaration]*
+//note: if no class anymore, the end of file may have been reached,
+	#empty
+//note: the \samp{\textbf{'=>'}} operator allows executing instructions of the scripting language
+//note: into the BNF-driven script; this one will be interpreted once the file will be matched
+//note: successfully,
+	=> { traceLine("this file is valid"); };
+//note: the clause \samp{classDeclaration} takes in charge of reading a class,
+classDeclaration ::=
+//note: the clause \samp{IDENT} reads identifiers and the matched sequence must be worth
+//note: \samp{"class"},
+	IDENT:"class"
+//note: the name of the class is expected here
+	IDENT
+//note: the declaration of the parent is facultative and is announced by a colon,
+	[':' IDENT ]?
+	classBody;
+//note: the clause \samp{classBody} reads attributes as long as a it matches,
+classBody ::= '{' [attributeDeclaration]* '}';
+//note: the clause \samp{attributeDeclaration} expects a class identifier and, eventually,
+//note: the symbol of an array, and the name of the attribute,
+attributeDeclaration ::= IDENT ['[' ']']? IDENT;
+//note: the clause \samp{IDENT} reads an identifier, composed of a letter or more, which
+//note: cannot be separated by blanks or comments (required by the directive \samp{\#!ignore}),
+IDENT ::= #!ignore ['a'..'z'|'A'..'Z']+;

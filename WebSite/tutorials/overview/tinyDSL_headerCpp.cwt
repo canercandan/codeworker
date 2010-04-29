@@ -1,0 +1,45 @@
+#ifndef _@this.name@_h_
+#define _@this.name@_h_
+
+@
+setProtectedArea("USER INCLUDES");
+newFloatingLocation("INCLUDE FILES");
+@
+class @this.name@@
+if this.superClass {
+	@ : public @this.superClass@@
+	insertTextOnce(getFloatingLocation("INCLUDE FILES"), "#include \"" + this.superClass + ".h\"" + endl());
+}
+@ {
+	private:
+		// ATTRIBUTES
+@
+foreach i in this.attributes {
+	if i.type.name == "string"
+		insertTextOnce(getFloatingLocation("INCLUDE FILES"), "#include <string>" + endl());
+	if i.type.isArray
+		insertTextOnce(getFloatingLocation("INCLUDE FILES"), "#include <vector>" + endl());
+	if i.type.isObject
+		insertTextOnce(getFloatingLocation("INCLUDE FILES"),
+					"class " + i.type.name + ";" + endl());
+	@		@getCppType(i.type)@ @i.name@_;
+@
+}
+@
+	public:
+		@this.name@();
+		virtual ~@this.name@();
+
+		// ACCESSORS
+@
+foreach i in this.attributes {
+	@		inline @getCppReturnType(i.type)@ get_@i.name@() const { return @i.name@_; }
+		inline void set_@i.name@(@getCppReturnType(i.type)@ @i.name@) { @i.name@_ = @i.name@; }
+@
+}
+@
+@
+setProtectedArea("USER METHODS");
+@};
+
+#endif

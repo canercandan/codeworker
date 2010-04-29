@@ -1,0 +1,11 @@
+r ::=
+	[
+		->[
+			#readIdentifier:sName #nextStep
+			#check(sName == "class")
+			'=' #readCString:sText
+			=> insert this[sText] = sText;
+		]
+	]*
+	=> foreach i in sorted this traceLine(i);
+	;

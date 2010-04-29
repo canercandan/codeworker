@@ -1,0 +1,4 @@
+parseAsBNF("CV-parser.cwp", project, "CV.txt");
+setCommentBegin("<!--");
+setCommentEnd("-->");
+generate("CV-HTML.cwt", project, "CV.html");

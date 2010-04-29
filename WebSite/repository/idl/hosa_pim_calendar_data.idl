@@ -1,0 +1,460 @@
+//Source file: Y:/DOCUMENTS/PRODUCTDOCUMENTS/INTERFACESPECIFICATIONS/HOSA/IDL/hosa/hosa_pim_calendar_data.idl
+
+#ifndef __HOSA_PIM_CALENDAR_DATA_DEFINED
+#define __HOSA_PIM_CALENDAR_DATA_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+#include "hosa_pim_common_data.idl"
+#include "osa.idl"
+#include "hosa_common_data.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			module hpim {
+				
+				/* Specifies the criteria used to retrieve Calendar Event entries. */
+				
+				struct TpHosaPIMCalendarEventCriteria {
+					/* Whether or not the EventID field shall be taken into account in the criteria match. */
+					org::csapi::TpBoolean EventIDPresent;
+					/* An equality match is performed on the eventID. */
+					org::csapi::TpOctetSet EventID;
+					/* Whether or not the DateRange field shall be taken into account in the criteria match. */
+					org::csapi::TpBoolean DateRangePresent;
+					/* All events that lie partly or completely within the given Date/Time range are retrieved. Note that this also applies to recurring events, all recurring events for which recurrences lie partly or completely within the given Date/Time range are retrieved as well. */
+					org::csapi::TpTimeInterval DateRange;
+				};
+				
+				enum TpHosaPIMCreateCalendarEntryResultInfoType {
+
+					/* A todo item has been created succesfully. The ToDoID of the created todo item is returned. */
+					P_HCAL_CREATE_TODO_OK,
+					/* A calendar event has been created succesfully. The EventID of the created calendar event is returned. */
+					P_HCAL_CREATE_EVENT_OK,
+					/* The calendar entry with the indicated identifier already exists. */
+					P_HCAL_CREATE_ALREADY_EXISTS,
+					/* For some reason the calendar entry could not be created. The reason is returned. */
+					P_HCAL_CREATE_FAILED,
+					/* The calendar entry could not be created from the provided input object, since the input object contains an error or formatting problem. */
+					P_HCAL_CREATE_INPUT_DATA_ERROR					
+				};
+				
+				/* Contains the actual create event result information. */
+				
+				union TpHosaPIMCreateCalendarResultInfo switch(TpHosaPIMCreateCalendarEntryResultInfoType) {
+					case P_HCAL_CREATE_TODO_OK: org::csapi::TpOctetSet ToDoID;
+					case P_HCAL_CREATE_EVENT_OK: org::csapi::TpOctetSet EventID;
+					case P_HCAL_CREATE_ALREADY_EXISTS: org::csapi::TpString AlreadyExistsAdditionalInfo;
+					case P_HCAL_CREATE_FAILED: org::csapi::TpString CreateFailedReason;
+					case P_HCAL_CREATE_INPUT_DATA_ERROR: org::csapi::TpString InputDataErrorReason;
+				};
+				
+				struct TpHosaPIMCreateCalendarResult {
+					/* Identifies the Subscriber for which this result is returned. */
+					TpHosaPIMSubscriber Subscriber;
+					/* Contains the actual create event result information. */
+					TpHosaPIMCreateCalendarResultInfo ResultInfo;
+					/* Indicates the device for which this specific result is send. */
+					TpHosaPIMTargetDevice TargetDevice;
+					/* The original ID which was provided on the creation request. This might be different from the EventID or ToDoID used to address the entry in the subscribers calendar. The latter is returned in the TpHosaPIMCreateCalendarEntryResultInfo when the calendar entry could be created succesfully. When entries are created from vCalendar objects this identifier is equal to the vCalendar's components UID part for which this result is returned. */
+					org::csapi::TpOctetSet OriginalID;
+				};
+				
+				typedef sequence <TpHosaPIMCreateCalendarResult> TpHosaPIMCreateCalendarResultList;
+				
+				enum TpHosaPIMDeleteCalendarEntryResultInfoType {
+
+					/* A calendar entry has been deleted succesfully. */
+					P_HCAL_DELETE_OK,
+					/* The contact entry with the indicated ID does not exist. */
+					P_HCAL_DELETE_NOT_EXISTING,
+					/* For some reason the calendar entry could not be deleted. The reason is returned. */
+					P_HCAL_DELETE_FAILED					
+				};
+				
+				union TpHosaPIMDeleteCalendarEntryResultInfo switch(TpHosaPIMDeleteCalendarEntryResultInfoType) {
+					case P_HCAL_DELETE_NOT_EXISTING: org::csapi::TpString NotExistingAdditionalInfo;
+					case P_HCAL_DELETE_FAILED: org::csapi::TpString DeleteFailedReason;
+					default: short Dummy;	//allows initialisation of the union in the default case
+				};
+				
+				enum TpHosaPIMModifyCalendarEntryResultInfoType {
+
+					/* A todo item has been modified succesfully. The ToDoID of the created todo item is returned. */
+					P_HCAL_MODIFY_TODO_OK,
+					/* A calendar event has been modified succesfully. The EventID of the created calendar event is returned. */
+					P_HCAL_MODIFY_EVENT_OK,
+					/* The calendar entry with the indicated identifier does not exist. */
+					P_HCAL_MODIFY_NOT_EXISTING,
+					/* For some reason the calendar entry could not be modified. The reason is returned. */
+					P_HCAL_MODIFY_FAILED,
+					/* The calendar entry could not be modified from the provided input object, since the input object contains an error or formatting problem. */
+					P_HCAL_MODIFY_INPUT_DATA_ERROR					
+				};
+				
+				union TpHosaPIMModifyCalendarEntryResultInfo switch(TpHosaPIMModifyCalendarEntryResultInfoType) {
+					case P_HCAL_MODIFY_TODO_OK: org::csapi::TpOctetSet ToDoID;
+					case P_HCAL_MODIFY_EVENT_OK: org::csapi::TpOctetSet EventID;
+					case P_HCAL_MODIFY_NOT_EXISTING: org::csapi::TpString NotExistingAdditionalInformation;
+					case P_HCAL_MODIFY_FAILED: org::csapi::TpString ModifyFailedReason;
+					case P_HCAL_MODIFY_INPUT_DATA_ERROR: org::csapi::TpString InputDataErrorReason;
+				};
+				
+				enum TpHosaPIMRetrieveCalendarEntryInfoType {
+
+					/* A calendar entry has been retrieved succesfully. The event/todo information of the retrieved calendar entry is returned. */
+					P_HCAL_RETRIEVE_OK,
+					/* For some reason a calendar entry that fulfills the retrieval criteria can not be retrieved. The reason is returned. */
+					P_HCAL_RETRIEVE_FAILED					
+				};
+				
+				struct TpHosaPIMvCalendar {
+					/* Calendar information formatted as a vCalendar object. */
+					org::csapi::TpOctetSet vCalendar;
+				};
+				
+				union TpHosaPIMRetrieveVCalendarResultInfo switch(TpHosaPIMRetrieveCalendarEntryInfoType) {
+					case P_HCAL_RETRIEVE_OK: TpHosaPIMvCalendar CalendarInfo;
+					case P_HCAL_RETRIEVE_FAILED: org::csapi::TpString RetrieveFailedReason;
+				};
+				
+				typedef sequence <TpHosaPIMRetrieveVCalendarResultInfo> TpHosaPIMRetrieveVCalendarResultInfoList;
+				
+				/* Contains the actual free/busy information. */
+				
+				struct TpHosaPIMFreeBusyInformation {
+					/* The date/time when this information was retrieved. */
+					org::csapi::TpDateAndTime RetrievedTimeStamp;
+					/* The date/time range for which free/busy information is retrieved. */
+					org::csapi::TpTimeInterval RetrievedDateRange;
+					/* A list of date/time ranges that represent busy time slots. */
+					TpHosaDateRangeList FreeBusyDateRanges;
+				};
+				
+				union TpHosaPIMRetrieveFreeBusyInformationResultInfo switch(TpHosaPIMRetrieveCalendarEntryInfoType) {
+					case P_HCAL_RETRIEVE_OK: TpHosaPIMFreeBusyInformation FreeBusyInfo;
+					case P_HCAL_RETRIEVE_FAILED: org::csapi::TpString RetrieveFailedReason;
+				};
+				
+				/* Specifies the type of repeptition used. */
+				
+				enum TpHosaPIMRecurrenceRuleClassType {
+
+					/* Indicates a rule that repeats on a daily basis. */
+					P_HPIM_DAILY,
+					/* Indicates a rule that repeats on a weekly basis. */
+					P_HPIM_WEEKLY,
+					/* Indicates a rule that repeats on a monthly basis on a relative day and week. */
+					P_HPIM_MONTHLY_BY_POSITION,
+					/* Indicates a rule that repeats on a monthly basis on an absolute day. */
+					P_HPIM_MONTHLY_BY_DAY,
+					/* Indicates a rule that repeats on a specific months of the year. */
+					P_HPIM_YEARLY_BY_MONTH,
+					/* Indicates a rule that repeats on a specific days of the year. */
+					P_HPIM_YEARLY_BY_DAY					
+				};
+				
+				/* A list of numbers representing days in the month. Allowed values {-31..-1,1..31}. Where positive numbers represent days starting from the beginning of the month. Negative numbers are interpreted as counting from the last day of the month backwards. */
+				
+				typedef sequence <org::csapi::TpInt32> TpHosaPIMDayInMonthNumberList;
+				
+				/* A list of numbers representing the month in a year. Allowed values {1..12}. The numbers represent months starting from the beginning of the year. */
+				
+				typedef sequence <org::csapi::TpInt32> TpHosaPIMMonthNumberList;
+				
+				/* A list of numbers representing a day in a year. Allowed values {1..366}. The numbers represent days starting from the beginning of the year. */
+				
+				typedef sequence <org::csapi::TpInt32> TpHosaPIMDayInYearNumberList;
+				
+				enum TpHosaPIMWeekDay {
+
+					/* Represents the day in the week which is called Sunday. */
+					P_HPIM_SUNDAY,
+					/* Represents the day in the week which is called Monday. */
+					P_HPIM_MONDAY,
+					/* Represents the day in the week which is called Tuesday. */
+					P_HPIM_TUESDAY,
+					/* Represents the day in the week which is called Wednesday. */
+					P_HPIM_WEDNESDAY,
+					/* Represents the day in the week which is called Thursday. */
+					P_HPIM_THURSDAY,
+					/* Represents the day in the week which is called Friday. */
+					P_HPIM_FRIDAY,
+					/* Represents the day in the week which is called Saturday. */
+					P_HPIM_SATURDAY					
+				};
+				
+				/* Specifies a list of weekdays. */
+				
+				typedef sequence <TpHosaPIMWeekDay> TpHosaPIMWeekDayList;
+				
+				/* A list of occurence values specififying which week of the month a particular weekday event occurs. Allowed values {-5..-1} and {+1..+5}. +1 means the first occurence of a weekday in the month, +2 the second occuernce etc. -1 means the last occurence, -2 means the second last occurence, etc. */
+				
+				typedef sequence <org::csapi::TpInt32> TpHosaPIMOccurenceList;
+				
+				/* Defines a rule that repeats on a monthly basis on a relative day and week. Example: Say that OccurenceList={1,3} and WeekDayList={MONDAY, WEDNESDAY, THURSDAY} then this means: The event occurs every month the first and third week on monday, wednesday and thursday. */
+				
+				struct TpHosaPIMMonthlyByPositionRule {
+					/* A list of occurence values specififying which week of the month a particular weekday event occurs. Allowed values {-5..-1} and {+1..+5}. +1 means the first occurence of a weekday in the month, +2 the second occuernce etc. -1 means the last occurence, -2 means the second last occurence, etc. */
+					TpHosaPIMOccurenceList OccurenceList;
+					/* Specifies a list of weekdays. */
+					TpHosaPIMWeekDayList WeekDayList;
+				};
+				
+				/* Contains repetition type specific information. */
+				
+				union TpHosaPIMRecurrenceRuleClass switch(TpHosaPIMRecurrenceRuleClassType) {
+					case P_HPIM_WEEKLY: TpHosaPIMWeekDayList WeeklyRule;	//Specifies a list of weekdays.
+					case P_HPIM_MONTHLY_BY_POSITION: TpHosaPIMMonthlyByPositionRule MonthlyByPositionRule;
+					case  P_HPIM_MONTHLY_BY_DAY: TpHosaPIMDayInMonthNumberList MonthlyByDayRule;	//A list of numbers representing days in the month. Allowed values {-31..-1,1..31}. Where positive numbers represent days starting from the beginning of the month. Negative numbers are interpreted as counting from the last day of the month backwards.
+					case P_HPIM_YEARLY_BY_MONTH: TpHosaPIMMonthNumberList YearlyByMonthRule;	//A list of numbers representing the month in a year. Allowed values {1..12}. The numbers represent months starting from the beginning of the year.
+					case P_HPIM_YEARLY_BY_DAY: TpHosaPIMDayInYearNumberList YearlyByDayRule;	//A list of numbers representing a day in a year. Allowed values {1..366}. The numbers represent days starting from the beginning of the year.
+					default: short Dummy;	//allows initialisation of the union in the default case
+				};
+				
+				/* Specifies  repetition pattern for the event. */
+				
+				struct TpHosaPIMRecurrenceRule {
+					/* The interval in which the event occurs, e.g. 2 means every second occasion. */
+					org::csapi::TpInt32 Interval;
+					/* Contains repeptition type specific information. */
+					TpHosaPIMRecurrenceRuleClass RuleType;
+					/* Specifies whether the NumberOfOccurences field shall be taken into account. */
+					org::csapi::TpBoolean NumberOfOccurencesSpecified;
+					/* Specifies when the total number of events the rule generates. When an end date is specified which occurs before the total number of occurences have been exhausted the recurrence stops at the specified end date. */
+					org::csapi::TpInt32 NumberOfOccurences;
+					/* Specifies whether the EndDate field shall be taken into account. */
+					org::csapi::TpBoolean EndDateSpecified;
+					/* Specifies when the recurrence ends. When also a number of occurences have been specified and all occurences are exhausted before the end date is reached the recurrence stops there. */
+					org::csapi::TpDateAndTime EndDate;
+				};
+				
+				/* An ordered set of recurrence rules. */
+				
+				typedef sequence <TpHosaPIMRecurrenceRule> TpHosaPIMRecurrenceRuleSet;
+				
+				struct TpHosaPIMDeleteCalendarEntryResult {
+					/* Contains the actual delete event result information. */
+					TpHosaPIMDeleteCalendarEntryResultInfo ResultInfo;
+					/* Indicates the device for which this specific result is send. */
+					TpHosaPIMTargetDevice TargetDevice;
+				};
+				
+				typedef sequence <TpHosaPIMDeleteCalendarEntryResult> TpHosaPIMDeleteCalendarEntryResultList;
+				
+				struct TpHosaPIMModifyCalendarEntryResult {
+					/* Contains the actual delete event result information. */
+					TpHosaPIMModifyCalendarEntryResultInfo ResultInfo;
+					/* Indicates the device for which this specific result is send. */
+					TpHosaPIMTargetDevice TargetDevice;
+				};
+				
+				typedef sequence <TpHosaPIMModifyCalendarEntryResult> TpHosaPIMModifyCalendarEntryResultList;
+				
+				/* Specifies the role that the attendee has in the event. */
+				
+				enum TpHosaPIMAttendeeRole {
+
+					/* Indicates an attendee of an event. */
+					P_HPIM_ATTENDEE,
+					/* Indicates the organizer of the event, but not the owner. */
+					P_HPIM_ORGANIZER,
+					/* Indicates the owner of the event. */
+					P_HPIM_OWNER,
+					/* Indicates a delegate of another attendee. */
+					P_HPIM_DELEGATE					
+				};
+				
+				/* Specifies the status of the attendees participation. */
+				
+				enum TpHosaPIMParticipationStatus {
+
+					/* Indicates whether the event was accepted. */
+					P_HPIM_ACCEPTED,
+					/* Indicates whether the event needs action by the attendee. */
+					P_HPIM_NEEDS_ACTION,
+					/* Indicates whether the event was sent out to the attendee. */
+					P_HPIM_SENT,
+					/* Indicates that the event was tentatively accepted by the attendee. */
+					P_HPIM_TENTATIVE,
+					/* Indicates that the attendee confirmed its attendance. */
+					P_HPIM_CONFIRMED,
+					/* Indicates that the attendee rejected the event. */
+					P_HPIM_DECLINED,
+					/* Indicates that the attendee completed. */
+					P_HPIM_COMPLETED,
+					/* Indicates that the attendee delegated its attendence to someone else. */
+					P_HPIM_DELEGATED					
+				};
+				
+				/* Specifies the attendees identity by means of its mailaddress, optionally also provides the eventstatus for this attendee and the attendees role in the meeting. */
+				
+				struct TpHosaPIMAttendee {
+					/* Identifies the attendee by its email address. */
+					TpHosaEmailAddress EmailAddress;
+					/* Specifies whether the AttendeeRole field is present. */
+					org::csapi::TpBoolean AttendeeRolePresent;
+					/* Specifies the role that the attendee has in the event. */
+					TpHosaPIMAttendeeRole AttendeeRole;
+					/* Specifies whether the ParticipationStatus field is present. */
+					org::csapi::TpBoolean ParticipationStatusPresent;
+					/* Specifies the status of the attendees participation. */
+					TpHosaPIMParticipationStatus ParticipationStatus;
+				};
+				
+				typedef sequence <TpHosaPIMAttendee> TpHosaPIMAttendeeList;
+				
+				/* This property defines the overall status or confirmation of the calendar event. */
+				
+				enum TpHosaPIMEventStatus {
+
+					/* Indicates that the event is tentative. */
+					P_HPIM_EVENT_TENTATIVE,
+					/* Indicates that the event is definitive. */
+					P_HPIM_EVENT_CONFIRMED,
+					/* Indicates that the event is cancelled. */
+					P_HPIM_EVENT_CANCELLED					
+				};
+				
+				/* Represents a calendar event. Note that a recurring event is represented as one event object, with a recurrence pattern as a recurrence rule. */
+				
+				struct TpHosaPIMCalendarEvent {
+					/* Uniquely identifies an event. */
+					org::csapi::TpOctetSet EventID;
+					/* The title or subject of the event. */
+					org::csapi::TpOctetSet Title;
+					/* The description of the event. */
+					org::csapi::TpOctetSet Description;
+					/* The date and time at which the event starts. */
+					org::csapi::TpDateAndTime StartTime;
+					/* The date and time at which the event ends. */
+					org::csapi::TpDateAndTime EndTime;
+					/* The first time at which this event is active that lies within the time range for which this event was requested. This field is only meaningfull when the event is retrieved from the system, for creation/modification purposes this field is ignored. */
+					org::csapi::TpDateAndTime StartTimeInRetrievedRange;
+					/* The last time at which this event is active that lies within the time range for which this event was requested. This field is only meaningfull when the event is retrieved from the system, for creation/modification purposes this field is ignored. */
+					org::csapi::TpDateAndTime EndTimeInRetrievedRange;
+					/* This property defines whether the event is transparent to free-busy time searches. A value of 0 will guarantee that the event blocks some time and will be visible in a free-busy time search. A value of 1 specifies that the entry will not block time and will not be visible in free-busy time searches. Any value >1 can be used for implementation specific transparency semantics. */
+					org::csapi::TpInt32 TimeTransparency;
+					/* The event prority. A value of zero specifies an undefined priority. The value 1 specifies the highest priority. Subsequent numbers specifiy a decreasing ordinal priority. */
+					org::csapi::TpInt32 Priority;
+					/* If the field SendEmailReminder is set to True, this field specifies the number of minutes before the event occurs that an email reminder should be sent out. */
+					org::csapi::TpInt32 EmailReminderTime;
+					/* Whether or not a email reminder shall be send. In case this field is True the field EmailReminderTime specifies when the reminder shall be sent. */
+					org::csapi::TpBoolean SendEmailReminder;
+					/* Whether or not a pager reminder shall be send. In case this field is True the field PagerReminderTime specifies when the reminder shall be sent. */
+					org::csapi::TpBoolean SendPagerReminder;
+					/* If the field SendPagerlReminder is set to True, this field specifies the number of minutes before the event occurs that a pager email reminder should be sent out. */
+					org::csapi::TpInt32 PagerReminderTime;
+					/* List of email addresses to which a notification shall be sent, in case the event is created or modified. Note that this is in addition to the possibilty to notify attendees. (Or a possibility to only notify a subset of the attendees.) Whether attendees are notified depends on the field NotifyAttendees. */
+					TpHosaEmailAddressList EventNotifyList;
+					/* A set of recurrence rules. */
+					TpHosaPIMRecurrenceRuleSet RecurrenceRules;
+					/* A set of exception rules that specify exceptions to the recurrence pattern specified by RecurrenceRules. */
+					TpHosaPIMRecurrenceRuleSet ExceptionRules;
+					/* A set of exception dates that specify exceptions to the recurrence pattern specified by RecurrenceRules. */
+					TpHosaDateAndTimeSet ExceptionDates;
+					/* The time that the event was created. */
+					org::csapi::TpDateAndTime CreationTime;
+					/* The time at which this event information was retrieved. */
+					org::csapi::TpDateAndTime RetrievedTimeStamp;
+					/* The last time the event was modified. */
+					org::csapi::TpDateAndTime ModificationTime;
+					/* Version number of the event. When supported the sequencenumber is stepped everytime the event is changed. */
+					org::csapi::TpInt32 SequenceNumber;
+					/* Specifies whether or not to notify atendees when the event is changed. */
+					org::csapi::TpBoolean NotifyAttendees;
+					/* Attachments referenced with their URL addresses. */
+					TpHosaPIMUrlAddressList AttachmentUrlList;
+					/* List of attendee identified by their email addresses. */
+					TpHosaPIMAttendeeList AttendeeList;
+					/* List of resources (such as conference rooms, beamers etc.) assigned to an event. Resources are referenced by a unique email address. */
+					TpHosaEmailAddressList ResourceList;
+					/* Whether or not the EventStatus is specified. In case this field is True the field EventStatus specifies the status of this event. */
+					org::csapi::TpBoolean EventStatusSpecified;
+					/* The status of the event. */
+					TpHosaPIMEventStatus EventStatus;
+				};
+				
+				union TpHosaPIMRetrieveCalendarEventResultInfo switch(TpHosaPIMRetrieveCalendarEntryInfoType) {
+					case P_HCAL_RETRIEVE_OK: TpHosaPIMCalendarEvent EventInfo;
+					case P_HCAL_RETRIEVE_FAILED: org::csapi::TpString RetrieveFailedReason;
+				};
+				
+				typedef sequence <TpHosaPIMRetrieveCalendarEventResultInfo> TpHosaPIMRetrieveCalendarEventResultInfoList;
+				
+				/* This property defines the overall status or confirmation of the todo item. */
+				
+				enum TpHosaPIMToDoStatus {
+
+					/* Indicates that the todo needs action. */
+					P_HPIM_TODO_NEEDS_ACTION,
+					/* Indicates that the todo is completed. */
+					P_HPIM_TODO_COMPLETED,
+					/* Indicates that the todo is started and in process. */
+					P_HPIM_TODO_IN_PROCESS,
+					/* Indicates that the todo is cancelled. */
+					P_HPIM_TODO_CANCELLED					
+				};
+				
+				struct TpHosaPIMCalendarToDoEntry {
+					/* Uniquely identifies a ToDo item. */
+					org::csapi::TpOctetSet ToDoID;
+					/* The title or subject of the ToDo item. */
+					org::csapi::TpOctetSet Title;
+					/* The description of the ToDo item. */
+					org::csapi::TpOctetSet Description;
+					/* The event prority. A value of zero specifies an undefined priority. The value 1 specifies the highest priority. Subsequent numbers specifiy a decreasing ordinal priority. */
+					org::csapi::TpInt32 Priority;
+					/* The time that the event was created. */
+					org::csapi::TpDateAndTime CreationTime;
+					/* The time at which this event information was retrieved. */
+					org::csapi::TpDateAndTime RetrievedTimeStamp;
+					/* The last time the event was modified. */
+					org::csapi::TpDateAndTime ModificationTime;
+					/* Version number of the event. */
+					org::csapi::TpInt32 SequenceNumber;
+					/* Whether or not a due time is specified. In case this field is True the field DueTime specifies the actual time that the ToDo is due. */
+					org::csapi::TpBoolean DueTimeSpecified;
+					/* Specifies the date and time that the ToDo is due to be completed. */
+					org::csapi::TpDateAndTime DueTime;
+					/* Whether or not a completed time is specified. In case this field is True the field CompletedTime specifies the actual time when the ToDo was completed. */
+					org::csapi::TpBoolean CompletedTimeSpecified;
+					/* Specifies the date and time that the ToDo was completed. */
+					org::csapi::TpDateAndTime CompletedTime;
+					/* Whether or not the ToDoStatus is specified. In case this field is True the field ToDoStatus specifies the status of this todo item. */
+					org::csapi::TpBoolean ToDoStatusSpecified;
+					/* The status of the todo item. */
+					TpHosaPIMToDoStatus ToDoStatus;
+				};
+				
+				union TpHosaPIMRetrieveToDoResultInfo switch(TpHosaPIMRetrieveCalendarEntryInfoType) {
+					case P_HCAL_RETRIEVE_OK: TpHosaPIMCalendarToDoEntry ToDoInfo;
+					case P_HCAL_RETRIEVE_FAILED: org::csapi::TpString RetrieveFailedReason;
+				};
+				
+				typedef sequence <TpHosaPIMRetrieveToDoResultInfo> TpHosaPIMRetrieveToDoResultInfoList;
+				
+				/* Specifies the criteria used to retrieve ToDo entries. */
+				
+				struct TpHosaPIMCalendarToDoCriteria {
+					/* Whether or not the ToDoID field shall be taken into account in the criteria match. */
+					org::csapi::TpBoolean ToDoIDPresent;
+					/* An equality match is performed on the ToDoID. */
+					org::csapi::TpOctetSet ToDoID;
+				};
+				
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif

@@ -1,0 +1,220 @@
+PRESENTATION
+
+CodeWorker ("http://www.codeworker.org") est né du constat qu'un grand nombre de tâches de développement gagneraient à être
+automatisées :
+	- application de "coding patterns" sur le code source,
+	- correction à appliquer sur l'ensemble des objets de l'application,
+	- tenir une documentation à jour sans effort et sans décalage avec le développement,
+	- avoir l'idée d'une nouvelle fonctionnalité (modèle de conception) à appliquer et à
+		personnaliser sur l'ensemble des objets métier (que chacun sache s'écrire sous XML ou
+		que chacun soit capable de vérifier ses contraintes de validité par exemple),
+	- n'avoir à retoucher que le code métier lorsque les membres d'un objet sont modifiés,
+	- générer des écrans de saisie automatiquement,
+	- générer une page HTML qui retrace intelligemment toutes les modifications faites sur
+		une application et portées dans un fichier "changes.log" (pour les développeurs les
+		plus sérieux, qui doivent maintenir une Release Notes à chaque livraison d'une nouvelle
+		version),
+	- transformer des données écrites dans un certain format, sous un autre format, et qu'il
+		n'existe pas de traducteurs sur le marché,
+	- interroger le coeur de l'application à partir d'un browser,
+	- ... tout ce qui est répétitif ou fastidieux à maintenir en cas de modification,
+
+Ces tâches peuvent paraître amusantes à implémenter une fois, mais pas à maintenir ou à
+reproduire manuellement sur l'ensemble d'une application. Elles demandent de plus un nombre
+plus important de développeurs pour les mener à bien, qui introduiront forcément un lot
+conséquent de bugs. Et ce, d'autant plus que ce travail n'est guère exaltant.
+Le pire est de gérer l'impact d'une modification, faite sur les attributs d'un objet
+par exemple, dans l'ensemble des fonctionnalités réalisées (ne pas oublier de modifier l'écran
+de saisie, l'écriture en XML, les contraintes de validité, ...). Un ingénieur occupé à ces
+tâches est sous-employé et a moins de temps à consacrer à la conception et aux fonctionnalités
+métier. De plus, il perdra toujours trop de temps à débugger les erreurs qu'il aura commises
+(le pire étant de revenir sur une erreur de conception, puisque cela implique des
+transformations en profondeur).
+
+CodeWorker est un outil qui permet de pallier tous les inconvénients cités ci-dessus qui, on
+l'a vu, affaiblissent considérablement la robustesse et la réactivité. CodeWorker se présente
+sous la forme d'un langage de script qui apporte toutes les facilités pour générer du texte.
+La nature du texte généré est totalement libre. Il peut s'agir :
+	- de code source, écrit en JAVA, en C++ ou en n'importe quel autre langage de programmation,
+	- de documentation, écrit en HTML, en LaTeX ou en n'importe quel langage de traitement de
+		texte qui offre une représentation non binaire du document (et qui dispose du moyen
+		d'introduire des commentaires),
+	- de procédures stockées d'insertion/suppression d'objets dans une base de données
+		relationnelle (ce qui implique notamment la prise en charge du mapping objet/relationnel),
+	- d'un fichier d'entrée destiné à une application, par exemple :
+		- un fichier XML destiné à ANT (outil de makefile pour JAVA),
+		- description des noeuds d'un graphe complexe pour "GraphViz" (outil qui permet de
+			dessiner une grande variété de graphes, pour la modélisation, le workflow,
+			la médecine, la chimie, les statistiques, ...),
+Ces exemples ne sont là qu'à titre illustratif, et sont loin d'être exhaustifs. La limite est
+fixée par l'imagination ou les capacités de l'architecte d'application, du concepteur et du
+développeur.
+
+Disposer d'un bon outil de génération de code n'a pas de sens si l'on ne sait pas acquérir la
+représentation conceptuelle de ce qu'il faut générer. Il peut s'agir :
+	- d'une modélisation UML,
+	- d'une modélisation Merise,
+	- du schéma d'une base de données écrit en SQL,
+	- de la description formelle d'échanges de données/messages entre processus
+	- du descripteur de déploiement d'une architecture J2EE-EJB,
+Là encore, la liste est loin d'être exhausive, et ne se limite qu'à tout ce qui peut se décrire
+dans un fichier texte dont la syntaxe est connue et exploitable par une machine. En fait, cela
+n'exclut que les documents écrits en langage naturel (français, anglais, ...), dont le contenu
+est, par nature, non formalisé.
+
+On découvrira au fur et à mesure en quoi cet outil répond réellement au besoin de fiabilité,
+robustesse, réactivité et capitalisation de la connaissance qui se fait sentir aujourd'hui sur
+les moyens et grands projets. Et ce, indépendamment d'un quelconque clocher, à savoir JAVA,
+Lotus Notes, Oracle, VB ou C++ et d'autres encore.
+
+
+ACQUISITION DE LA CONNAISSANCE
+
+Le frein à cette démarche d'acquisition du fichier de modélisation sont la lecture de sa syntaxe
+et l'extraction de la connaissance. C'est ce qui a justifié l'expansion de XML ces dernières
+années. Faisons une petite digression sur XML. En soi, XML n'a rien d'exceptionnel ou de
+nouveau (tous ses concepts sont issus de son grand père SGML) et beaucoup, suivant en cela le
+courant du moment, lui ont donné une importance qu'il ne méritait pas. Cependant, il dispose
+de trois atouts majeurs :
+	- son rôle de hiérarchisation de la connaissance, de n'importe quelle connaissance,
+	- sa compréhension à la fois par l'être humain et par la machine,
+	- l'invariance de sa syntaxe, qui permet d'écrire un 'lecteur' unique pour chaque langage
+		de programmation ('lecteur': outil qui reconnait la syntaxe du flux de données, un
+		fichier le plus souvent)
+Ces trois atouts lui permettent de représenter n'importe quelle information sous une forme
+structurée. Cette forme structurée se présentera sous la forme d'un graphe dans la mémoire
+de l'application qui le lit (via le 'lecteur'). Cette opération est appelée le 'parsing' et
+consiste, au cours de la lecture, à alimenter un graphe (dit 'de parsing') avec la connaissance
+extraite du flux de données XML. Tout langage de programmation dispose maintenant d'une
+librairie capable de parser n'importe quel fichier XML.
+
+Pourquoi cette digression sur XML? Parce que c'est un moyen connu de tous d'acquérir de la
+connaissance, déjà mise en forme pour la génération de code : il suffirait de piocher
+l'information à générer dans le graphe XML construit en mémoire par le 'parser'. C'est un
+moyen, mais ce n'est pas le bon, si l'on veut rester performant :
+	- une syntaxe doit s'adapter à la nature de la connaissance qu'elle décrit : on n'écrit
+		pas du JAVA, du Lotus Script, du SQL, un document ou les formules mathématiques dans
+		la syntaxe XML. Chaque domaine dispose d'une syntaxe appropriée, partagée, née du bon
+		sens et du besoin de clarté. Une syntaxe XML ne ferait qu'ajouter de la lourdeur et
+		plomber radicalement la productivité.
+	- le graphe XML n'est pas adapté pour représenter proprement un graphe de parsing. Pour
+		résumer, un graphe XML s'étale sur deux	dimensions, et consiste à relier des noeuds
+		de nature différente (entités/attributs/éléments) avec des branches. Il est pénible de
+		piocher de l'information et de naviguer là-dedans. C'est trop verbeux et on peut
+		s'égarer entre les noeuds de différente nature.
+	- la structure du graphe de parsing est le reflet exact du fichier XML. Cela signifie que
+		la représentation conceptuelle de la connaissance dans un domaine particulier dépend
+		de celui qui a produit le fichier XML. Je m'explique : Rational ROSE et Objecteering
+		sont tous deux capables de représenter une modélisation UML. Chacun peut définir son
+		propre format XML pour structurer la connaissance UML, et il ne se ressemblera pas
+		s'ils ne se concertent pas avant pour participer à un format XML standard dans leur
+		domaine. Chaque fichier XML aura une structure différente, donc un graphe de parsing
+		différent, pour représenter pourtant la même modélisation UML.
+Il est malsain de penser que l'organisation de la connaissance dans le graphe dépende de la
+source choisie. Une classe "Company" est un concept que vous manipulez dans votre cerveau de
+la même manière, qu'il provienne de la modélisation UML dessinée sous Rational ROSE ou sous
+Objecteering. Ceci permet d'appliquer derrière des schémas de pensée identiques, quelle que
+soit la provenance UML de cette classe.
+Le graphe de parsing qui est finalement choisi prend en quelque sorte le rôle de "format pivot",
+c'est à dire que, pour reprendre l'exemple précédent sur UML, les fichiers XML sont traduits
+dans ce format, qu'ils proviennent de Rational ROSE ou de Objecteering.
+
+Ainsi, et pour rester ouvert et performant, CodeWorker accepte toute sorte de fichiers de
+description (tant qu'ils restent textuels et non pas binaires), avec les syntaxes les plus
+farfelues, et il n'utilise pas un graphe de parsing XML.
+Le langage de scripts permet de décrire commodément la procédure de parsing de ces fichiers. Il
+existe pour cela deux types de scripts dédiés au parsing dans CodeWorker :
+	- un script de parsing utilisant une grammaire EBNF pred-LL(k) (une syntaxe appropriée à
+		la description d'une syntaxe!),
+	- un script de parsing utilisant des appels procéduraux, classique dans un langage de programmation,
+		mais moins bien adapté que la BNF,
+
+Des scripts de parsing, qui seront bientôt publiés dans la rubrique "Scripts repository" du
+site Web, ont été réalisés pour :
+	- lire une modélisation UML issue de Rational ROSE,
+	- lire une modélisation Objet particulière, étendue de capacités que UML n'offre pas,
+	- lire une DTD et générer automatiquement le parser/validateur XML à partir de là (XML a
+		quand même de l'intérêt!),
+	- lire du LaTeX et le retranscrire en HTML,
+	- lire des IDLs CORBA,
+D'autres ont été réalisés dans le cadre de missions, et demanderont une refonte complète avant
+d'être publiés (reprise de l'idée mais pas de l'implémentation, à cause des droits d'auteur).
+
+Pour ceux qui ne trouveront pas leur bonheur, il leur restera la possibilité de définir leur
+propre script de parsing en BNF, où tout est fait pour apporter le plus de puissance possible
+sur le plan de l'expressivité et de la clarté. Une fois les concepts du langage maîtrisés, il
+est très rapide d'écrire le script de parsing.
+
+
+GENERATION DE CODE
+
+La génération de code est pilotée elle-aussi par le langage de script. Sa syntaxe a été
+spécialement étudiée pour faciliter l'écriture du processus de génération de code. Elle
+s'inspire de ce qui est déjà utilisé par JSP, PhP, ASP et qui permettent de réaliser des
+pages dynamiques (ou des translations, XLT par exemple). La différence essentielle
+réside dans la non appartenance à un langage cible donné, HTML ou XML pour les cas évoqués
+ci-dessus. Ces scripts permettent donc de générer n'importe quoi dans n'importe quel langage
+cible : C++, JAVA, HTML, LaTeX, "Mon Petit Format", ...
+Il y aura dans quelques temps un serveur de pages dynamiques qui sera proposé. Pour l'instant,
+CodeWorker s'utilise comme un interpréteur, qui acquiert les connaissances via des scripts
+de parsing, et qui les reproduit au travers de scripts de génération de code.
+
+Jusqu'à présent, il a été utilisé pour :
+	- générer une grosse partie du générateur de code et de la documentation jointe,
+	- générer une grosse librairie Financière en C++, avec un grand nombre de designs patterns
+		et une extension de UML proposés pour réduire considérablement l'effort
+		d'implémentation,
+	- traduire automatiquement cette même librairie en version possédant une gestion automatique
+		de la mémoire, de manière à ce que les deux se maintiennent en parallèle,
+	- réaliser un framework d'applications financières, qui automatise encore plus de tâches
+		de programmation qu'au sein de la librairie sus-citée,
+
+Grâce à la génération de code, on dispose d'une réactivité qui dépasse de loin celle offerte
+par les modeleurs UML ou autre, puisque le processus de génération de code est totalement à la
+main du développeur. Il choisit donc les fonctionnalités et les voies d'implémentations qu'il
+met en place.
+En fait, la génération de code permet de capitaliser sur les compétences de conception / implémentation
+des ingénieurs. Il décrit à un niveau supérieure leur démarche d'implémentation face à des cas
+de conception simples ou très complexes. Cette démarche est alors appliquée automatiquement
+sur la modélisation acquise par parsing.
+Grâce à cette approche, l'ingénieur se décharge des tâches répétitives et ingrates, et dégage
+beaucoup plus de temps sur l'architecture et la conception. Il devient de même considérablement
+moins impacté par les modification faite sur la modélisation.
+
+Des scripts de génération de code seront publiés (après réécriture complète, puisque appartenant$
+à la société où les projets relatifs à la Finance ont été implémentés):
+	- génération d'objets C++ et JAVA,
+	- processus intelligent de sérialisation / unmarshalling d'objets,
+	- processus intelligent de navigation au travers d'objets pour y appliquer un traitement,
+	- génération du schéma d'une base de données relationnelle + procédures stockées effectuant
+		le mapping objets/relationnel + piste d'audit et rétro-corrections intégrées + couche
+		côté client qui cache la complexité d'appel à la base,
+	- génération automatique d'écrans de saisie intelligents,
+	- connection à un MiddleWare,
+
+
+IMPACT SUR LES METHODES DE CONCEPTION / DEVELOPPEMENT
+
+La réalisation du framework, couche qui touche à l'architecture, a permis de découvrir de
+nouvelles méthodes de travail qui décuplent la puissance de travail, en apportant tout à la
+fois rigueur, robustesse et documentation pertinente.
+
+Un framework touche à la fois à l'architecture des applications (intra/inter application), à
+la conception et bien sûr, au développement.
+
+Une règle s'est avérée d'une importance capitale : tout document de référence doit formaliser
+les parties de description qui concernent une exploitation par la machine. Je m'explique :
+supposons que des applications échangent des messages via un bus multicast. Ces messages sont
+formalisés dans un fichier qui dispose de sa propre syntaxe, et qui inclut des parties
+explicatives. Partant de là, le document est mis à jour automatiquement, ce qui garantit la
+qualité de son contenu, et le code source d'envoi/administration/recomposition du message,
+intégré dans l'application, s'implémente automatiquement.
+
+Une autre règle, qui justifie la personnalisation de la syntaxe des fichiers de description,
+stipule que plus d'informations seront reportées au niveau de la conception (informations
+indépendantes du langage cible d'implémentation), plus de code source ou de documentation
+pourra être disponible, et sous différents langages (JAVA + VB ou HTML + LaTeX + fichier plat).
+
+Pour ce qui touche au travail de développement en équipe, des règles doivent être respectées
+pour mettre en place un environnement de développement performant. Trop techniques pour être
+détaillées ici, elles feront l'objet d'une explication dans le manuel de CodeWorker.

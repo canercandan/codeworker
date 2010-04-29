@@ -1,0 +1,81 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+local sLine;
+local iCounter = 1;
+local sNote;
+local bCarriageReturn = true;
+local bMerge;
+local bHighlight;
+
+while sLine.readLine() {
+	if startString(sLine, "//note:") {
+		local sSlice = subString(sLine, 7);
+		set bCarriageReturn = sSlice;
+		if sNote set sNote += endl() + sSlice;
+		else set sNote = sSlice;
+	} else if startString(sLine, "//command:") {
+		local sSlice = subString(sLine, 10);
+		if this.command set this.command += " " + sSlice;
+		else insert this.command = sSlice;
+	} else if startString(sLine, "//execute:") {
+		executeStringQuiet(project, subString(sLine, 10));
+	} else if startString(sLine, "//hide:") {
+		sLine.readLine();
+	} else if startString(sLine, "//hide all:") {
+		while sLine.readLine() && !startString(sLine, "//show:") {}
+	} else if startString(sLine, "//merge:") {
+		set bMerge = true;
+	} else if startString(sLine, "//highlight:") {
+		set bHighlight = true;
+	} else if startString(sLine, "//normal:") {
+		set bHighlight = false;
+	} else {
+		if bMerge decrement(iCounter);
+		if sNote {
+			if bCarriageReturn set sNote += "\\\\";
+			else set bCarriageReturn = true;
+			insert this.listOfNotes[iCounter] = sNote;
+			set sNote = false;
+		}
+		if bHighlight {
+			set sLine = replaceTabulations(sLine, 4);
+			local iNbSpaces = trimLeft(sLine);
+			set sLine = repeatString(" ", iNbSpaces) + "§§textbf§1" + sLine + "§2";
+		}
+		if bMerge {
+			local sPreviousText = rsubString(this.text, 1);
+			local iIndex = findLastString(sPreviousText, "\n");
+			if isPositive(iIndex) {
+				set iIndex = add(iIndex, 1);
+				set sLine = subString(sPreviousText, iIndex) + sLine;
+				set sPreviousText = leftString(sPreviousText, iIndex);
+			}
+			set sLine = cutLinesTooLong(sLine, iCounter);
+			set this.text = sPreviousText + sLine + "\n";
+			set bMerge = false;
+		} else {
+			set sLine = cutLinesTooLong(sLine, iCounter);
+			insert this.text += sLine + "\n";
+		}
+		increment(iCounter);
+	}
+}

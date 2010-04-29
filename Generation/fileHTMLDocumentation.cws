@@ -1,0 +1,155 @@
+@
+function LaTeX2HTML(sLaTeX : value) {
+	local myHTMLDoc;
+	insert myHTMLDoc.sParsingMode = "description";
+	createVirtualFile(".#f1", sLaTeX);
+	createVirtualFile(".#f2", "");
+	try {
+		translate("LaTeX2HTML.cwp", myHTMLDoc, ".#f1", ".#f2");
+	} catch(sError) {
+		traceLine("error in the description:");
+		traceLine(theVersion.description);
+		error(sError);
+	}
+	local sResult = loadVirtualFile(".#f2");
+	deleteVirtualFile(".#f2");
+	deleteVirtualFile(".#f1");
+	return sResult;
+}
+
+function HTMLAnchor(sLabel) {
+	set sLabel = replaceString("#",  "_", sLabel);
+	set sLabel = replaceString("&",  "_", sLabel);
+	set sLabel = replaceString(";",  "_", sLabel);
+	set sLabel = replaceString(" ",  "_", sLabel);
+	set sLabel = replaceString("%",  "_", sLabel);
+	set sLabel = replaceString("@",  "_", sLabel);
+	set sLabel = replaceString("=",  "_", sLabel);
+	set sLabel = replaceString("<",  "_", sLabel);
+	set sLabel = replaceString(">",  "_", sLabel);
+	set sLabel = replaceString("\"", "_", sLabel);
+	set sLabel = replaceString("'",  "_", sLabel);
+	set sLabel = replaceString("/",  "_", sLabel);
+	set sLabel = replaceString("-",  "_", sLabel);
+	set sLabel = replaceString("+",  "_", sLabel);
+	set sLabel = replaceString(".",  "_", sLabel);
+	return sLabel;
+}
+
+function fileHTMLDocumentation(sFilename : value) {
+	local myFile;
+	insert myFile.parseAll = true;
+	parseAsBNF("fileDescription.cwp", myFile, sFilename);
+	if myFile.description {
+		@@LaTeX2HTML(myFile.description)@@
+	}
+	if existVariable(myFile.input) {
+		@
+<p/>
+<b>Input files:</b>
+@
+		foreach i in myFile.input {
+			if !first(i) {
+				@, @
+			}
+			@<a href=\"@i@\">@i@</a>"@
+		}
+		@.
+@
+	}
+	if existVariable(myFile.file) {
+		@
+<p/>
+<b>quoted files:</b>
+@
+		foreach i in myFile.file {
+			if !first(i) {
+				@, @
+			}
+			@<a href=\"@i@\">@i@</a>@
+		}
+		@.
+@
+	}
+	if existVariable(myFile.output) {
+		@
+<p/>
+<b>output files:</b>
+@
+		foreach i in myFile.output {
+			if !first(i) {
+				@, @
+			}
+			@<a href=\"@i@\">@i@</a>@
+		}
+		@.
+@
+	}
+	local bPrecedentWasCode;
+	foreach i in myFile.content {
+		if i.type == "section" {
+			if bPrecedentWasCode {
+				set bPrecedentWasCode = false;
+				@</code></td></tr></table>
+@
+			}
+			@<p/>
+<h2>@LaTeX2HTML(i.title)@</h2>
+@LaTeX2HTML(i.description)@
+@
+		} else if i.type == "paragraph" {
+			if bPrecedentWasCode {
+				set bPrecedentWasCode = false;
+				@</code></td></tr></table>
+@
+			}
+			@<p/>
+@LaTeX2HTML(i.description)@
+@
+		} else {
+			if !bPrecedentWasCode {
+				set bPrecedentWasCode = true;
+				@<p/>
+<table border="1" cellpadding="7" cellspacing="0" width="100%"><tr><td class="content" valign="top"><code>
+@
+			} else {
+				@</br>
+@
+			}
+			local iIndex = 0;
+			while (iIndex < i.description.length()) && (i.description.charAt(iIndex) == '\t') increment(iIndex);
+			local sText = i.description.composeHTMLLikeString();
+			if $iIndex > 0$ {
+				set sText = repeatString("&nbsp;&nbsp;&nbsp;&nbsp;", iIndex) + sText.subString(iIndex);
+			}
+			@@sText@@
+		}
+	}
+	if bPrecedentWasCode {
+		@</code></td></tr></table>
+@
+	}
+}
+
+
+if !getProperty("FILE") error("property 'FILE' should be populated with the file to document!");
+local sFilename = getProperty("FILE");
+
+local sRelativeFile = sFilename;
+local iIndex = sRelativeFile.findLastString('/');
+if isPositive(iIndex) set sRelativeFile = sRelativeFile.subString($iIndex + 1$);
+set iIndex = sRelativeFile.findLastString('\\');
+if isPositive(iIndex) set sRelativeFile = sRelativeFile.subString($iIndex + 1$);
+
+@<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>@sRelativeFile@</title>
+		<link rel="stylesheet" type="text/css" href="CodeWorker.css" />
+	</head>
+	<body>
+		<h1>@sRelativeFile@</h1>
+@
+fileHTMLDocumentation(sFilename);
+@	</body>
+</html>

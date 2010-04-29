@@ -1,0 +1,115 @@
+//-I C:\Projects\Generator\Scripts\Tutorial -path C:\Projects\Generator\Scripts\Tutorial -define JAVA=com.codeworker.tutorial -script Tutorial.cws -time
+//-I C:\Projects\Generator\Scripts\Tutorial -path C:\Projects\Generator\Scripts\Tutorial -define JAVA=com.codeworker.tutorial -script Tutorial.cws -time -I C:\Projects\Generator\Generation -C++ C:\Projects\Generator\Scripts\Tutorial\CodeGenerator
+
+parseAsBNF("BPML.cwp", project, "FinancialWorld.txt");
+
+/*
+parseAsBNF("DTD-parser.cwp", project, "EJB-jar_2_0.dtd");
+generate("BNF-from-DTD.cwt", project, getWorkingPath() + "EJB-jar_2_0-parser.cwp");
+parseAsBNF("EJB-jar_2_0-parser.cwp", project, "MusicCDs.xml");
+*/
+
+function normalizeIdentifier(sName) {
+	if sName {
+		if startString(sName, "_") return "_" + normalizeIdentifier(subString(sName, 1));
+		set sName = toUpperString(leftString(sName, 1)) + subString(sName, 1);
+		local iIndex = findString(sName, "_");
+		if !isNegative(iIndex) {
+			local sNext = subString(sName, add(iIndex, 1));
+			return leftString(sName, iIndex) + normalizeIdentifier(sNext);
+		}
+	}
+	return sName;
+}
+
+function completeInterfacePackage(myClass : node) {
+	return getDefineTarget("JAVA") + ".interfaces." + myClass.sequence;
+}
+
+function completeInterfaceName(myClass : node) {
+	return getDefineTarget("JAVA") + ".interfaces." + myClass.sequence + "." + normalizeIdentifier(myClass.name);
+}
+
+function getJAVAType(myType : node) {
+	local sType;
+	if myType.isObject {
+		set sType = completeInterfaceName(objectClass);
+	} else {
+		switch(myType.name) {
+			case "int": if myType.isOptional && !myType.isArray set sType = "Integer"; else sType = "int";break;
+			case "double": if myType.isOptional && !myType.isArray set sType = "Double"; else sType = "double";break;
+			case "boolean": if myType.isOptional && !myType.isArray set sType = "Boolean"; else sType = "boolean";break;
+			case "string": set sType = "String";break;
+			case "date": set sType = "java.util.Date";break;
+			case "map": set sType = "java.util.Map/*<" + getJAVAType(myType.keyType) + ", " + getJAVAType(myType.elementType) + ">*/";break;
+		}
+	}
+	if myType.isArray set sType += "[]";
+	return sType;
+}
+
+function getJAVAElementType(myType : node) {
+    if !myType.isArray error("array type expected");
+    local sType = getJAVAType(myType);
+    return leftString(sType, sub(lengthString(sType), 2));
+}
+
+function getJAVAReturnType(myType : node) {
+	return getJAVAType(myType);
+}
+
+function getJAVAParameterType(myType : node) {
+	return getJAVAType(myType);
+}
+
+function getParameterName(sParameter, myType : node) {
+	local sPrefix;
+    if myType.isArray set sPrefix = "t";
+	if myType.isObject set sPrefix += a;
+	else {
+		switch(myType.name) {
+			case "int": set sPrefix += "i";break;
+			case "double": set sPrefix += "d";break;
+			case "boolean": set sPrefix += "b";break;
+			case "string": set sPrefix += "s";break;
+			case "date": set sPrefix += "a";break;
+			case "map": set sPrefix = "mapOf";break;
+		}
+	}
+	return sPrefix + normalizeIdentifier(sParameter);
+}
+
+function getClass(entryPoint : node, sClassName, myClass : reference) {
+	if !findElement(sClassName, entryPoint.allClasses) return "";
+	foreach i in entryPoint.allClasses[sClassName].packages {
+		ref myClass = i.listOfClasses[sClassName];
+		return "true";
+	}
+	return "";
+}
+
+function decorateBPML(entryPoint : node) {
+	foreach i in cascading entryPoint.listOfPackages {
+		foreach j in i.listOfClasses {
+			if j.extendedClass {
+				if !getClass(entryPoint, j.extendedClass, j.extendedClass) error("class '" + j.name + "' extends from an unknown parent class '" + j.extendedClass + "'");
+			}
+			foreach k in j.listOfAttributes {
+				if k.type.isObject {
+					if !getClass(entryPoint, k.type.name, k.type.objectClass) error("attribute '" + j.name + "::" + k.name + "' refers to an unknown class '" + k.type.name + "'");
+				}
+			}
+		}
+	}
+}
+
+decorateBPML(project);
+
+foreach i in cascading project.listOfPackages {
+	foreach j in i.listOfClasses {
+		generate("interface-JAVA.cwt", j, getWorkingPath() + pathFromPackage(completeInterfacePackage(j)) + normalizeIdentifier(j.name) + ".java");
+	}
+}
+
+saveProjectTypes(getWorkingPath() + "types.xml");
+saveProject(getWorkingPath() + "project.xml");

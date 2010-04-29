@@ -1,0 +1,77 @@
+function text2HTML(sText : value) {
+	sText = sText.composeHTMLLikeString();
+	sText = sText.replaceString("\r", "");
+	return sText.replaceString("\n", "<br/>");
+}
+
+TEXT2HTML ::=
+	=> {
+@<html>
+	<header>
+		<title>BNF coverage</title>
+		<style type='text/css'>
+			<!--
+@
+		foreach i in this.rules {
+			if existVariable(i.color) {
+@				span.@i@ {
+@
+				if i.color.foreground {
+					@					COLOR: @i.color.foreground@;
+@
+				}
+				if i.color.background {
+			@					BACKGROUND-COLOR: @i.color.background@;
+@
+				}
+@				}
+@
+			}
+		}
+@			-->
+		</style>
+	</header>
+	<body>
+@
+	}
+	=> {
+		@		<table border="1"><tr><td><b>Highlighting of production rules</b></td></tr>@
+		foreach i in this.rules {
+			if existVariable(i.color) {
+				@<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;<span class="@i@">@i@</span></td></tr>@
+			}
+		}
+		@		</table><p/><table border="1"><tr><td><b>Coverage of the text by production rules</b></td></tr><tr><td>@
+		local iPreviousPosition = 0;
+		foreach position in this.areas {
+			local iCurrentPosition = position.key();
+			if iCurrentPosition != iPreviousPosition {
+				local sText = readChars($iCurrentPosition - iPreviousPosition$);
+				@@sText.text2HTML()@@
+			}
+			foreach i in position.end {
+				foreach rule in i {
+					if existVariable(rule.color) {
+						@</span>@
+					}
+				}
+			}
+			foreach i in position.begin {
+				foreach rule in i {
+					if existVariable(rule.color) {
+						@<span class="@rule@">@
+					}
+				}
+			}
+			iPreviousPosition = iCurrentPosition;
+		}
+	}
+	->(:sText)#empty
+	=> {
+		@@sText.text2HTML()@
+		</td></tr></table>
+	</body>
+</html>
+@
+	}
+	;

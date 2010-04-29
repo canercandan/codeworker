@@ -1,0 +1,36 @@
+#implicitCopy
+
+JavaScript2CW ::=
+		#ignore(JAVA)
+		#continue
+		[instruction]*
+		#empty;
+
+instruction ::=
+		'{' #continue [instruction]* '}'
+	|
+		#readIdentifier:T
+		=> local iPosition = $getOutputLocation() - T.length()$;
+		identifier<T>(iPosition)
+	;
+
+identifier<T>(iPosition : value) ::= uptoEndInstruction;
+
+instruction<"var">(iPosition : value) ::=
+		=> setOutputLocation(iPosition);
+		=> {@local @}
+		uptoEndInstruction
+		;
+
+STRING ::=
+		"'" #continue
+		=> setOutputLocation($getOutputLocation() - 1$);
+		=> {@"@}
+		['\\' #readChar | ~"'"]*
+		"'"
+		=> {@"@}
+	|
+		"\"" #continue ['\\' #readChar | ~"\""]* "\""
+	;
+
+uptoEndInstruction ::= [STRING | ~[';' | #empty]]* #continue ';';

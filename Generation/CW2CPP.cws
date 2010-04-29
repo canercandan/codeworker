@@ -1,0 +1,59 @@
+insert this.parsed_files["jni.h"];
+insert this.parsed_files["DOTNET.h"];
+insert this.parsed_files["DOTNET.cpp"];
+insert this.parsed_files["HTTPRequest.cpp"];
+
+insert this.structs["FILE"] = "struct";
+insert this.structs["FILE"].name = "FILE";
+insert this.structs["FILE"].system = true;
+insert this.structs["tm"] = "struct";
+insert this.structs["tm"].name = "tm";
+insert this.structs["tm"].system = true;
+insert this.structs["termios"] = "struct";
+insert this.structs["termios"].name = "termios";
+insert this.structs["termios"].system = true;
+
+local sSystemDeclarations =
+	"void* memset(void*, int, size_t);"
+	"void* memcpy(void*, const void*, size_t);"
+	"void* memmove(void*, const void*, size_t);"
+	"FILE* fopen(const char*, const char*);"
+	"size_t fread(char*, size_t, size_t, FILE*);"
+	"size_t fwrite(const char*, size_t, size_t, FILE*);"
+	"int ferror(FILE*);"
+	"int fclose(FILE*);"
+	"int sprintf(char*, const char*, void*);"
+	"int atoi(const char*);"
+	"double atof(const char*);"
+	"size_t strlen(const char*);"
+	"void WRITECHAR(char);"
+	;
+parseStringAsBNF("../cpp/default-scripts/CWcpp-parser.cwp", project, sSystemDeclarations);
+
+insert this.namespaces["CodeWorker"].classes["ScpStream"].parse_body = true;
+insert this.namespaces["CodeWorker"].classes["DtaBNFScript"].parse_body = true;
+
+
+setProperty("c++2target-property", "org.codeworker");
+
+parseAsBNF("../cpp/default-scripts/CWcpp-parser.cwp", project, "ScpStream.cpp");
+//parseAsBNF("../cpp/default-scripts/CWcpp-parser.cwp", project, "DtaBNFScript.cpp");
+generate({@
+	#include "../java/default-scripts/CWcpp2java-utils.cws"
+local theList;
+traceLine(getOutputFilename() + " " + remainingProtectedAreas(theList));
+	generateClass(this);
+}, this.namespaces["CodeWorker"].classes["ScpStream"], "java/org/codeworker/ScpStream.java");
+//generate("../java/default-scripts/CWcpp2java.cwt", this.namespaces["CodeWorker"].classes["DtaBNFScript"], "test.java");
+break;
+
+forfile i in "*.cpp" {
+	if this.parsed_files.findElement(getShortFilename(i)) {
+		traceLine("file \"" + i + "\" skipped");
+		continue;
+	}
+	traceLine("parsing file \"" + i + "\"...");
+	parseAsBNF("../cpp/default-scripts/CWcpp-parser.cwp", project, i);
+}
+
+generate("../java/default-scripts/CWcpp2java.cwt", this.namespaces["CodeWorker"].classes["ScpStream"], "bugs/ScpStream.java");

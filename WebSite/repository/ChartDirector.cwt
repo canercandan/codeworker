@@ -1,0 +1,1170 @@
+// C++ CodeWorker interface for building dynamic library bindings
+#include <stdlib.h> // strtod
+
+#include "CW4dl.h"
+#include "ExternalValueNode.h"
+
+#include "FinanceChart.h"
+
+class CWPluginDoubleArray : public DoubleArray {
+	public:
+		inline CWPluginDoubleArray() {}
+		inline CWPluginDoubleArray(const DoubleArray& copy) : DoubleArray(copy.data, copy.len) {}
+		~CWPluginDoubleArray() {
+			delete [] data;
+		}
+};
+
+class CWPluginIntArray : public IntArray {
+	public:
+		inline CWPluginIntArray() {}
+		inline CWPluginIntArray(const IntArray& copy) : IntArray(copy.data, copy.len) {}
+		~CWPluginIntArray() {
+			delete [] data;
+		}
+};
+
+class CWPluginStringArray : public StringArray {
+	public:
+		inline CWPluginStringArray() {}
+		inline CWPluginStringArray(const StringArray& copy) : StringArray(copy.data, copy.len) {}
+		~CWPluginStringArray() {
+			delete [] data;
+		}
+};
+
+class CWPluginMemBlock : public MemBlock {
+	public:
+		inline CWPluginMemBlock() {}
+		inline CWPluginMemBlock(const MemBlock& copy) : MemBlock(copy.data, copy.len) {}
+		~CWPluginMemBlock() {
+			delete [] data;
+		}
+};
+
+void toDoubleArray(CW4dl::Interpreter* interpreter, CW4dl::Tree* p_a, DoubleArray& a);
+
+void populateDoubleArray(CW4dl::Interpreter* interpreter, CW4dl::Tree* pInstance, const DoubleArray& a) {
+	for (int i = 0; i < a.len; ++i) {
+		interpreter->setDoubleValue(interpreter->pushItem(pInstance), a.data[i]);
+	}
+}
+
+int string2enum(const char* tcValue) {
+	if ((strncmp(tcValue, "Chart::", 7) == 0) || (strncmp(tcValue, "CHART::", 7) == 0)) {
+		return string2enum(tcValue + 7);
+	}
+@
+foreach i in this.namespaces["Chart"].unnamed_enums {
+	foreach j in i.values {
+		@	if (strcmp(tcValue, "@key(j)@") == 0) return Chart::@key(j)@;
+@
+	}
+}
+foreach i in this.namespaces["Chart"].enums {
+	foreach j in i.values {
+		@	if (strcmp(tcValue, "@key(j)@") == 0) return Chart::@key(j)@;
+@
+	}
+}
+@	return 0;
+}
+
+int string2int(const char* tcValue) {
+	int iResult = 0;
+	char* tcNext = strchr(tcValue, '+');
+	if (tcNext != NULL) {
+		std::string sExpr = tcValue;
+		sExpr = sExpr.substr(0, sExpr.find('+'));
+		return string2int(sExpr.c_str()) + string2int(tcNext + 1);
+	}
+	if ((tcValue[0] == '0') && (tcValue[1] == 'x')) {
+		char* u = (char*) (tcValue + 2);
+		do {
+			iResult *= 16;
+			if ((*u >= '0') && (*u <= '9')) iResult += *u - '0';
+			else if ((*u >= 'a') && (*u <= 'f')) iResult += 10 + *u - 'a';
+			else if ((*u >= 'A') && (*u <= 'F')) iResult += 10 + *u - 'A';
+			else return 0;
+			++u;
+		} while (*u != '\0');
+	} else if (tcValue[0] == 'C') {
+		iResult = string2enum(tcValue);
+	} else {
+		iResult = atoi(tcValue);
+	}
+	return iResult;
+}
+
+void toIntArray(CW4dl::Interpreter* interpreter, CW4dl::Tree* p_a, IntArray& a) {
+	a.len = interpreter->size(p_a);
+	if (a.len == 0) {
+		if (interpreter->getValue(p_a) != NULL) {
+			a.len = 1;
+			int* tiValues = new int[a.len];
+			a.data = tiValues;
+			tiValues[0] = string2int(interpreter->getValue(p_a));
+		} else {
+			a.len = 0;
+			a.data = NULL;
+		}
+	} else {
+		int* tiValues = new int[a.len];
+		a.data = tiValues;
+		const char** tcKeys = new const char*[a.len];
+		interpreter->allValues(p_a, tcKeys);
+		for (int i = 0; i < a.len; ++i) {
+			tiValues[i] = string2int(tcKeys[i]);
+		}
+		delete [] tcKeys;
+	}
+}
+
+void populateIntArray(CW4dl::Interpreter* interpreter, CW4dl::Tree* pInstance, const IntArray& a) {
+	for (int i = 0; i < a.len; ++i) {
+		interpreter->setIntValue(interpreter->pushItem(pInstance), a.data[i]);
+	}
+}
+
+void toStringArray(CW4dl::Interpreter* interpreter, CW4dl::Tree* p_a, StringArray& a) {
+	a.len = interpreter->size(p_a);
+	if ((a.len == 0) && (interpreter->getValue(p_a) != NULL)) {
+		a.len = 1;
+		char** tsValues = new char*[a.len];
+		a.data = tsValues;
+		tsValues[0] = (char*) interpreter->getValue(p_a);
+	} else {
+		char** tsValues = new char*[a.len];
+		a.data = tsValues;
+		const char** tcKeys = new const char*[a.len];
+		interpreter->allValues(p_a, tcKeys);
+		for (int i = 0; i < a.len; ++i) {
+			tsValues[i] = (char*) tcKeys[i];
+		}
+		delete [] tcKeys;
+	}
+}
+
+void populateStringArray(CW4dl::Interpreter* interpreter, CW4dl::Tree* pInstance, const StringArray& a) {
+	for (int i = 0; i < a.len; ++i) {
+		interpreter->pushItem(pInstance, a.data[i]);
+	}
+}
+
+static char tcHexa[] = "0123456789ABCDEF";
+
+void populateMemBlock(CW4dl::Interpreter* interpreter, CW4dl::Tree* pInstance, const MemBlock& a) {
+	char* tcText = new char[2*a.len + 1];
+	char* u = tcText;
+	for (int i = 0; i < a.len; ++i) {
+		int iDigit = (unsigned char) a.data[i];
+		*u++ = tcHexa[iDigit >> 4];
+		*u++ = tcHexa[iDigit & 0x0F];
+	}
+	*u = '\0';
+	interpreter->setValue(pInstance, tcText);
+	delete [] tcText;
+}
+
+
+//-------------------------------------------------------------------------
+// Exported function 'CHART_Init'.
+//
+// Initialization of the module in CodeWorker.
+// Registers all commands in CodeWorker, for recognizing them in the
+// scripting language.
+//-------------------------------------------------------------------------
+CW4DL_EXPORT_SYMBOL void CHART_Init(CW4dl::Interpreter* interpreter) {
+@
+
+function param2Cpp(sParam : value, theType : node) {
+	switch(theType) {
+		case "base":
+			if theType.pointers {
+				if theType.name == "char" && $theType.pointers.length() == 1$ return sParam + " = (char*) p_" + sParam;
+				traceObject(theType);
+				error("not handled yet!");
+			}
+			switch(theType.name) {
+				case "int": return sParam + " = string2int((const char*) p_" + sParam + ")";
+				case "double": return sParam +" = atof((const char*) p_" + sParam + ")";
+				case "bool": return sParam + " = (((const char*) p_" + sParam + ")[0] != '\\0')";
+				case "char": return sParam + " = ((const char*) p_" + sParam + ")[0]";
+			}
+			break;
+		case "array":
+			return "to" + theType.name + "(interpreter, (CW4dl::Tree*) p_" + sParam + ", " + sParam + ")";
+		case "class":
+			return sParam + " = (External" + theType.name + "ValueNode*) interpreter->getExternalValue((CW4dl::Tree*) p_" + sParam + ")";
+		case "enum":
+			if theType.name return sParam + " = string2" + theType.name + "(interpreter, (const char*) p_" + sParam + ")";
+			return sParam + " = string2UnnamedEnum(interpreter, (const char*) p_" + sParam + ")";
+	}
+}
+
+
+foreach i in this.namespaces["Chart"].functions {
+	foreach j in i {
+		if $j.parameters.size() <= 4$ {
+			@	interpreter->createCommand("@j.name@"@
+			foreach k in j.parameters {
+				if k.type.isNodeType() {
+					@, CW4dl::NODE_PARAMETER@
+				} else {
+					@, CW4dl::VALUE_PARAMETER@
+				}
+			}
+			@);
+@
+		} else {
+			@	CW4dl::PARAMETER_TYPE @j.name@Params[] = {@
+			foreach k in j.parameters {
+				if !k.first() {
+					@, @
+				}
+				if k.type.isNodeType() {
+					@CW4dl::NODE_PARAMETER@
+				} else {
+					@CW4dl::VALUE_PARAMETER@
+				}
+			}
+			@};
+	interpreter->createCommand("@j.name@", @j.parameters.size()@, @j.name@Params);
+@
+		}
+		break;
+	}
+}
+
+foreach i in this.classes {
+	foreach i0 in i.functions {
+		foreach j in i0 {
+			if i0.key() == i.name {
+				if $j.parameters.size() <= 3$ {
+					@	interpreter->createCommand("create@i.name@", CW4dl::NODE_PARAMETER@
+					foreach k in j.parameters {
+						if k.type.isNodeType() {
+							@, CW4dl::NODE_PARAMETER@
+						} else {
+							@, CW4dl::VALUE_PARAMETER@
+						}
+					}
+					@);
+@
+				} else {
+					@	CW4dl::PARAMETER_TYPE create@i.name@Params[] = {CW4dl::NODE_PARAMETER@
+					foreach k in j.parameters {
+						if k.type.isNodeType() {
+							@, CW4dl::NODE_PARAMETER@
+						} else {
+							@, CW4dl::VALUE_PARAMETER@
+						}
+					}
+					@};
+	interpreter->createCommand("create@i.name@", @$j.parameters.size() + 1$@, create@i.name@Params);
+@
+				}
+				break;
+			} else {
+				insert project.allFunctions[i0.key()].bySize[j.parameters.size()].classes[i.key()];
+			}
+		}
+	}
+}
+
+foreach i in sorted project.allFunctions {
+	foreach j in i.bySize {
+		foreach k in j.classes {
+			local sSignature;
+			foreach m in this.classes[k.key()].functions[i.key()] {
+				if m.parameters.size() != j.key() continue;
+				sSignature = getCppType(m.return_type) + ' ' + i.key();
+				local iMinSize = 0;
+				foreach p in m.parameters {
+					if !p.default increment(iMinSize);
+					sSignature += '.' + getCppType(p.type);
+				}
+				if i.key() == "setLogScale" {
+					if m.parameters#front.type.name == "bool" continue;
+				} else if i.key() == "yZoneColor" {
+					if sSignature.endString("ValueNode*") {
+						if k.key() != "XYChart" continue;
+						// change the last parameter type of XYChart::yZoneColor(...)
+						setall m.parameters#back.original_type = m.parameters#back.type;
+						insert m.parameters#back.original_default = m.parameters#back.default;
+						m.parameters#back.type.clearVariable();
+						m.parameters#back.default = true;
+						m.parameters#back.type = "base";
+						insert m.parameters#back.type.name = "bool";
+					}
+				}
+				if $sSignature.findString("const int*") >= 0$ || $sSignature.findString("const double*") >= 0$ || $sSignature.findString("const void*") >= 0$ || $sSignature.findString("const char**") >= 0$ || $sSignature.findString("const char*const*") >= 0$ {
+					sSignature = "";
+				} else {
+					if !j.min_size || $j.min_size > iMinSize$ insert j.min_size = iMinSize;
+					if j.signature {
+						local oldSegments;
+						cutString(j.signature, "Array", oldSegments);
+						local newSegments;
+						cutString(sSignature, "Array", newSegments);
+						if $oldSegments.size() != newSegments.size()$ {
+							local oldFunction, newFunction;
+							if $oldSegments.size() < newSegments.size()$ {
+								j.signature = "";
+								ref oldFunction = j.firstFunction;
+								ref newFunction = m;
+							} else {
+								sSignature = "";
+								ref oldFunction = m;
+								ref newFunction = j.firstFunction;
+							}
+							local iIndex = 0;
+							local degeneratedParams;
+							insert j.degenerate = true;
+							foreach p in newFunction.parameters {
+								if p.type == "array" && oldFunction.parameters#[iIndex].type == "base" {
+									local sTypeName = getBaseTypeOfArray(p.type.name);
+									if oldFunction.parameters#[iIndex].type.name != sTypeName {
+										j.degenerate = false;
+										break;
+									} else {
+										pushItem degeneratedParams = iIndex;
+									}
+								} else if p.type.name != oldFunction.parameters#[iIndex].type.name {
+									j.degenerate = false;
+									break;
+								}
+								increment(iIndex);
+							}
+							if j.degenerate {
+								foreach p in degeneratedParams {
+									insert newFunction.parameters#[p].degenerate = true;
+								}
+							}
+						}
+					}
+					if sSignature {
+						if !j.signature insert j.signature = sSignature;
+						if sSignature == j.signature {
+							ref k.function = m;
+							ref j.firstFunction = m;
+						} else {
+							local alternatives;
+							local iParamIndex = 0;
+							while $iParamIndex < j.key()$ {
+								if getCppType(m.parameters#[iParamIndex].type) != getCppType(j.firstFunction.parameters#[iParamIndex].type) {
+									if m.parameters#[iParamIndex].type.name in {"int", "bool", "char"} && j.firstFunction.parameters#[iParamIndex].type.name in {"int", "bool", "char"} {
+										insert alternatives[iParamIndex] = iParamIndex;
+										traceLine(i.key() + " " + j.key() + " " + k.key());
+										traceLine("!! incompatible signatures: " + sSignature + " and " + j.signature);
+									} else {
+										if m.parameters#[iParamIndex].type.name == "char" && j.firstFunction.parameters#[iParamIndex].type == "class" {
+											ref k.function = m;
+											ref j.firstFunction = m;
+											j.signature = sSignature;
+											traceLine(i.key() + " " + j.key() + " " + k.key());
+											traceLine("!! selected " + sSignature + ", eliminating " + j.signature);
+										} else if m.parameters#[iParamIndex].type == "class" && j.firstFunction.parameters#[iParamIndex].type.name == "char" {
+											traceLine(i.key() + " " + j.key() + " " + k.key());
+											traceLine("!! selected " + j.signature + ", eliminating " + sSignature);
+										} else {
+											break;
+										}
+									}
+								}
+								increment(iParamIndex);
+							}
+							if $iParamIndex < j.key()$ {
+								traceLine(i.key() + " " + j.key() + " " + k.key());
+								traceLine("!! incompatible signatures: " + sSignature + " and " + j.signature);
+								insert j.ambiguity = true;
+								if i.key() != "makeChart" && i.key() != "addExtraField" {
+									local iIndex = 0;
+									foreach p in m.parameters {
+										if p.type.isNodeType() != j.firstFunction.parameters#[iIndex] {
+											break;
+										}
+										increment(iIndex);
+									}
+									insert j.conflict = $iIndex < m.parameters.size()$;
+									if !j.conflict ref k.function = m;
+								}
+							} else {
+								ref k.function = m;
+								foreach p in alternatives {
+									setall j.firstFunction.parameters#[p].alternative_type = m.parameters#[p].type;
+								}
+							}
+						}
+					}
+				}
+			}
+			if !j.signature {
+				traceLine(i.key() + " " + j.key() + " " + k.key());
+				traceLine("!! no correct signature found!");
+				continue;
+			}
+		}
+	}
+}
+
+foreach i in project.allFunctions if i.key() != '=' {
+	foreach j in i.bySize if !j.conflict && j.signature {
+		localref myFunction = j.firstFunction;
+		local paramTypes;
+		pushItem paramTypes = "CW4dl::NODE_PARAMETER";
+		foreach k in myFunction.parameters {
+			if k.type.isNodeType() {
+				pushItem paramTypes = "CW4dl::NODE_PARAMETER";
+			} else {
+				pushItem paramTypes = "CW4dl::VALUE_PARAMETER";
+			}
+		}
+		if myFunction.return_type == "class" || myFunction.return_type == "array" || myFunction.return_type == "special" {
+			pushItem paramTypes = "CW4dl::NODE_PARAMETER";
+		}
+		if $paramTypes.size() > 4$ {
+			@	CW4dl::PARAMETER_TYPE @i.key()@@j.key()@Params[] = {@
+			foreach k in paramTypes {
+				if !k.first() {
+					@, @
+				}
+				@@k@@
+			}
+			@};
+	interpreter->createCommand("@i.key()@@j.key()@", @paramTypes.size()@, @i.key()@@j.key()@Params@
+		} else {
+			@	interpreter->createCommand("@i.key()@@j.key()@"@
+			foreach k in paramTypes {
+				@, @k@@
+			}
+		}
+		@);
+@
+	}
+}
+
+foreach i in this.namespaces["Chart"].arrays {
+	@	CW4dl::Tree* p_@i.key()@ = interpreter->createVariable("@i.key()@");
+@
+	foreach j in i {
+		@	interpreter->setIntValue(interpreter->pushItem(p_@i.key()@), @j@);
+@
+	}
+}
+
+foreach i in this.namespaces["Chart"].constants {
+	@	CW4dl::Tree* p_@i.key()@ = interpreter->createVariable("@i.key()@");
+@
+	foreach j in i {
+		@	interpreter->setDoubleValue(p_@i.key()@, @j@);
+@
+	}
+}
+
+@}
+
+@
+
+local enumValues;
+foreach i in this.namespaces["Chart"].unnamed_enums {
+	foreach j in i.values {
+		insert enumValues[j.key()];
+	}
+}
+@int string2UnnamedEnum(CW4dl::Interpreter* interpreter, const std::string& sEnum) {
+	std::string::size_type iIndex = sEnum.find('+');
+	if (iIndex != std::string::npos) {
+		return string2UnnamedEnum(interpreter, sEnum.substr(0, iIndex)) + string2UnnamedEnum(interpreter, sEnum.substr(iIndex + 1));
+	}
+	std::string sStart = sEnum.substr(0, 7);
+	if ((sStart == "Chart::") || (sStart == "CHART::")) {
+		return string2UnnamedEnum(interpreter, sEnum.substr(7));
+	} else if ((sStart[0] == '0' && sStart[1] == 'x') || sStart[0] == '-' || (sStart[0] >= '0' && sStart[0] <= '9')) {
+		return string2int(sEnum.c_str());
+	}
+@
+foreach i in enumValues {
+	@	if (sEnum == "@i.key()@") return Chart::@i.key()@;
+@
+}
+@	interpreter->error("invalid enum value passed as an argument");
+	return -1; // never reached
+}
+
+@
+
+foreach i in this.namespaces["Chart"].enums {
+	@Chart::@i.key()@ string2@i.key()@(CW4dl::Interpreter* interpreter, const std::string& sEnum) {
+	std::string::size_type iIndex = sEnum.find('+');
+	if (iIndex != std::string::npos) {
+		return (Chart::@i.key()@) (string2@i.key()@(interpreter, sEnum.substr(0, iIndex)) + string2@i.key()@(interpreter, sEnum.substr(iIndex + 1)));
+	}
+	std::string sStart = sEnum.substr(0, 7);
+	if ((sStart == "Chart::") || (sStart == "CHART::")) {
+		return string2@i.key()@(interpreter, sEnum.substr(7));
+	} else if ((sStart[0] == '0' && sStart[1] == 'x') || sStart[0] == '-' || (sStart[0] >= '0' && sStart[0] <= '9')) {
+		return (Chart::@i.key()@) string2int(sEnum.c_str());
+	}
+@
+	foreach j in i.values {
+		@	if (sEnum == "@j.key()@") return Chart::@j.key()@;
+@
+	}
+@	interpreter->error("invalid enum value passed as an argument for @i.key()@");
+	return (Chart::@i.key()@) -1; // never reached
+}
+
+@
+}
+
+@
+class ExternalChartDirectorValueNode : public CodeWorker::ExternalValueNode {
+public:
+	enum CLASS_TYPE {@
+foreach i in this.classes {
+	if !i.first() {
+		@, @
+	}
+	@@i.name.toUpperString()@_CLASS@
+}
+	@};
+	
+	virtual CLASS_TYPE getType() const = 0;
+	virtual bool instanceOf(CLASS_TYPE theType) const = 0;
+
+	virtual const char* getValue() const { return NULL; }
+	virtual void setValue(const char* /*tcValue*/) {}
+};
+
+@
+
+foreach i in this.classes {
+	@class External@i.name@ValueNode : public @
+	if i.inheritance {
+		@External@i.inheritance@ValueNode {@
+	} else if i.typedef {
+		@External@i.typedef@ValueNode {@
+	} else {
+		@ExternalChartDirectorValueNode {
+	public:
+		@i.name@* internal_;
+		bool bOwn_;
+@
+	}
+	if i.functions[i.name].empty() || !i.functions[i.name]#front.parameters.empty() {
+		@
+	protected:
+		inline External@i.name@ValueNode() @
+		if !i.inheritance && !i.typedef {
+			@: bOwn_(true) @
+		}
+		@{}
+@
+	}
+	@
+	public:
+		inline External@i.name@ValueNode(@i.name@* pInternal) : @
+	if i.inheritance {
+		@External@i.inheritance@ValueNode(pInternal)@
+	} else if i.typedef {
+		@External@i.typedef@ValueNode(pInternal)@
+	} else {
+		@internal_(pInternal), bOwn_(false)@
+	}
+	@ {}
+@
+	foreach j in i.functions[i.name] {
+		@		inline External@i.name@ValueNode(@
+		foreach k in j.parameters {
+			if !k.first() {
+				@, @
+			}
+			@@getCppType(k.type)@ @k.key()@@
+		}
+		@) @
+		if !i.inheritance && !i.typedef {
+			@: bOwn_(true) @
+		}
+		@{@
+		if !i.functions[i.name].empty() && !i.functions[i.name]#front.parameters.empty() {
+			@
+			internal_ = new @i.name@@
+			foreach j in i.functions[i.name] {
+				if !j.parameters.empty() {
+					@(@
+					foreach k in j.parameters {
+						if !k.first() {
+							@, @
+						}
+						@@k.key()@@
+					}
+					@)@
+				}
+				break;
+			}
+			@;
+		@
+		}
+		@}
+@
+		break;
+	}
+	@		virtual ~External@i.name@ValueNode() {
+@
+	if !i.inheritance && !i.typedef {
+		@			if (bOwn_) delete internal_;
+@
+	}
+	@		}
+
+		virtual CLASS_TYPE getType() const { return @i.name.toUpperString()@_CLASS; }
+		virtual bool instanceOf(CLASS_TYPE theType) const {
+			if (External@i.name@ValueNode::getType() == theType) return true;
+			return @
+	if i.inheritance {
+		@External@i.inheritance@ValueNode::instanceOf(theType)@
+	} else if i.typedef {
+		@External@i.typedef@ValueNode::instanceOf(theType)@
+	} else {
+		@false@
+	}
+	@;
+		}
+
+		static void delete@i.name@(ExternalValueNode* ptr) {
+			delete ptr;
+		}
+
+		virtual CodeWorker::EXTERNAL_VALUE_NODE_DESTRUCTOR getDestructor() const {
+			return delete@i.name@;
+		}
+@
+	foreach i0 in i.functions if i0.key() != i.name && i0.key() != '=' {
+		foreach j in i0 {
+			local sType = getCppReturnType(j.return_type);
+			@
+		virtual @sType@ @i0.key()@(@
+			foreach k in j.parameters {
+				if !k.first() {
+					@, @
+				}
+				@@getCppType(k.type)@ @k.key()@@
+			}
+			@) {
+@
+			if sType != "void" {
+				@			return @
+			} else {
+				@			@
+			}
+			if j.return_type == "class" {
+				@new External@j.return_type.name@ValueNode(@
+			}
+			if j.return_type.is_reference {
+				@&@
+			}
+			@((@i.name@*) internal_)->@i0.key()@(@
+			foreach k in j.parameters {
+				if !k.first() {
+					@, @
+				}
+				if k.original_type {
+					@@k.original_default@@
+				} else if k.type == "class" {
+					@((@k.key()@ == NULL) ? NULL : (@k.type.name@*) @k.key()@->internal_)@
+				} else {
+					@@k.key()@@
+				}
+			}
+			if j.return_type == "class" {
+				@)@
+			}
+			@);
+		}
+@
+		}
+	}
+@};
+
+@	
+}
+
+//--------------------------------------------------------------------------------------
+// Generate the stubs for functions
+//--------------------------------------------------------------------------------------
+
+foreach i in this.namespaces["Chart"].functions {
+	foreach j in i {
+		insert j.is_packaged = true;
+		@CW4DL_EXPORT_SYMBOL const char* @j.name@(CW4dl::Interpreter* interpreter@
+		if $j.parameters.size() <= 4$ {
+			foreach k in j.parameters {
+				@, CW4dl::Parameter p_@k.key()@@
+			}
+			@) {
+@
+		} else {
+			@, CW4dl::Parameter* tParams) {
+@
+			local iIndex = 0;
+			foreach k in j.parameters {
+				@	CW4dl::Parameter p_@k.key()@ = tParams[@iIndex@];
+@
+				increment(iIndex);
+			}
+		}
+		foreach k in j.parameters {
+			@	@getCppValueType(k.type)@ @k.key()@;
+	if (p_@k.key()@ == NULL@
+			if !isNodeType(k.type) {
+				@ || ((const char*) p_@k.key()@)[0] == '\0'@
+			}
+			@) @
+			if k.default {
+				@@k.key()@ = @k.default@;
+	else @
+			} else {
+				@interpreter->error("No default value available for parameter '@k.key()@'; you must populate it!");
+	@
+			}
+			@@param2Cpp(k.key(), k.type)@;
+@
+		}
+		if j.return_type.name != "void" {
+			@	return interpreter->copyLocal@
+			switch(j.return_type.name) {
+				case "int": {@Int@} break;
+				case "double": {@Double@} break;
+				case "bool": {@Boolean@} break;
+				case "char": {@String@} break;
+			}
+			@(@
+		} else {
+			@	@
+		}
+		@Chart::@j.name@(@
+		foreach p in j.parameters {
+			if !p.first() {
+				@, @
+			}
+			@@p.key()@@
+		}
+		if j.return_type.name != "void" {
+			@));
+@
+		} else {
+			@);
+	return interpreter->trueConstant();
+@
+		}
+		@}
+
+@
+		break;
+	}
+}
+
+//--------------------------------------------------------------------------------------
+// Generate the stubs for constructors
+//--------------------------------------------------------------------------------------
+
+foreach i in this.classes {
+	foreach j in i.functions[i.name] {
+		insert j.is_packaged = true;
+		@CW4DL_EXPORT_SYMBOL const char* create@i.name@(CW4dl::Interpreter* interpreter, @
+		local bMulti = $j.parameters.size() >= 4$;
+		if !bMulti {
+			@CW4dl::Parameter pThis@
+			foreach k in j.parameters {
+				@, CW4dl::Parameter p_@k.key()@@
+			}
+		@) {
+@
+		} else {
+			@CW4dl::Parameter* tParams) {
+	CW4dl::Parameter pThis = tParams[0];
+@
+			local iIndex = 1;
+			foreach k in j.parameters {
+				@	CW4dl::Parameter p_@k.key()@ = tParams[@iIndex@];
+@
+				increment(iIndex);
+			}
+		}
+		@	if (pThis == NULL) return NULL;
+@
+		foreach k in j.parameters {
+			@	@getCppValueType(k.type)@ @k.key()@;
+	if (p_@k.key()@ == NULL@
+			if !isNodeType(k.type) {
+				@ || ((const char*) p_@k.key()@)[0] == '\0'@
+			}
+			@) @
+			if k.default {
+				@@k.key()@ = @k.default@;
+	else @
+			} else {
+				@interpreter->error("No default value available for parameter '@k.key()@'; you must populate it!");
+	@
+			}
+			@@param2Cpp(k.key(), k.type)@;
+@
+		}
+@	interpreter->setExternalValue((CW4dl::Tree*) pThis, new External@i.name@ValueNode@
+		if !j.parameters.empty() {
+			@(@
+			foreach k in j.parameters {
+				if !k.first() {
+					@, @
+				}
+				@@k.key()@@
+			}
+			@)@
+		}
+	@);
+	return interpreter->trueConstant();
+}
+
+@
+		break;
+	}
+}
+
+
+//--------------------------------------------------------------------------------------
+// Generate the stubs for methods
+//--------------------------------------------------------------------------------------
+
+function generateWrapperFunctionCall(myFunction : node, sClass : value, sAlternativeState : value) {
+	if myFunction.return_type.name != "void" {
+		@		return interpreter->copyLocal@
+		switch(myFunction.return_type.name) {
+			case "int": {@Int@} break;
+			case "double": {@Double@} break;
+			case "bool": {@Boolean@} break;
+			case "char": {@String@} break;
+		}
+		@(@
+	} else {
+		@		@
+	}
+	@((External@sClass@ValueNode*) pThisInstance)->@myFunction.name@(@
+	foreach p in myFunction.parameters {
+		if !p.first() {
+			@, @
+		}
+		@@p.key()@@
+		if sAlternativeState && p.alternative_type {
+			@_alt@
+		}
+	}
+	if myFunction.return_type.name != "void" {
+		@));
+@
+	} else {
+		@);
+@
+	}
+}
+
+
+foreach i in project.allFunctions if i.key() != '=' {
+	foreach j in i.bySize if !j.conflict && j.signature {
+		@CW4DL_EXPORT_SYMBOL const char* @i.key()@@j.key()@(CW4dl::Interpreter* interpreter@
+		localref myFunction = j.firstFunction;
+		local iNbParams = $myFunction.parameters.size() + 1$;
+		if myFunction.return_type == "class" || myFunction.return_type == "array" || myFunction.return_type == "special" {
+			insert myFunction.output_param = true;
+			increment(iNbParams);
+		}
+		if $iNbParams <= 4$ {
+			@, CW4dl::Parameter pThis@
+			foreach p in myFunction.parameters {
+				@, CW4dl::Parameter p_@p.key()@@
+			}
+			if myFunction.output_param {
+				@, CW4dl::Parameter p_returnedInstance@
+			}
+			@) {
+@
+		} else {
+			@, CW4dl::Parameter* tParams) {
+	CW4dl::Parameter pThis = tParams[0];
+@
+			local iIndex = 1;
+			foreach p in myFunction.parameters {
+				@	CW4dl::Parameter p_@p.key()@ = tParams[@iIndex@];
+@
+				increment(iIndex);
+			}
+			if myFunction.output_param {
+				@	CW4dl::Parameter p_returnedInstance = tParams[@iIndex@];
+@
+			}
+		}
+		@	if (pThis == NULL) return false;
+	ExternalChartDirectorValueNode* pThisInstance = (ExternalChartDirectorValueNode*) interpreter->getExternalValue((CW4dl::Tree*) pThis);
+@
+		local sKey = i.key() + j.key() + "::alternatives";
+		if j.ambiguity {
+			if getProtectedArea(sKey) setProtectedArea(sKey);
+			else populateProtectedArea(sKey, "		interpreter->error(\"CHART::" + i.key() + "(): signature ambiguity not implemented yet!\");" + endl());
+		} else {
+			setProtectedArea(sKey);
+		}
+		local sAlternativeState;
+		foreach k in myFunction.parameters {
+			@	@getCppValueType(k.type)@ @k.key()@;
+@
+			if k.alternative_type {
+				sAlternativeState = k.key() + "_alt";
+				@	@getCppValueType(k.alternative_type)@ @k.key()@_alt;
+	bool @k.key()@_alt_used = false;
+	CW4dl::Parameter p_@k.key()@_alt = p_@k.key()@;
+@
+			}
+			@	if (p_@k.key()@ == NULL@
+			if !isNodeType(k.type) {
+				@ || ((const char*) p_@k.key()@)[0] == '\0'@
+			}
+			@) @
+			if k.default {
+				if k.type.name == "bool" && k.default == "true" {
+					@@k.key()@ = (p_@k.key()@ == NULL);
+	else @
+				} else {
+					@@k.key()@ = @k.default@;
+	else @
+				}
+			} else if k.type.name == "bool" {
+				@@k.key()@ = false;
+	else @
+			} else if k.alternative_type.name == "bool" {
+				@{
+		@k.key()@_alt = false;
+		@k.key()@_alt_used = true;
+	} else @
+			} else {
+				@interpreter->error("No default value available for parameter '@k.key()@'; you must populate it!");
+	@
+			}
+			if k.type.name == "bool" {
+				if k.alternative_type.name == "int" {
+					@if (((const char*) p_@k.key()@)[0] != 't') {
+		@param2Cpp(k.key() + "_alt", k.type)@;
+		@k.key()@_alt_used = true;
+	} else @k.key()@ = true;
+@
+				} else {
+					@@param2Cpp(k.key(), k.type)@;
+@
+				}
+			} else if k.alternative_type.name == "bool" {
+				@if (((const char*) p_@k.key()@)[0] == 't') {
+		@k.key()@_alt = true;
+		@k.key()@_alt_used = true;
+	} else @param2Cpp(k.key(), k.type)@;
+@
+			} else {
+				@@param2Cpp(k.key(), k.type)@;
+@
+			}
+		}
+		if j.degenerate {
+			@	if (@
+			local bFirstParam = true;
+			foreach p in myFunction.parameters if p.degenerate {
+				if bFirstParam {
+					bFirstParam = false;
+				} else {
+					@ || @
+				}
+				@((p_@p.key()@ != NULL) && (interpreter->getValue((CW4dl::Tree*) p_@p.key()@) != NULL))@
+			}
+			@) {
+@
+			local sKey = i.key() + j.key() + "::degeneration";
+			if getProtectedArea(sKey) setProtectedArea(sKey);
+			else populateProtectedArea(sKey, "		interpreter->error(\"CHART::" + i.key() + "(): degeneration of array types to base types not implemented yet!\");" + endl());
+			@	}
+@
+		}
+		if myFunction.output_param {
+			if myFunction.return_type == "class" {
+				@	ExternalChartDirectorValueNode* returnedInstance;
+@
+			} else {
+				@	@getCppReturnType(myFunction.return_type)@ returnedInstance;
+@
+			}
+		}
+		local bFirstClass = true;
+		foreach k in j.classes if k.function.existVariable() {
+			insert k.function.is_packaged = true;
+			if myFunction.output_param insert k.function.output_param = true;
+			if bFirstClass {
+				bFirstClass = false;
+				@	@
+			} else {
+				@ else @
+			}
+			@if (pThisInstance->instanceOf(ExternalChartDirectorValueNode::@toUpperString(k.key())@_CLASS)) {
+@
+			// change default values, if needed, depending on the instance class
+			local iParam = 0;
+			local bAlternativeState = false;
+			foreach p in k.function.parameters {
+				if p.default && myFunction.parameters#[iParam].default != p.default {
+					local sParamName = myFunction.parameters#[iParam].name;
+					local bAlternate = myFunction.parameters#[iParam].alternative_type && (myFunction.parameters#[iParam].alternative_type.name == p.type.name);
+					if bAlternate {
+						bAlternate = "_alt";
+						bAlternativeState = true;
+						sAlternativeState = myFunction.parameters#[iParam].name + "_alt";
+					}
+					@		if (p_@sParamName@ == NULL@
+					if !isNodeType(p.type) {
+						@ || ((const char*) p_@sParamName@)[0] == '\0'@
+					}
+					@) { @
+					if p.type.name == "bool" && p.default == "true" {
+						@@sParamName + bAlternate@ = (p_@sParamName@ == NULL);@
+					} else {
+						@@sParamName + bAlternate@ = @p.default@;@
+					}
+					if bAlternate {
+						@@sParamName@_alt_used = true;@
+					}
+					@ }@endl()@@
+				}
+				increment(iParam);
+			}
+			// call the wrapper method
+			local bAlternativeFormOnly = bAlternativeState && $this.classes[k.key()].functions[i.key()].size() == 1$;
+			if bAlternativeFormOnly {
+				local iParam = 0;
+				foreach p in k.function.parameters {
+					local sParamName = myFunction.parameters#[iParam].name;
+					local bAlternate = myFunction.parameters#[iParam].alternative_type && (myFunction.parameters#[iParam].alternative_type.name == p.type.name);
+					if bAlternate {
+						@		if (!@sParamName@_alt_used) @param2Cpp(sParamName + "_alt", p.type)@;
+@
+					}
+					increment(iParam);
+				}
+			}
+			if myFunction.output_param {
+				if bAlternativeState {
+					if !bAlternativeFormOnly {
+						// not necessary the alternative only
+						@		if (@sAlternativeState@_used) {
+@
+					}
+					@			returnedInstance = ((External@k.key()@ValueNode*) pThisInstance)->@myFunction.name@(@
+				foreach p in myFunction.parameters {
+					if !p.first() {
+						@, @
+					}
+					@@p.key()@@
+					if p.alternative_type {
+						@_alt@
+					}
+				}
+				@);
+@
+					if !bAlternativeFormOnly {
+						// not necessary the alternative only
+						@		} else {
+	@
+					}
+				}
+				if !bAlternativeState || !bAlternativeFormOnly {
+					@		returnedInstance = ((External@k.key()@ValueNode*) pThisInstance)->@myFunction.name@(@
+				foreach p in myFunction.parameters {
+					if !p.first() {
+						@, @
+					}
+					@@p.key()@@
+				}
+				@);
+@
+					if sAlternativeState {
+						@		}
+@
+					}
+				}
+			} else {
+				if bAlternativeState {
+					if !bAlternativeFormOnly {
+						@		if (@sAlternativeState@_used) {
+	@
+					}
+					generateWrapperFunctionCall(myFunction, k.key(), sAlternativeState);
+					if !bAlternativeFormOnly {
+						@		} else {
+	@
+						generateWrapperFunctionCall(myFunction, k.key(), "");
+						@		}
+@
+					}
+				} else {
+					generateWrapperFunctionCall(myFunction, k.key(), "");
+				}
+			}
+			@	}@
+		}
+@ else {
+		interpreter->error("function @i.key()@() doesn't exist for the 'this' instance passed as first argument");
+	}
+@
+		if myFunction.return_type == "class" {
+			@	interpreter->setExternalValue((CW4dl::Tree*) p_returnedInstance, returnedInstance);
+@
+		} else if myFunction.return_type == "array" || myFunction.return_type == "special" {
+			@	populate@myFunction.return_type.name@(interpreter, (CW4dl::Tree*) p_returnedInstance, returnedInstance);
+@
+		}
+@	return interpreter->trueConstant();
+}
+
+@
+	}
+}
+
+@
+
+void toDoubleArray(CW4dl::Interpreter* interpreter, CW4dl::Tree* p_a, DoubleArray& a) {
+	ExternalArrayMathValueNode* pArrayMath = (ExternalArrayMathValueNode*) interpreter->getExternalValue(p_a);
+	if (pArrayMath == NULL) {
+		a.len = interpreter->size(p_a);
+		if (a.len == 0) {
+			if (interpreter->getValue(p_a) != NULL) {
+				a.len = 1;
+				double* tdValues = new double[a.len];
+				a.data = tdValues;
+				tdValues[0] = interpreter->getDoubleValue(p_a);
+			} else {
+				a.len = 0;
+				a.data = NULL;
+			}
+		} else {
+			a.len = interpreter->size(p_a);
+			double* tdValues = new double[a.len];
+			a.data = tdValues;
+			const char** tcKeys = new const char*[a.len];
+			interpreter->allValues(p_a, tcKeys);
+			char* tcEndStr;
+			for (int i = 0; i < a.len; ++i) {
+				tdValues[i] = strtod(tcKeys[i], &tcEndStr);
+			}
+			delete [] tcKeys;
+		}
+	} else {
+		DoubleArray b = *(pArrayMath->internal_);
+		a.len = b.len;
+		double* tdValues = new double[a.len];
+		a.data = tdValues;
+		memcpy(tdValues, b.data, sizeof(double)*a.len);
+	}
+}

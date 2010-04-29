@@ -1,0 +1,15 @@
+testing separation of concerns in CodeWorker:
+
+// beginning of methods
+	// BEGIN around iteration
+	void display() {}
+	// OUT around iteration
+	// BEGIN around iteration
+	void delete() {}
+	// OUT around iteration
+	// BEGIN around iteration
+	void visit() {}
+	// OUT around iteration
+// end of methods
+
+This is the end of the test

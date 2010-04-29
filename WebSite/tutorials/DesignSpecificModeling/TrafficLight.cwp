@@ -1,0 +1,121 @@
+TrafficLightControl ::=
+	#ignore(C++) // ignore C++-like comments and whitespaces
+	#continue // a syntax error will occur if the BNF sequence fails
+	[strategy]* // repetition of strategies consuming
+	#empty // end of file necessarily reached after the reading of strategies
+	;
+
+strategy ::=
+	#readIdentifier:"strategy" // identifier must be worth 'strategy'
+	#continue // the rest of the BNF sequence doesn't have to fail
+	#readIdentifier:sName // assign the consumed id to a local variable
+	// the '=>' symbol escapes the BNF to execute a non-BNF instruction
+	=> if this.strategies.findElement(sName) {
+		// Error! The strategy already exists in the parse tree!
+		error("cannot define the strategy '" + sName + "' twice!");
+	}
+	// insert the strategy to the parse tree and keep a reference
+	=> insert this.strategies[sName].name = sName;
+	=> localref theStrategy = this.strategies[sName];
+	'{'
+	start_condition(theStrategy) // when to trigger the strategy
+	[rule(theStrategy)]+ // at least one rule to parse
+	'}'
+	;
+
+start_condition(theStrategy : node) ::=
+	#continue
+	#readIdentifier:"start"     // add to the parse tree the condition
+	condition:theStrategy.start // to start running the strategy
+	';'
+	;
+
+rule(theStrategy : node) ::=
+	condition:sAntecedent // the antecedent of the rule is a condition
+	#continue
+	"=>"
+	=> pushItem theStrategy.rules; // add a new rule in the list
+	// access to the last element of the list for inserting a new attribute
+	=> insert theStrategy.rules#back.condition = sAntecedent;
+	=> pushItem theStrategy.rules#back.actions; // add a new action
+	#readIdentifier:sAction // keyword of the action to execute
+	// call of a generic BNF non-terminal, resolved by 'sAction'
+	rule_action<sAction>(theStrategy.rules#back.actions#back)
+	[
+		',' #continue // a comma separates the actions
+		=> pushItem theStrategy.rules#back.actions;
+		#readIdentifier:sAction
+		rule_action<sAction>(theStrategy.rules#back.actions#back)
+	]*
+	';'
+	;
+
+// A generic BNF non-terminal instantiated on "duration" constant
+rule_action<"duration">(theAction : node) ::=
+	#continue
+	=> theAction = "duration"; // type of action
+	'('
+	street_segment(theAction.crossroad_entry) // entry point
+	','
+	time_sequence(theAction.durations) // traffic light durations
+	')'
+	;
+
+rule_action<"activate">(theAction : node) ::=
+	#continue
+	=> theAction = "activate";
+	'(' #readIdentifier:theAction.strategy ')'
+	;
+
+rule_action<"desactivate">(theAction : node) ::=
+	=> theAction = "desactivate";
+	;
+
+street_segment(theSegment : node) ::=
+		#readIdentifier:theSegment.crossroad
+		#continue "->"
+		=> insert theSegment.direction = "c->s";
+		#readCString:theSegment.street
+	|
+		#readCString:theSegment.street
+		#continue "->"
+		=> insert theSegment.direction = "s->c";
+		#readIdentifier:theSegment.crossroad
+	;
+
+time_sequence(theSequence : node) ::=
+	#continue
+	=> pushItem theSequence;
+	timeInSeconds:theSequence#back
+	[
+		'/' #continue
+		=> pushItem theSequence;
+		timeInSeconds:theSequence#back
+	]+
+	;
+
+// This BNF non-terminal reads a time like 1min15 and
+// restitutes it in seconds: the keyword 'value' means that
+// the non-terminal will return its own transformation rather
+// than the consumed character sequence.
+timeInSeconds:value ::=
+	#readInteger:iMin
+	#continue
+	"min"
+	// arithmetic expressions are enclosed between '$' symbols
+	=> timeInSeconds = $iMin * 60$;
+	#readInteger:iSec
+	=> timeInSeconds = $timeInSeconds + iSec$;
+	;
+
+condition ::=
+	!'}' // look ahead one character if no trailing brace 
+	[
+			#readCString // bypass string: may contain ';' or '=>'
+		|
+			#readCChar // same reason
+		|
+			~[';' | "=>"] // consume if neither ';' nor '=>' reached
+	]*
+	;
+

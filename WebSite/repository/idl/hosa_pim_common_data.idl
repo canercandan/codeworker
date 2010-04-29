@@ -1,0 +1,108 @@
+//Source file: Y:/documents/productdocuments/interfacespecifications/hosa/idl/hosa/hosa_pim_common_data.idl
+
+#ifndef __HOSA_PIM_COMMON_DATA_DEFINED
+#define __HOSA_PIM_COMMON_DATA_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+#include "hosa_common_data.idl"
+#include "osa.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			module hpim {
+				
+				/* Indicates whether the request could be serviced succesfully, partially or not at all. */
+				
+				enum TpHosaPIMResultCode {
+
+					/* The request was succesfully processed. The results can be found in the accompanying result (list). */
+					P_HPIM_REQUEST_RESULT_OK,
+					/* The request was partially succesful. Partially could mean that for example the request was succesfully executed for a number of subscribers, but not for all subscribers that the request was issued for. Generally one needs to look at the accompanying resultlist to be able to find out for which subscribers the request could not be executed succesfully. */
+					P_HPIM_REQUEST_PARTIALLY_FAILED,
+					/* The request could not be executed succesfully. To find out why the accompanying result(list) shall be processed. */
+					P_HPIM_REQUEST_FAILED					
+				};
+				
+				/* Uniquely identifies a Subscriber. In the context of PIM this can be used to address a subscribers address book or calendar. */
+				
+				typedef org::csapi::TpString TpHosaPIMSubscriber;
+				
+				typedef sequence <TpHosaPIMSubscriber> TpHosaPIMSubscriberList;
+				
+				/* Defines how multiple criteria shall be evaluated. This is a logical operator. */
+				
+				enum TpHosaCriteriaOperator {
+
+					/* Perform a logical OR. */
+					P_HPIM_EVALUATE_BY_OR,
+					/* Perform a logical AND. */
+					P_HPIM_EVALUATE_BY_AND					
+				};
+				
+				/* Specifies a Uniform Resource Locator. */
+				
+				typedef org::csapi::TpString TpHosaPIMUrlAddress;
+				
+				/* Specifies a list of Uniform Resource Locators. */
+				
+				typedef sequence <TpHosaPIMUrlAddress> TpHosaPIMUrlAddressList;
+				
+				/* Specifies the type of terminal that the telephonenumber is attached to. */
+				
+				enum TpHosaPIMTelephoneNumberType {
+
+					/* This number represents a telephone number. */
+					P_HPIM_TELEPHONE,
+					/* This number represents a fax number. */
+					P_HPIM_FAX,
+					/* This number represents a ISDN number. */
+					P_HPIM_ISDN,
+					/* This number represents a pager number. */
+					P_HPIM_PAGER,
+					/* This number represents a mobile telephone number. */
+					P_HPIM_MOBILE,
+					/* This number represents a video telephone number. */
+					P_HPIM_VIDEO					
+				};
+				
+				/* Specifies a telephone number and the type of the telephone number. */
+				
+				struct TpHosaPIMTelephoneNumber {
+					/* Specifies the type of terminal that the telephonenumber is attached to. */
+					TpHosaPIMTelephoneNumberType Type;
+					/* Specifies the actual telephone number. */
+					org::csapi::TpString TelephoneNumber;
+				};
+				
+				/* Specifies a list of telephonenumbers. */
+				
+				typedef sequence <TpHosaPIMTelephoneNumber> TpHosaPIMTelephoneNumberList;
+				
+				/* Indicates the target device for a specific action. */
+				
+				enum TpHosaPIMTargetDevice {
+
+					/* The action shall be performed on the central server. */
+					P_HPIM_TARGET_DEVICE_CENTRAL_SERVER,
+					/* The action shall be performed on the terminal. */
+					P_HPIM_TARGET_DEVICE_TERMINAL,
+					/* The action shall be performed on the central server as well as the terminal. */
+					P_HPIM_TARGET_DEVICE_ALL_KNOWN					
+				};
+				
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif
+

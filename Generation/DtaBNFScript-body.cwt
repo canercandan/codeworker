@@ -1,0 +1,117 @@
+@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2003 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+if getMarkupKey() == "includes" {
+	foreach i in project.procedureList if i.mode == "parse" {
+		@#include "Grf@transformUnderscores(i.name)@.h"
+@
+	}
+} else if getMarkupKey() == "parsing" {
+	foreach i in project.procedureList if i.mode == "parse" {
+		if findElement("info", i.modifierList) {
+			@	void DtaBNFScript::parse@transformUnderscores(i.name)@(GrfBlock& block, ScpStream& script, ExprScriptVariable* pMethodCaller) {
+@
+			setProtectedArea("parse" + transformUnderscores(i.name));
+			@	}
+
+@
+		} else {
+			@	void DtaBNFScript::parse@transformUnderscores(i.name)@(GrfBlock& block, ScpStream& script, ExprScriptVariable* pMethodCaller) {
+		Grf@transformUnderscores(i.name)@* p@transformUnderscores(i.name)@ = new Grf@transformUnderscores(i.name)@;
+		if (requiresParsingInformation()) p@transformUnderscores(i.name)@->setParsingInformation(getFilenamePtr(), script);
+		block.add(p@transformUnderscores(i.name)@);
+		script.skipEmpty();
+		if (!script.isEqualTo('(')) throw UtlException(script, "syntax error: '(' expected");
+		script.skipEmpty();
+@
+		local bSecondParameter;
+		foreach j in i.parameterList {
+			if !first(j) {
+				@		if (@
+				if !bSecondParameter {
+					set bSecondParameter = true;
+					@(pMethodCaller == NULL) && @
+				}
+				@!script.isEqualTo(',')) throw UtlException(script, "syntax error: ',' expected");
+		script.skipEmpty();
+@
+			}
+			@		@
+			if j.first() {
+				@if (pMethodCaller == NULL) @
+			}
+			@p@transformUnderscores(i.name)@->set@transformUnderscores(j.name)@(@
+			switch(j.type) {
+				case "int":
+				case "bool":
+				case "double":
+				case "string":
+				case "ulong":
+				case "ushort":
+					@parseExpression(block, script)@
+					break;
+				case "doubleref":
+				case "boolref":
+				case "stringref":
+				case "stringlist":
+				case "tree":
+				case "treeref":
+				case "treexpr":
+					@parseVariableExpression(block, script)@
+					break;
+				case "script":
+					@parseScriptFileExpression(block, script, DtaScriptFactory::@
+					switch(j.type.script) {
+						case "BNF": {@BNF_SCRIPT@} break;
+						case "free": {@FREE_SCRIPT@} break;
+						case "pattern": {@PATTERN_SCRIPT@} break;
+						case "translate": {@TRANSLATE_SCRIPT@} break;
+					}
+					@)@
+					break;
+			}
+			@);
+@
+			if j.first() {
+				@		else p@transformUnderscores(i.name)@->set@transformUnderscores(j.name)@(pMethodCaller);
+@
+			} else {
+				@		script.skipEmpty();
+@
+			}
+		}
+		@		if (!script.isEqualTo(')')) throw UtlException(script, "syntax error: ')' expected");
+		script.skipEmpty();
+		if (!script.isEqualTo(';')) throw UtlException(script, "syntax error: ';' expected");
+	}
+
+@
+		}
+	} else if i.mode == "generate" {
+		@	void DtaBNFScript::parse@transformUnderscores(i.name)@(GrfBlock& block, ScpStream& script, ExprScriptVariable* pMethodCaller) {
+		DtaScript::parse@transformUnderscores(i.name)@(block, script, pMethodCaller);
+	}
+
+@
+	}
+}
+@

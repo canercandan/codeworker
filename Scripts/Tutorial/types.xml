@@ -1,0 +1,68 @@
+<project>
+	<allClasses>
+		<__ARRAY_TYPE packages="compulsory">
+		</__ARRAY_TYPE>
+	</allClasses>
+	<listOfPackages>
+		<__ARRAY_TYPE name="compulsory" sequence="compulsory">
+			<listOfClasses>
+				<__ARRAY_TYPE extendedClass="optional[36%]" listOfInstances="optional[9%]" name="compulsory" sequence="compulsory">
+					<listOfAttributes>
+						<__ARRAY_TYPE name="compulsory">
+							<type isArray="optional[10%]" isConst="optional[10%]" isObject="optional[35%]" name="optional[90%]" objectClass="optional[20%]">
+								<elementType isConst="optional[66%]" isObject="optional[66%]" name="compulsory">
+								</elementType>
+								<keyType name="compulsory">
+								</keyType>
+							</type>
+						</__ARRAY_TYPE>
+					</listOfAttributes>
+					<listOfMethods>
+						<__ARRAY_TYPE isConst="optional[66%]" name="compulsory">
+							<listOfParameters>
+								<__ARRAY_TYPE name="compulsory">
+									<type isArray="optional[10%]" isConst="optional[10%]" isObject="optional[35%]" name="optional[90%]" objectClass="optional[20%]">
+										<elementType isConst="optional[66%]" isObject="optional[66%]" name="compulsory">
+										</elementType>
+										<keyType name="compulsory">
+										</keyType>
+									</type>
+								</__ARRAY_TYPE>
+							</listOfParameters>
+							<type isArray="optional[10%]" isConst="optional[10%]" isObject="optional[35%]" name="optional[90%]" objectClass="optional[20%]">
+								<elementType isConst="optional[66%]" isObject="optional[66%]" name="compulsory">
+								</elementType>
+								<keyType name="compulsory">
+								</keyType>
+							</type>
+						</__ARRAY_TYPE>
+					</listOfMethods>
+				</__ARRAY_TYPE>
+			</listOfClasses>
+			<listOfServices>
+				<__ARRAY_TYPE name="compulsory">
+					<listOfMethods>
+						<__ARRAY_TYPE isConst="optional[66%]" name="compulsory">
+							<listOfParameters>
+								<__ARRAY_TYPE name="compulsory">
+									<type isArray="optional[10%]" isConst="optional[10%]" isObject="optional[35%]" name="optional[90%]" objectClass="optional[20%]">
+										<elementType isConst="optional[66%]" isObject="optional[66%]" name="compulsory">
+										</elementType>
+										<keyType name="compulsory">
+										</keyType>
+									</type>
+								</__ARRAY_TYPE>
+							</listOfParameters>
+							<type isArray="optional[10%]" isConst="optional[10%]" isObject="optional[35%]" name="optional[90%]" objectClass="optional[20%]">
+								<elementType isConst="optional[66%]" isObject="optional[66%]" name="compulsory">
+								</elementType>
+								<keyType name="compulsory">
+								</keyType>
+							</type>
+						</__ARRAY_TYPE>
+					</listOfMethods>
+				</__ARRAY_TYPE>
+			</listOfServices>
+		</__ARRAY_TYPE>
+	</listOfPackages>
+</project>

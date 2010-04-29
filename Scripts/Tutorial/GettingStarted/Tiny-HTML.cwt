@@ -1,0 +1,36 @@
+@
+//note: the function \samp{getMarkupKey()} returns the current expanding markup that is handled,
+if getMarkupKey() == "classes" {
+//note: all classes will be presented sequentially into tables of 3 columns, whose title is
+//note: the name of the class, and rows are populated with attributes,
+	foreach i in project.listOfClasses {
+		@		<TABLE>
+			<TR>
+				<TD colspan=3><B>@i.name@</B></TD>
+			</TR>
+			<TR>
+				<TD><EM>Attribute</EM></TD><TD><EM>Type</EM></TD> <TD><EM>Description</EM></TD>
+			</TR>
+@
+//note: the \textit{name}, \textit{Type} and \textit{Description} of all attributes of the
+//note: class are presented into the table,
+		foreach j in i.listOfAttributes {
+			@			<TR>
+				<TD><I>@j.name@</I></TD><TD><CODE>@
+//note: the type is expressed in the syntax of our tiny modeling language,
+			@@j.class.name@@
+			if j.isArray {
+				@[]@
+			}
+			@</CODE></TD><TD>@
+//note: the description of an attribute must be filled by the user into a protected area, so
+//note: as to preserve it from an expansion to another,
+			setProtectedArea(i.name + "::" + j.name);
+			@</TD>
+			</TR>
+@
+		}
+		@		</TABLE>
+@
+	}
+}

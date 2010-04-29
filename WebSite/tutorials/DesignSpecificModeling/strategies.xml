@@ -1,0 +1,46 @@
+<project>
+	<strategies>
+		<__ARRAY_ENTRY __KEY="BusinessDayNight">
+			<name __VALUE="BusinessDayNight" />
+			<start __VALUE="time() &gt; (17*60 + 30)*60" />
+			<rules>
+				<__ARRAY_ENTRY __KEY="0">
+					<condition __VALUE="vehicles_hour(place_opera-&gt;&quot;boulevard des Capucines&quot;) &lt; 400" />
+					<actions>
+						<__ARRAY_ENTRY __KEY="0" __VALUE="duration">
+							<crossroad_entry>
+								<crossroad __VALUE="scribe" />
+								<direction __VALUE="c-&gt;s" />
+								<street __VALUE="rue Scribe" />
+							</crossroad_entry>
+							<durations>
+								<__ARRAY_ENTRY __KEY="0" __VALUE="65" />
+								<__ARRAY_ENTRY __KEY="1" __VALUE="120" />
+							</durations>
+						</__ARRAY_ENTRY>
+					</actions>
+				</__ARRAY_ENTRY>
+				<__ARRAY_ENTRY __KEY="1">
+					<condition __VALUE="vehicles_hour(&quot;rue de la Paix&quot;-&gt;rue_paix) &gt; 300" />
+					<actions>
+						<__ARRAY_ENTRY __KEY="0" __VALUE="activate">
+							<strategy __VALUE="RivoliLowDensity" />
+						</__ARRAY_ENTRY>
+					</actions>
+				</__ARRAY_ENTRY>
+				<__ARRAY_ENTRY __KEY="2">
+					<condition __VALUE="vehicles_hour(auber-&gt;&quot;rue auber&quot;) &gt; 500" />
+					<actions>
+						<__ARRAY_ENTRY __KEY="0" __VALUE="desactivate" />
+					</actions>
+				</__ARRAY_ENTRY>
+				<__ARRAY_ENTRY __KEY="3">
+					<condition __VALUE="time() &gt; (22*60 + 30)*60" />
+					<actions>
+						<__ARRAY_ENTRY __KEY="0" __VALUE="desactivate" />
+					</actions>
+				</__ARRAY_ENTRY>
+			</rules>
+		</__ARRAY_ENTRY>
+	</strategies>
+</project>

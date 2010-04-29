@@ -1,0 +1,11 @@
+/*description:
+{
+	Parses the XML file \samp{"cdcatalog.xml"} and then generates a HTML presentation of
+	data in \samp{"XMLparser-cdcatalog.html"} following the template \samp{"cdcatalog.cwt"}.
+}
+input "examples/cdcatalog.xml", "examples/cdcatalog.cwt";
+output "examples/cdcatalog.html";
+*/
+local myXMLTree;
+parseAsBNF("repository/XMLparser.cwp", myXMLTree, "examples/cdcatalog.xml");
+generate("examples/cdcatalog.cwt", myXMLTree, getWorkingPath() + "examples/cdcatalog.html");

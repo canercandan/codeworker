@@ -1,0 +1,285 @@
+//Source file: Y:/DOCUMENTS/PRODUCTDOCUMENTS/INTERFACESPECIFICATIONS/HOSA/IDL/hosa/hosa_pim_contact_data.idl
+
+#ifndef __HOSA_PIM_CONTACT_DATA_DEFINED
+#define __HOSA_PIM_CONTACT_DATA_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+#include "hosa_pim_common_data.idl"
+#include "hosa_common_data.idl"
+#include "osa.idl"
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			module hpim {
+				
+				/* Defines the type of result returned. */
+				
+				enum TpHosaPIMModifyContactResultInfoType {
+
+					/* A contact entry has been modified succesfully. The ContactID of the created contact is returned. */
+					P_HCON_MODIFY_OK,
+					/* The contact entry with the indicated ContactID does not exist. */
+					P_HCON_MODIFY_NOT_EXISTING,
+					/* For some reason the contact entry could not be modified. The reason is returned. */
+					P_HCON_MODIFY_FAILED,
+					/* The contact entry could not be modified from the provided contact object, since the  contact object contains an error or formatting problem. */
+					P_HCON_MODIFY_INPUT_DATA_ERROR					
+				};
+				
+				/* Contains the actual modify contact result information. */
+				
+				union TpHosaPIMModifyContactResultInfo switch(TpHosaPIMModifyContactResultInfoType) {
+					case P_HCON_MODIFY_OK: org::csapi::TpOctetSet ContactID;
+					case P_HCON_MODIFY_NOT_EXISTING: org::csapi::TpString NotExistingAdditionalInfo;
+					case P_HCON_MODIFY_FAILED: org::csapi::TpString ModifyFailedReason;
+					case P_HCON_MODIFY_INPUT_DATA_ERROR: org::csapi::TpString InputDataErrorReason;
+				};
+				
+				enum TpHosaPIMDeleteContactResultInfoType {
+
+					/* A contact entry has been deleted succesfully. */
+					P_HCON_DELETE_OK,
+					/* The contact entry with the indicated ContactID does not exist. */
+					P_HCON_DELETE_NOT_EXISTING,
+					/* For some reason the contact entry could not be deleted. The reason is returned. */
+					P_HCON_DELETE_FAILED					
+				};
+				
+				/* Contains the actual delete contact result information. */
+				
+				union TpHosaPIMDeleteContactResultInfo switch(TpHosaPIMDeleteContactResultInfoType) {
+					case P_HCON_DELETE_NOT_EXISTING: org::csapi::TpString NotExistingAdditionalInfo;
+					case P_HCON_DELETE_FAILED: org::csapi::TpString DeleteFailedReason;
+					default: short Dummy;	//allows initialisation of the union in the default case
+				};
+				
+				enum TpHosaPIMCreateContactResultInfoType {
+
+					/* A contact entry has been created succesfully. The ContactID of the created contact is returned. */
+					P_HCON_CREATE_OK,
+					/* For some reason the contact entry could not be created. The reason is returned. */
+					P_HCON_CREATE_FAILED,
+					/* The contact entry with the indicated ContactID already exists. */
+					P_HCON_CREATE_ALREADY_EXISTS,
+					/* The contact entry could not be created from the provided contact object, since the  contact object contains an error or formatting problem. */
+					P_HCON_CREATE_INPUT_DATA_ERROR					
+				};
+				
+				/* Contains the actual create contact result information. */
+				
+				union TpHosaPIMCreateContactResultInfo switch(TpHosaPIMCreateContactResultInfoType) {
+					case P_HCON_CREATE_FAILED: org::csapi::TpString CreateFailedReason;
+					case P_HCON_CREATE_ALREADY_EXISTS: org::csapi::TpString AlreadyExistsAdditionalInfo;
+					case P_HCON_CREATE_INPUT_DATA_ERROR: org::csapi::TpString InputDataErrorReason;
+					case P_HCON_CREATE_OK: org::csapi::TpOctetSet ContactID;
+				};
+				
+				/* Contains the actual result information and additional information to be able to associate the result information to the correct subscriber. */
+				
+				struct TpHosaPIMCreateContactResult {
+					/* Identifies the Subscriber for which this result is returned. */
+					TpHosaPIMSubscriber Subscriber;
+					/* Contains the actual create contact result information. */
+					TpHosaPIMCreateContactResultInfo ResultInfo;
+					/* The original ContactID which was provided on the creation request. This might be different from the ContactID used to address the contact in the subscribers address book. The latter is returned in the TpHosaPIMCreateContactResultInfo when the contact could be created succesfully. When contacts are created from vCard objects this identifier is equal to the vCards UID part for which this result is returned. */
+					org::csapi::TpOctetSet OriginalContactID;
+					/* Indicates the device for which this specific result is send. */
+					TpHosaPIMTargetDevice TargetDevice;
+				};
+				
+				typedef sequence <TpHosaPIMCreateContactResult> TpHosaPIMCreateContactResultList;
+				
+				/* Specifies the criteria that can be used in a PIM Contact retrieve request. */
+				
+				struct TpHosaPIMContactCriteria {
+					/* Whether or not the ContactID field shall be taken into account in the criteria match. */
+					org::csapi::TpBoolean ContactIDPresent;
+					/* A match is performed against the ContactID contact field. When the criterium does not contain the wildcard character "*" only ContactIDs that are exactly the same as the criterium match. When the criterium contains one or more wildcard characters the substrings are matched accordingly. */
+					org::csapi::TpOctetSet ContactID;
+					/* Whether or not the UserName field shall be taken into account in the criteria match. */
+					org::csapi::TpBoolean UserNamePresent;
+					/* A match is performed against the UserName contact field. When the criterium does not contain the wildcard character "*" only UserNames that are exactly the same as the criterium match. When the criterium contains one or more wildcard characters the substrings are matched accordingly. */
+					org::csapi::TpOctetSet UserName;
+					/* Whether or not the Email field shall be taken into account in the criteria match. */
+					org::csapi::TpBoolean EmailPresent;
+					/* A match is performed against all email fields from the contacts. When the criterium does not contain the wildcard character "*" only ContactIDs that are exactly the same as the criterium match. When the criterium contains one or more wildcard characters the substrings are matched accordingly. */
+					org::csapi::TpString Email;
+					/* Whether or not the TelephoneNumber field shall be taken into account in the criteria match. */
+					org::csapi::TpBoolean TelephoneNumberPresent;
+					/* A  match is performed against all the telephonenumber fields from the contacts. In telephonenumber matching spaces and "-" are ignored. When the criterium does not contain the wildcard character "*" only ContactIDs that are exactly the same as the criterium match. When the criterium contains one or more wildcard characters the substrings are matched accordingly. */
+					org::csapi::TpString TelephoneNumber;
+					/* Whether or not the RealName field shall be taken into account in the criteria match. */
+					org::csapi::TpBoolean RealNamePresent;
+					/* A match is performed against the FullName contact field. When the criterium does not contain the wildcard character "*" only Fullnames that are exactly the same as the criterium match. When the criterium contains one or more wildcard characters the substrings are matched accordingly. */
+					org::csapi::TpOctetSet RealName;
+				};
+				
+				/* Defines the type of result returned. */
+				
+				enum TpHosaPIMRetrieveContactResultInfoType {
+
+					/* A contact entry has been retrieved succesfully. The Contact information of the retrieved contact is returned. */
+					P_HCON_RETRIEVE_OK,
+					/* For some reason a contact entry that fulfills the retrieval criteria can not be retrieved. The reason is returned. */
+					P_HCON_RETRIEVE_FAILED					
+				};
+				
+				/* Contains the vCard and the ContactID to which the contact is know in the system. */
+				
+				struct TpHosaPIMvCard {
+					/* The unique identifier of the contact. */
+					org::csapi::TpOctetSet ContactID;
+					/* The contact formatted as a vCard object. */
+					org::csapi::TpOctetSet vCard;
+				};
+				
+				/* Contains the actual retrieve contact as vCard result information. */
+				
+				union TpHosaPIMRetrieveVCardInfo switch(TpHosaPIMRetrieveContactResultInfoType) {
+					case P_HCON_RETRIEVE_FAILED: org::csapi::TpString RetrieveFailedReason;
+					case P_HCON_RETRIEVE_OK: TpHosaPIMvCard ContactInfo;
+				};
+				
+				typedef sequence <TpHosaPIMRetrieveVCardInfo> TpHosaPIMRetrieveVCardInfoList;
+				
+				/* Specifies an expression that matches selected contact entries based on multiple Criteria. A contact entry matches when at least one (OR) or all (AND) criteria match. */
+				
+				struct TpHosaPIMContactCriteriaExpression {
+					/* Specifies how to evaluate a multiple criteria match. */
+					TpHosaCriteriaOperator Operator;
+					/* Specifies the criteria to match. */
+					se::ericsson::hosa::hpim::TpHosaPIMContactCriteria Criteria;
+				};
+				
+				/* Specifies to which domain the contained contactinformation applies to. */
+				
+				enum TpHosaPIMContactRoleType {
+
+					/* This information applies to home/private address contact information. */
+					P_HPIM_HOME,
+					/* This information applies to work/business address contact information. */
+					P_HPIM_WORK					
+				};
+				
+				/* Contains all the addressing information needed to specify the physical and postal address of a contact. */
+				
+				struct TpHosaPIMAddressInformation {
+					/* Specifies the address information required for the physical delivery of postal messages by the postal authority to the contact persons business address. This field has the same semantics as the X.520 postalAddress attribute. */
+					org::csapi::TpOctetSet PostalLabel;
+					/* Specifies the postal code of the contact persons address. This field has the same semantics as the X.520 postalCode attribute. */
+					org::csapi::TpOctetSet PostalCode;
+					/* Specifies the post office box of the contact persons address. This field has the same semantics as the X.520 postOfficeBox attribute. */
+					org::csapi::TpOctetSet PostOfficeBox;
+					/* Specifies a site for the local distribution and physical delivery in a postal address, i.e. the street name, place, avenue, and the house number of a persons business address. This field has the same semantics as the X.520 streetAddress (street) attribute. */
+					org::csapi::TpOctetSet Street;
+					/* Identifies a geographical area or locality where the contact persons address is located. This field has the same semantics as the X.520 localityName attribute. */
+					org::csapi::TpOctetSet City;
+					/* Specifies a state or a province where the contact persons address is located. This field has the same semantics as the X.520 stateOrProvinceName (st) attribute. */
+					org::csapi::TpOctetSet Region;
+					/* Specifies the country where the contact persons address is located. Only two character country codes from ISO3166 are allowed for this field. This field has the same semantics as the X.520 countryName (co) attribute. */
+					org::csapi::TpOctetSet Country;
+				};
+				
+				/* Contains work specific information. */
+				
+				struct TpHosaPIMWorkRoleInformation {
+					/* Specifies the designated position or function of the person within an organization. This field has the same semantics as the X.520 title attribute. */
+					org::csapi::TpOctetSet JobTitle;
+					/* Specifies information regarding the role, occupation or business category of the person within an organization. This field has the same semantics as the X.520 businessCategory attribute. */
+					org::csapi::TpOctetSet Role;
+					/* Code for department to which a person belongs. */
+					org::csapi::TpOctetSet DepartmentNumber;
+					/* Specifies the name of a unit which is understood to be part of the organization identified by the CompanyName field. This field has the same semantics as the X.520  organizationalUnitName (ou) attribute. */
+					org::csapi::TpOctetSet OrganizationalUnit;
+					/* Specifies the name of the company. This field has the same semantics as the X.520 organizationName (o) attribute. */
+					org::csapi::TpOctetSet CompanyName;
+				};
+				
+				/* Specifies contact information that is related to a specific role that the contact has. In general a contact has one home role and one or more work roles. */
+				
+				struct TpHosaPIMContactRole {
+					/* Specifies to which domain the contained contactinformation applies to. */
+					TpHosaPIMContactRoleType Type;
+					/* Contains all the addressing information needed to specify the physical and postal address of a contact. */
+					TpHosaPIMAddressInformation Address;
+					/* List of telephone numbers belonging to this role. */
+					TpHosaPIMTelephoneNumberList TelephoneNumberList;
+					/* List of email addresses belonging to this role. */
+					TpHosaEmailAddressList EmailAddressList;
+					/* List of URL addresses belonging to this role. */
+					TpHosaPIMUrlAddressList UrlList;
+					/* Contains work specific information. */
+					TpHosaPIMWorkRoleInformation WorkSpecificInformation;
+				};
+				
+				/* Specifies contact information for every role that the contact has. In general a contact has one home role and one or more work roles. Whether multiple workroles are supported depends on the implementation of this service. */
+				
+				typedef sequence <TpHosaPIMContactRole> TpHosaPIMContactRoleList;
+				
+				/* Serves as a container for all information that describes a persons contact information. */
+				
+				struct TpHosaPIMContact {
+					/* Uniquely identifies a contact object in a subscribers address book. */
+					org::csapi::TpOctetSet ContactID;
+					/* Specifies the persons full name. This field has the same semantics as the X.520 commonName (cn) attribute. */
+					org::csapi::TpOctetSet FullName;
+					/* Specifies the persons first name. This field has the same semantics as the X.520 givenName attribute. */
+					org::csapi::TpOctetSet FirstName;
+					/* Specifies the family name of a person.  This field has the same semantics as the X.520 surname (sn) attribute. */
+					org::csapi::TpOctetSet LastName;
+					/* Specifies the date that the person was born. */
+					org::csapi::TpDate BirthDay;
+					/* The unique username that is used to identify this person for obtaining access to a  computer system. */
+					org::csapi::TpOctetSet UserName;
+					/* Specifies contact information for every role that the person has. */
+					TpHosaPIMContactRoleList ContactRoleList;
+					/* Specifies supplemental information or a comment on the contact. This field is typically used in the same way as the X.520 description attribute. */
+					org::csapi::TpOctetSet Notes;
+				};
+				
+				/* Contains the actual retrieve contact result information. */
+				
+				union TpHosaPIMRetrieveContactResultInfo switch(TpHosaPIMRetrieveContactResultInfoType) {
+					case P_HCON_RETRIEVE_OK: TpHosaPIMContact ContactInfo;
+					case P_HCON_RETRIEVE_FAILED: org::csapi::TpString RetrieveFailedReason;
+				};
+				
+				typedef sequence <TpHosaPIMRetrieveContactResultInfo> TpHosaPIMRetrieveContactResultInfoList;
+				
+				/* Contains the actual result information and additional information to be able to associate the result information to the correct device. */
+				
+				struct TpHosaPIMDeleteContactResult {
+					/* Contains the actual create contact result information. */
+					TpHosaPIMDeleteContactResultInfo ResultInfo;
+					/* Indicates the device for which this specific result is send. */
+					TpHosaPIMTargetDevice TargetDevice;
+				};
+				
+				/* Contains the actual result information and additional information to be able to associate the result information to the correct device. */
+				
+				struct TpHosaPIMModifyContactResult {
+					/* Contains the actual modify contact result information. */
+					TpHosaPIMModifyContactResultInfo ResultInfo;
+					/* Indicates the device for which this specific result is send. */
+					TpHosaPIMTargetDevice TargetDevice;
+				};
+				
+				typedef sequence <TpHosaPIMDeleteContactResult> TpHosaPIMDeleteContactResultList;
+				
+				typedef sequence <TpHosaPIMModifyContactResult> TpHosaPIMModifyContactResultList;
+				
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif

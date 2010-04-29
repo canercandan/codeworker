@@ -1,0 +1,88 @@
+#include "C1-Parser.cwp"
+
+function getC1Filename() {
+	local sFile = canonizePath(getInputFilename());
+	local iIndex = sFile.findLastString("/c1/");
+	if $iIndex < 0$ error("C1 file '" + getInputFilename() + "' is misplaced in the file tree");
+	set sFile = sFile.subString($iIndex + 4$);
+	return sFile;
+}
+
+#overload translation_unit	::=
+		#ignore(C++)
+		#implicitCopy #skipIgnore #explicitCopy
+		#super::translation_unit
+		=> indentText("C++");
+		;
+
+#overload declare_type<"namespace"> : value	::=
+		=> {@namespace @}
+		#implicitCopy
+		#readIdentifier
+		#continue
+		'{'
+		[#ignore(blanks) #skipIgnore]
+		#explicitCopy
+		[declare_type]*
+		#skipIgnore
+		#implicitCopy
+		'}'
+		#skipIgnore
+		;
+
+#overload declare_type<"class"> : value	::=
+		=> local sOldClassName = this.current_class_name;
+		class_header:this.current_class_name
+		class_body
+		->';'
+		=> set this.current_class_name = sOldClassName;
+		;
+
+#overload class_member<"friend">	::=
+		=> local sOldValue = this.current_class_name;
+		=> insert this.current_class_name = false;
+		#continue class_body_item
+		=> insert this.current_class_name = sOldValue;
+		;
+
+#overload class_member<"inline">	::=
+		#continue
+		=> {@inline @}
+		=> local iLocation;
+		[#readIdentifier:"static" #skipIgnore]?
+		#implicitCopy
+		->[
+			[
+					'~'
+					=> set iLocation = $getOutputLocation() - 1$;
+					#readCompleteIdentifier:sId
+				|
+					#readCompleteIdentifier:sId
+					=> set iLocation = $getOutputLocation() - sId.length()$;
+			]
+			[
+					#check(sId == "operator")
+					#continue
+					->'('
+				|
+					'('
+			]
+			=> if this.current_class_name {
+				insertText(iLocation, this.current_class_name + "::");
+			}
+		]
+		[#readCString | ~'{']*
+		[
+				#check(!getProperty("PURE_CPP"))
+				#explicitCopy #skipIgnore #implicitCopy
+				=> {
+					@@endl()@#line @sub(countInputLines(), 1)@ "@getC1Filename()@"@endl()@@
+				}
+			|
+				#skipIgnore
+		]
+		body_definition
+		=> { @@endl()+endl()@@ }
+		;
+
+#overload preprocessor_directive	::= #implicitCopy #super::preprocessor_directive #ignore(blanks) #skipIgnore;

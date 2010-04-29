@@ -1,0 +1,65 @@
+@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+if startString(getMarkupKey(), "size:") {
+	local iSize = fileSize(getWorkingPath() + "WebSite/" + subString(getMarkupKey(), 5));
+	@ (@floor($iSize / 1024$)@kb)@
+} else if getMarkupKey() == "downloads" {
+	@
+@
+	local sThisVersion;
+	if findElement("current", project.listOfVersions) {
+		set sThisVersion = "current";
+	} else {
+		set sThisVersion = getVersion();
+	}
+	local listOfKeys;
+	remainingProtectedAreas(listOfKeys);
+	removeElement(listOfKeys, "current");
+	if findElement(sThisVersion, listOfKeys) {
+		if this.checkVersion error("the version '" + sThisVersion + "' is already downloadable!");
+		removeElement(listOfKeys, sThisVersion);
+	}
+	local tempList;
+	foreach i in listOfKeys {
+		local slices;
+		cutString(i, ".", slices);
+		local sVersion;
+		foreach j in slices sVersion += completeLeftSpaces(j, 4);
+		insert tempList[sVersion] = i;
+	}
+	local listOfVersions;
+	foreach i in sorted tempList insert listOfVersions[i] = i;
+	invertArray(listOfVersions);
+	local sContent;
+	local params;
+	generateString("VersionDownload.cwt", params, sContent);
+	populateProtectedArea(sThisVersion, sContent);
+	foreach i in listOfVersions populateProtectedArea(i, getProtectedArea(i));
+	@
+@
+} else if getMarkupKey() == "last download" {
+	local sContent;
+	local params = "last download";
+	generateString("VersionDownload.cwt", params, sContent);
+	@@sContent@@
+}

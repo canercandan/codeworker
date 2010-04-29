@@ -1,0 +1,45 @@
+//Source file: Y:/DOCUMENTS/PRODUCTDOCUMENTS/INTERFACESPECIFICATIONS/HOSA/IDL/hosa/hosa_mpcc_interfaces.idl
+
+#ifndef __HOSA_MPCC_INTERFACES_DEFINED
+#define __HOSA_MPCC_INTERFACES_DEFINED
+
+/* CmIdentification
+  %X% %Q% %Z% %W% */
+
+#include "mpcc_interfaces.idl"
+
+
+module se {
+	
+	module ericsson {
+		
+		module hosa {
+			
+			module hcc {
+				
+				module hmpccs {
+					
+					interface IpHosaMultiPartyCallControlManager : org::csapi::cc::mpccs::IpMultiPartyCallControlManager {
+						/* This method is used to create a new  call object. An IpAppMultiPartyCallControlManager should already have been passed to the IpMultiPartyCallControlManager,
+otherwise the call control will not be able to report a callAborted() to the application (the application should invoke setCallback() if it wishes to ensure this).
+Returns callReference: Specifies the interface reference and sessionID of the call created.
+						@roseuid 3DF74D6403AF */
+						org::csapi::cc::mpccs::TpMultiPartyCallIdentifier hosaCreateCallWithAdditionalInfo (
+							in org::csapi::cc::mpccs::IpAppMultiPartyCall appCall,	//Specifies the application interface for callbacks from the call created.
+							in org::csapi::cc::TpCallAppInfoSet appInfo	//Appinfo contains the field CallAppAdditionalAddress which specifies the address of the network entity which is used for call creation and control. Only one appInfo can be supplied.
+							)							
+							raises (org::csapi::TpCommonExceptions, org::csapi::P_INVALID_INTERFACE_TYPE);
+							
+					};
+					
+				};
+				
+			};
+			
+		};
+		
+	};
+	
+};
+
+#endif

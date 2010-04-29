@@ -1,0 +1,30 @@
+//command: -script Scripts/Tutorial/GettingStarted/Tiny-leaderScript0.cws
+//hide:
+clearVariable(project.listOfClasses);
+parseAsBNF("Tiny-BNFparsing1.cwp", project, "Scripts/Tutorial/GettingStarted/Tiny.tml");
+
+
+//note: a user-defined function without parameters,
+function displayParsingTree() {
+//note: the \samp{foreach} statement iterates all items of an array; here, all classes are
+//note: explored,
+	foreach i in project.listOfClasses {
+		traceLine("class '" + i.name + "'");
+//note: check whether the attribute \textit{parent} exists or not,
+		if existVariable(i.parent)
+			traceLine("\tparent = '" + i.parent.name + "'");
+//note: all attributes of the current class \textit{i} are iterated,
+		foreach j in i.listOfAttributes {
+			traceLine("\tattribute '" + j.name + "'");
+			traceLine("\t\tclass = '" + j.class.name + "'");
+//note: perhaps the association is multiple,
+			if existVariable(j.isArray)
+				traceLine("\t\tarray = '" + j.isArray + "'");
+		}
+	}
+}
+
+//note: a call to the user-defined function,
+displayParsingTree();
+//hide:
+clearVariable(project.listOfClasses);

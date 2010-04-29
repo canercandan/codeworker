@@ -1,0 +1,38 @@
+//note: we don't care about the case: \textit{<BODY>} and \textit{<Body>} must be recognized
+//note: as identical for instance,
+#noCase
+
+HTML	::= #ignore(HTML) #continue '<' "HTML" '>' HTMLHeader HTMLBody '<' '/' "HTML" '>' #empty;
+HTMLHeader	::= '<' #continue "HEAD" '>' [~['<' '/' "HEAD" '>']]* '<' '/' "HEAD" '>';
+HTMLBody	::= '<' #continue "BODY" '>' HTMLText '<' '/' "BODY" '>';
+//note: the clause \samp{HTMLText} reads the value between tags,
+HTMLText	::=
+		[
+			~'<'
+				|
+			!['<' '/'] #continue '<'
+//note: the best way to assure an easy extension of the grammar: to declare a template clause
+//note: for describing the reading of a tag,
+				#readIdentifier:sTag HTMLNextOfTag<sTag>
+		]*;
+HTMLNextOfTag<"H1">	::=	#continue '>' HTMLText '<' '/' "H1" '>';
+HTMLNextOfTag<"H2">	::=	#continue '>' HTMLText '<' '/' "H2" '>';
+HTMLNextOfTag<"A">	::= [HTMLAttribute]* #continue '>' HTMLText '<' '/' 'A' '>';
+HTMLNextOfTag<"TABLE">	::= [HTMLAttribute]* #continue '>' [HTMLTag("TR")]* '<' '/' "TABLE" '>';
+//note: a clause to read a determined tag: the token \samp{\#readText} matches the input
+//note: stream to the evaluated expression passed in parameter and the rest is read by the
+//note: template clause that describes the reading of a tag,
+HTMLTag(sTag : value)	::= '<' #readText(sTag) #continue HTMLNextOfTag<sTag>;
+HTMLNextOfTag<"TR">	::= [HTMLAttribute]* #continue '>' [HTMLTag("TD")]* '<' '/' "TR" '>';
+HTMLNextOfTag<"TD">	::= [HTMLAttribute]* #continue '>' HTMLText '<' '/' "TD" '>';
+HTMLNextOfTag<"UL">	::= [HTMLAttribute]* #continue '>' [HTMLTag("LI")]* '<' '/' "UL" '>';
+HTMLNextOfTag<"LI">	::= [HTMLAttribute]* #continue '>' HTMLText '<' '/' "LI" '>';
+HTMLNextOfTag<"B">	::=	#continue '>' HTMLText '<' '/' "B" '>';
+HTMLNextOfTag<"I">	::=	#continue '>' HTMLText '<' '/' "I" '>';
+HTMLNextOfTag<"FONT">	::= [HTMLAttribute]* #continue '>' HTMLText '<' '/' "FONT" '>';
+HTMLNextOfTag<"BR">	::=	['/']? #continue '>';
+HTMLAttribute	::= #readIdentifier ['=' #continue [STRING_LITERAL | WORD_LITERAL]]?;
+
+
+STRING_LITERAL ::= #!ignore '\"' [~'\"']* '\"';
+WORD_LITERAL ::= #!ignore [~['>' | '/' | ' ' | '\t']]+;

@@ -1,0 +1,60 @@
+<HTML>
+<BODY>
+<FONT SIZE=3><FONT COLOR="#000000"><B>package&nbsp;tiny;</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B></B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B>public&nbsp;class&nbsp;</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff"></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;swapping&nbsp;to&nbsp;script&nbsp;mode:&nbsp;the&nbsp;value&nbsp;of&nbsp;\textit{this.name}&nbsp;is&nbsp;put&nbsp;into&nbsp;the&nbsp;output&nbsp;file,</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;knowing&nbsp;that&nbsp;the&nbsp;variable&nbsp;\textit{this}&nbsp;is&nbsp;determined&nbsp;by&nbsp;the&nbsp;second&nbsp;parameter&nbsp;that&nbsp;is</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;passed&nbsp;to&nbsp;the&nbsp;procedure&nbsp;\samp{generate}&nbsp;(see&nbsp;section&nbsp;\ref{generate()}&nbsp;and&nbsp;below).&nbsp;If</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;the&nbsp;notation&nbsp;appears&nbsp;confusing&nbsp;to&nbsp;you&nbsp;(where&nbsp;does&nbsp;the&nbsp;writing&nbsp;mode&nbsp;ends,&nbsp;where&nbsp;does</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;the&nbsp;script&nbsp;mode&nbsp;starts&nbsp;or&nbsp;the&nbsp;contrary),&nbsp;you&nbsp;can&nbsp;choose&nbsp;to&nbsp;inlay&nbsp;the&nbsp;variables&nbsp;in&nbsp;tags</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;\textbf{'&#139;\%'}&nbsp;and&nbsp;\textbf{'\%&#155;'}.</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//merge:</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">name</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff"></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;swapping&nbsp;once&nbsp;again&nbsp;to&nbsp;script&nbsp;mode&nbsp;for&nbsp;writing&nbsp;the&nbsp;inheritance,&nbsp;if&nbsp;any</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">if&nbsp;existVariable(parent)&nbsp;{</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;extends&nbsp;</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">parent.name</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff"></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">}</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;swapping&nbsp;to&nbsp;text&nbsp;mode,</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff"></FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>{</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B>&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;attributes:</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B></B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff"></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;we'll&nbsp;need&nbsp;a&nbsp;function&nbsp;to&nbsp;convert&nbsp;a&nbsp;type&nbsp;specifier&nbsp;of&nbsp;the&nbsp;tiny&nbsp;modeling&nbsp;language&nbsp;to&nbsp;JAVA,</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;which&nbsp;expects&nbsp;the&nbsp;attribute's&nbsp;node&nbsp;(parameter&nbsp;mode&nbsp;is&nbsp;\samp{variable},&nbsp;instead&nbsp;of&nbsp;\samp{value}),</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">function&nbsp;getJAVAType(myAttribute&nbsp;:&nbsp;variable)&nbsp;{</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">&nbsp;&nbsp;&nbsp;&nbsp;local&nbsp;sType&nbsp;=&nbsp;myAttribute.class.name;</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;myAttribute.isArray&nbsp;{</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;we&nbsp;have&nbsp;chosen&nbsp;\samp{java.util.ArrayList}&nbsp;to&nbsp;represent&nbsp;an&nbsp;array,&nbsp;why&nbsp;not?</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;set&nbsp;sType&nbsp;=&nbsp;"java.util.ArrayList/*&#139;"&nbsp;+&nbsp;sType&nbsp;+&nbsp;"&#155;*/";</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">&nbsp;&nbsp;&nbsp;&nbsp;}</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;sType;</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">}</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff"></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;swapping&nbsp;to&nbsp;script&nbsp;mode&nbsp;for&nbsp;declaring&nbsp;the&nbsp;attributes&nbsp;of&nbsp;the&nbsp;class</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">foreach&nbsp;i&nbsp;in&nbsp;listOfAttributes&nbsp;{</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;&nbsp;&nbsp;&nbsp;private&nbsp;</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">getJAVAType(i)</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;_</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">i.name</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;=&nbsp;null;</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B></B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff"></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">}</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;swapping&nbsp;to&nbsp;text&nbsp;mode&nbsp;for&nbsp;putting&nbsp;the&nbsp;constructor&nbsp;into&nbsp;the&nbsp;output&nbsp;file,</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff"></FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B></B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B>&nbsp;&nbsp;&nbsp;&nbsp;//constructor:</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B>&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">i.name</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>()&nbsp;{</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B>&nbsp;&nbsp;&nbsp;&nbsp;}</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B></B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B>&nbsp;&nbsp;&nbsp;&nbsp;//&nbsp;accessors:</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B></B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff"></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;swapping&nbsp;to&nbsp;script&nbsp;mode&nbsp;for&nbsp;implementing&nbsp;the&nbsp;accessors&nbsp;to&nbsp;the&nbsp;attributes&nbsp;of&nbsp;the&nbsp;class</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">foreach&nbsp;i&nbsp;in&nbsp;listOfAttributes&nbsp;{</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;the&nbsp;predefined&nbsp;function&nbsp;\samp{toUpperString}&nbsp;capitalizes&nbsp;the&nbsp;parameter,</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">getJAVAType(i)</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;get</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">toUpperString(i.name)</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>()&nbsp;{&nbsp;return&nbsp;_</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">i.name</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>;&nbsp;}</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B>&nbsp;&nbsp;&nbsp;&nbsp;public&nbsp;void&nbsp;set</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">toUpperString(i.name)</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>(</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">getJAVAType(i)</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">i.name</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>)&nbsp;{&nbsp;_</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">i.name</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>&nbsp;=&nbsp;</B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff">i.name</FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>;&nbsp;}</B></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#000000"><B></B></FONT><FONT SIZE=1 COLOR="#00ff00">@</FONT><FONT SIZE=3 COLOR="#0000ff"></FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">}</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;the&nbsp;procedure&nbsp;\samp{setProtectedArea}&nbsp;(see&nbsp;section&nbsp;\ref{setProtectedArea()})&nbsp;adds</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;a&nbsp;protected&nbsp;area&nbsp;that&nbsp;is&nbsp;intended&nbsp;to&nbsp;the&nbsp;user&nbsp;and&nbsp;that&nbsp;is&nbsp;preserved&nbsp;during&nbsp;a</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;generation&nbsp;process,</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">setProtectedArea("Methods");</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff">//note:&nbsp;swapping&nbsp;to&nbsp;text&nbsp;mode&nbsp;for&nbsp;writing&nbsp;the&nbsp;trailing&nbsp;brace,</FONT></FONT><BR>
+<FONT SIZE=3><FONT COLOR="#0000ff"></FONT><FONT SIZE=1 COLOR="#ff0000">@</FONT><FONT SIZE=3 COLOR="#000000"><B>}</B></FONT></FONT><BR>
+</BODY>
+</HTML>

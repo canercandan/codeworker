@@ -1,0 +1,49 @@
+//note: we iterate all classes,
+foreach myClass in project.listOfClasses {
+//note: if field \samp{parent} is filled, we check its existence and then, we change it
+//note: as a reference to the parent class,
+	if myClass.parent {
+		if !findElement(myClass.parent, project.listOfClasses)
+			error("class '" + myClass.parent + "' doesn't exist while class '"
+				  + myClass.name + "intends to inherit from it");
+		ref myClass.parent = project.listOfClasses[myClass.parent];
+	}
+//note: we iterate all attributes of each class,
+	foreach myAttribute in myClass.listOfAttributes {
+		local myType;
+		ref myType = myAttribute.type;
+//note: only object attributes are interesting,
+		if myType.isObject {
+//note: check whether the class exists or not into the array node that contains all classes:
+//note: does the key \samp{myType.name} exist as an array entry of node \samp{project.listOfClasses}?
+			if !findElement(myType.name, project.listOfClasses)
+				error("class '" + myType.name + "' doesn't exist while attribute '"
+					  + myClass.name + "::" + myAttribute.name + "' refers to it");
+//note: to optimize navigating into the parse tree later, we keep a reference to the
+//note: class into new node \textbf{myType.class},
+			ref myType.class = project.listOfClasses[myType.name];
+		}
+	}
+//note: we iterate all methods of each class,
+	foreach myMethod in myClass.listOfMethods {
+		if existVariable(myMethod.type) && myMethod.type.isObject {
+			localref myType = myMethod.type;
+			if !findElement(myType.name, project.listOfClasses)
+				error("class '" + myType.name + "' doesn't exist while method '"
+					  + myClass.name + "::" + myMethod.name + "' refers to it");
+			ref myType.class = project.listOfClasses[myType.name];
+		}
+//note: we iterate all parameters of each method,
+		foreach myParameter in myMethod.listOfParameters {
+			localref myType = myParameter.type;
+			if myType.isObject {
+				if !findElement(myType.name, project.listOfClasses)
+					error("class '" + myType.name
+						  + "' doesn't exist while method '"
+						  + myClass.name + "::" + myMethod.name
+						  + "' refers to it");
+				ref myType.class = project.listOfClasses[myType.name];
+			}
+		}
+	}
+}

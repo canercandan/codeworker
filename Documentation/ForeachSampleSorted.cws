@@ -1,0 +1,35 @@
+local list;
+insert list["silverware"] = "tea spoon";
+insert list["Mountain"] = "Everest";
+insert list["SilverWare"] = "Tea Spoon";
+insert list["Boat"] = "Titanic";
+insert list["acrobat"] = "Circus";
+
+traceLine("Sorted list in a classical order:");
+//highlight:
+foreach i in sorted list {
+//normal:
+	traceLine("\t" + key(i));
+}
+traceLine("Note that uppercases are listed before lowercases." + endl());
+
+traceLine("Sorted list where the case is ignored:");
+//highlight:
+foreach i in sorted no_case list {
+//normal:
+	traceLine("\t" + key(i));
+}
+
+traceLine("Reverse sorted list:");
+//highlight:
+foreach i in reverse sorted list {
+//normal:
+	traceLine("\t" + key(i));
+}
+
+traceLine("Reverse sorted list where the case is ignored:");
+//highlight:
+foreach i in reverse sorted no_case list {
+//normal:
+	traceLine("\t" + key(i));
+}

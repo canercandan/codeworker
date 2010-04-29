@@ -1,0 +1,18 @@
+@
+
+foreach i in this.procedureList if !findElement("info", i.modifierList) && !findElement("visibility", i.modifierList) {
+	@	JNIEXPORT void JNICALL Java_org_codeworker_jni_Runtime_@i.name@(JNIEnv *, jclass@
+	foreach j in i.parameterList {
+		@, @getCppJNIType(j.type)@ @getCppVariable(j.name, j.type)@@
+	}
+	@);
+@
+}
+foreach i in this.functionList if !findElement("info", i.modifierList) && !findElement("user", i.modifierList) {
+	@	JNIEXPORT @getCppJNIType(i.return_type)@ JNICALL Java_org_codeworker_jni_Runtime_@i.name@(JNIEnv *, jclass@
+	foreach j in i.parameterList {
+		@, @getCppJNIType(j.type)@ @getCppVariable(j.name, j.type)@@
+	}
+	@);
+@
+}

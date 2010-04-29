@@ -1,0 +1,30 @@
+"CodeWorker" is a scripting language that is intended to assist the developer in writing
+source code or documentation. It is distributed under the ''GNU Lesser General Public License''
+at the URL "http://www.codeworker.org".
+
+This application is a 'semiskilled worker' specialized in generating repetitive and tedious
+source code and text.
+
+The way it proceeds is:
+	- to acquire modeling data from an extended BNF parser interpreter,
+	- to handle parse trees well adapted to represent a design and easy to walk,
+	- to generate source code via kinds of 'coding patterns'.
+
+It carries out these tasks via a scripting language, whose syntax is particularly studied for:
+	- describing an extended BNF: the syntax looks like the one commonly admitted for BNF,
+	- providing all functions, statements and procedures that are expected for a procedural
+		language,
+	- defining 'coding patterns': the principle is the same as XSLT, JSP, PHP and so on, but
+		no target language is imposed (nor XML neither HTML neither JAVA ...).
+
+The predicated-LL(k) grammar is powerful enough to allow parsing any kind of file (C++,
+'Petal' file of Rational ROSE, LaTeX, ...).
+
+The software doesn't care of parochialism about languages and can generate JAVA code as well
+as C++ or LaTeX or your own output file, whatever it is.
+
+Generic programming and implementation of coding patterns become very easy.
+
+The documentation ("http://www.codeworker.org/CodeWorker.pdf") is written in "frenglish" (easy
+to understand for French people, but very far from Shakespeare!). I'll be very glad to take
+your remarks into account (email "codeworker@free.fr") to improve it!

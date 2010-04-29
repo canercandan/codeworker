@@ -1,0 +1,29 @@
+package interfaces.@sequence@;
+
+public interface @normalizeIdentifier(name)@@
+if existVariable(extendedClass) {
+	@ extends @completeInterfaceName(extendedClass)@@
+}
+@ {
+@
+
+function writeAttributeAccessors(myClass : node, myAttribute : node) {
+	@	@getJAVAReturnType(myAttribute.type)@ get@normalizeIdentifier(myAttribute.name)@();
+	void set@normalizeIdentifier(myAttribute.name)@(@getJAVAParameterType(myAttribute.type)@ @getParameterName(myAttribute.name, myAttribute.type)@);
+@
+	if myAttribute.type.isArray {
+		// indexed access
+		@	@getJAVAElementType(myAttribute.type)@ get@normalizeIdentifier(myAttribute.name)@(int iIndex);
+	void set@normalizeIdentifier(myAttribute.name)@(int iIndex, @getJAVAElementType(myAttribute.type)@ @getParameterName(myAttribute.name, myAttribute.type)@);
+	void pushfront@normalizeIdentifier(myAttribute.name)@(@getJAVAElementType(myAttribute.type)@ @getParameterName(myAttribute.name, myAttribute.type)@Elt);
+	void pushback@normalizeIdentifier(myAttribute.name)@(@getJAVAElementType(myAttribute.type)@ @getParameterName(myAttribute.name, myAttribute.type)@Elt);
+@
+		}
+}
+
+foreach i in listOfAttributes {
+	writeAttributeAccessors(this, i);
+}
+
+
+@}

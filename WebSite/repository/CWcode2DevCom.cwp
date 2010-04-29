@@ -1,0 +1,1777 @@
+/* Copyright (C) 2004 Cédric Lemaire
+
+This script is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+To contact the author: codeworker@free.fr
+*/
+
+/**[description]
+[title]Ecriture de documents en [i]CWcode[/i][line/]Manuel d'utilisation[/title]
+
+[docinfo,author="Cédric Lemaire",creation="24sep2004",keywords="CWcode,mise en forme de documents,document formate,conversion de documents en HTML"/]
+[synopsis]Ce manuel précise comment écrire un document en [i]CWcode[/i]. Le [i]CWcode[/i] s'apparente au [i]BBcode[/i], à ceci
+près qu'il se destine à la mise en forme de documents, plutôt qu'à l'écriture dans des forums. A l'heure actuelle, seule la
+production de documents HTML selon le style de [url=http://www.developpez.com]Developpez.com[/url] est supportée.[/synopsis]
+
+[chapter]Pourquoi écrire un document en [i]CWcode[/i] ?[/chapter]
+
+Le [i]CWcode[/i] permet d'écrire un document dans un éditeur de texte classique, indépendamment de son aspect visuel. Il s'agit
+principalement de taper du contenu, avant de se concentrer sur la mise en forme. A partir d'un document écrit en [i]CWcode[/i],
+on veut pouvoir réaliser facilement une nouvelle déclinaison visuelle du contenu. Le plus facile est de réaliser une
+déclinaison en [i]HTML[/i].
+
+Pour l'instant, le [i]CWcode[/i] est livré avec une conversion en [i]HTML[/i] dont le rendu est semblable à celui proposé par
+[url=http://www.developpez.com]Developpez.com[/url]. Il est possible d'adapter un convertisseur à la charte graphique de
+n'importe quel site Web. Les convertisseurs se construisent dans le langage de script CodeWorker, un outil de parsing et un
+générateur de code, disponible sous licence [i]LGPL[/i] à l'adresse [url]http://www.codeworker.org[/url].
+
+La souplesse d'adaptation du rendu visuel n'est pas le seul critère qui peut pousser à utiliser le [i]CWcode[/i]. Ce dernier
+se prête bien à l'écriture de documentations informatique ou de tutoriels, incluant des échantillons de code notamment. Il
+offre la possibilité d'exécuter les codes sources qu'il contient, et d'inclure les résultats de ces exécutions. Vous
+garantissez ainsi à la fois que le code source a une syntaxe correcte et fonctionne, mais en plus que le résultat coïncide
+bien avec ce que le code est sensé faire (voir le chapitre consacré à l'[reference=insertion_de_code_source]insertion de code source[/reference]).
+
+Ce document a été entièrement réalisé en [i]CWcode[/i]. Vous lisez ici une représentation visuelle possible. On pourrait en
+inventer une infinité, dans des formats autres que HTML.
+
+[chapter]La syntaxe du [i]CWcode[/i][/chapter]
+
+Le terme [i]CWcode[/i] est un clin d'oeil au [i]BBcode[/i], ce langage de mise en forme du texte, très répandu sur les forums des sites
+Web. Son principe est le même : on utilise des balises pour appliquer des caractéristiques au texte : nouveau chapître, passage
+en italique, présentation de code source.
+
+Une balise terminale marque la fin du champ d'application de la balise initiale dans le texte. Une balise initiale est un
+mot-clé placé entre crochets. Une balise terminale ressemble à une balise initiale, si ce n'est que le mot-clé est précédé
+du symbole [b]/[/b]. Parfois, des options sont spécifiées à l'intérieur d'une balise terminale. Elles se présentent sous la
+forme d'un ensemble de propriétés séparées par des virgules. Une propriété est un nom suivi d'une valeur, les deux séparés
+par une virgule. Une valeur peut être placée entre guillemets.
+
+Exemples de balises :
+[list]
+[*] [code]Cette phrase a [b][[/b][b]i][/b]quatre mots en italique[b][[/b][b]/i][/b], pas un de plus.[/code]
+[*] [code][b][[/b][b]code,save="test.cpp"][/b]vitesse = 45;[b][[/b][b]/code][/b][/code]
+[*] [code][b][[/b][b]chapter=force_coriolis][/b]La force de Coriolis[b][[/b][b]/chapter][/b][/code]
+[/list]
+
+Une ligne vide est comptée comme un saut de paragraphe. En revanche, plusieurs lignes vides consécutives sont comptées pour un
+seul saut de paragraphe. Un saut de ligne n'a pas d'effet, à moins qu'il ne soit placé derrière un point, point
+d'interrogation, point d'exclamation ou deux-points.
+[/description]
+ **/
+
+// on récupère la grammaire du CWcode : toutes les règles de production
+// ne sont pas à redéfinir
+#include "CWcode.cwp"
+
+// recopie implicite du document CWcode, avec transformation des caractères
+// spéciaux du HTML dans le fichier cible
+#implicitCopy(composeHTMLLikeString)
+
+// Elimine toutes les balises contenues dans le texte, et retourne le
+// texte brut correspondant
+function removeLayout(sText) {
+	return translateString({
+			#implicitCopy
+			remove ::=
+				[
+					->[
+						#explicitCopy
+						'[' ->(:sText)']'
+						=> if sText == "line/" {@; @}
+					]
+				]*
+				->#empty
+				;
+		}, project, sText);
+}
+
+// Retourne le numéro de la section en cours, construite à partir
+// du numéro de section précédent. Utile pour numéroter la structure
+// du document (chapitres, sections, sous-sections).
+function incrementSection(sNumber : value) {
+	local iIndex = $sNumber.findLastString('.') + 1$;
+	return sNumber.leftString(iIndex) + $sNumber.subString(iIndex) + 1$;
+}
+
+// Prend du texte (du code source à inclure, bien souvent), et transforme
+// les retour-chariots, espaces et tabulations en équivalents HTML
+// (respectivement : '<br/>', '&nbsp;', répétition de '&nbsp;' modulo 4).
+function formatCode(sCode : value) {
+	return translateString({
+			#implicitCopy
+			text_code ::=
+					[
+							['\r']? '\n' => {@<br/>@}
+						|
+							#explicitCopy ' ' => {@&nbsp;@}
+						|
+							#explicitCopy '\t'
+							=> {
+								local iPosition = $countInputCols() - 1$;
+								do {
+									@&nbsp;@
+									increment(iPosition);
+								} while $(iPosition % 4) != 0$;
+							}
+						|
+							#readChar	
+					]*
+					;
+		}, project, sCode);
+}
+
+//--------------------------------------------------------------------------
+//        Coloration syntaxique en fonction du type de code source
+//--------------------------------------------------------------------------
+
+// Code source non typé : simple mise en forme du texte.
+function highlightScript<"">(sScript : value) {
+	local sText = composeHTMLLikeString(sScript);
+	if $sScript.findString('\n') >= 0$ return "<pre>" + sText + "</pre>";
+	return formatCode(sText);
+}
+
+// Coloration syntaxique d'un script CodeWorker, dont le sous-type
+// a déjà été précisé (.cwp, .cws, .cwt ou sans sous-type).
+function highlightCWScript(script : node, sScript : value) {
+	if !sScript return "";
+	insert script.embeddedScript = true;
+	insert script.docURL = "http://www.codeworker.org/";
+	return translateString("CWScript2HTML.cwp", script, sScript);
+}
+
+// Coloration syntaxique d'un script dont on ne connaît pas le
+// sous-type.
+function highlightScript<"CodeWorker">(sScript : value) {
+	local script;
+	return highlightCWScript(script, sScript);
+}
+
+// Coloration syntaxique d'un script CodeWorker standard.
+function highlightScript<"CodeWorker.cws">(sScript : value) {
+	local script = "procedural";
+	return highlightCWScript(script, sScript);
+}
+
+// Coloration syntaxique d'un script CodeWorker 'modèle de génération'.
+function highlightScript<"CodeWorker.cwt">(sScript : value) {
+	local script = "template-based";
+	return highlightCWScript(script, sScript);
+}
+
+// Coloration syntaxique d'un script CodeWorker de parsing.
+function highlightScript<"CodeWorker.cwp">(sScript : value) {
+	local script = "extended-BNF";
+	return highlightCWScript(script, sScript);
+}
+
+// Coloration syntaxique des mot-clés du C.
+function keyword<"C">(sId : value) {
+	return sId in	{"auto", "register", "static", "extern", "typedef", "void", "char", "short", "int", "long", "float",
+					 "double", "signed", "unsigned", "struct", "union", "const", "volatile", "sizeof", "enum", "case",
+					 "default", "switch", "if", "else", "while", "do", "for", "goto", "continue", "break", "return"};
+}
+
+// Coloration syntaxique des mot-clés du C++.
+function keyword<"C++">(sId : value) {
+	return keyword<"C">(sId) || sId in {"bool", "virtual", "class", "public", "protected", "private", "throw", "template", "try", "catch"};
+}
+
+// Coloration syntaxique des mot-clés du Java.
+function keyword<"Java">(sId : value) {
+	return sId in	{"package", "import", "class", "interface", "public", "protected", "private", "abstract", "static", "void", "byte",
+					 "extends", "implements", "char", "short", "int", "long", "float", "double", "case", "default", "switch", "if",
+					 "else", "while", "do", "for", "goto", "continue", "break", "return", "throw", "throws", "try", "catch", "finally", "final"};
+}
+
+// Coloration syntaxique des mot-clés de l'IDL.
+function keyword<"IDL">(sId : value) {
+	return sId in	{"abstract", "any", "attribute", "boolean", "case", "char", "component", "const", "consults",
+					 "context", "custom", "default", "double", "emits", "enum", "eventtype", "exception", "factory",
+					 "FALSE", "finder", "fixed", "float", "getraises", "home", "import", "in", "inout", "interface",
+					 "local", "long", "manages", "module", "multiple", "native", "Object", "octet", "oneway", "out",
+					 "primarykey", "private", "provides", "public", "publishes", "raises", "readonly", "sequence",
+					 "setraises", "short", "string", "struct", "supports", "switch", "TRUE", "truncatable", "typedef",
+					 "typeid", "typeprefix", "union", "unsigned", "uses", "ValueBase", "valuetype", "wchar", "wstring"};
+}
+
+// Coloration syntaxique d'un code source XML.
+// On réalise un parseur XML simplifié.
+function highlightScript<"XML">(sScript : value) {
+	local temp;
+	return translateString({
+		#implicitCopy(composeHTMLLikeString)
+		xml2HTML ::=
+			[
+				!![->'\n']
+				=> insert this.multilineScript = true;
+				=> {@<pre>@}
+			]?
+			[
+				->[
+					=> local iPosition = getOutputLocation();
+					[
+							'<'
+							#ignore(blanks)
+							tag
+							[attribute]*
+							['/']?
+							'>'
+							=> {
+								insertText(iPosition, "<span class=\"xml_balise\">");
+								@</span>@
+							}
+						|
+							'<' '/'
+							#ignore(blanks)
+							tag
+							'>'
+							=> {
+								insertText(iPosition, "<span class=\"xml_balise\">");
+								@</span>@
+							}
+						|
+							"<!--" [whitespace | ~"-->"]* "-->"
+							=> {
+								insertText(iPosition, "<span class=\"xml_comment\">");
+								@</span>@
+							}
+						|
+							whitespace
+					]
+				]
+			]*
+			=> if this.multilineScript {@</pre>@}
+			;
+		tag ::=
+			=> local iPosition = getOutputLocation();
+			#readIdentifier #!ignore ['.' | ':' | #readIdentifier]*
+			=> {
+				insertText(iPosition, "<span class=\"php_type\">");
+				@</span>@
+			}
+			;
+		attribute ::= tag ['=' #continue #skipIgnore(blanks) value]?;
+		value ::=
+			=> local iPosition = getOutputLocation();
+			[
+					'"' ->'"'
+				|
+					"'" ->"'"
+				|
+					[~['>' | whitespace]]*
+			]
+			=> {
+				insertText(iPosition, "<span class=\"php_ch\">");
+				@</span>@
+			}
+			;
+		whitespace ::=
+				#explicitCopy
+				[
+						['\r']? '\n'
+						=> if !this.multilineScript {@<br/>@} else {@@endl()@@}
+					|
+						' '
+						=> if !this.multilineScript {@&nbsp;@} else {@ @}
+					|
+						'\t'
+						=> {
+							local iPosition = $countInputCols() - 1$;
+							do {
+								if !this.multilineScript {@&nbsp;@} else {@ @}
+								increment(iPosition);
+							} while $(iPosition % 4) != 0$;
+						}
+				]
+				;
+	}, temp, sScript);
+}
+
+// Coloration syntaxique du HTML. On reprend le parseur XML précédent.
+function highlightScript<"HTML">(sScript : value) {
+	return highlightScript<"XML">(sScript);
+}
+
+// Coloration syntaxique d'un code source C, C++, Java, IDL. Se contente
+// de détecter les mot-clés du langage et de les colorer.
+function highlightScript<T>(sScript : value) {
+	local temp = T;
+	return translateString({
+		#implicitCopy(composeHTMLLikeString)
+		cpp2HTML ::=
+				[
+					!![->'\n']
+					=> insert this.multilineScript = true;
+					=> {@<pre>@}
+				]?
+				[
+					=> local iPosition  = getOutputLocation();
+					[
+							'#'
+							#readIdentifier
+							=> {
+								insertText(iPosition, "<span class=\"cpp_define\">");
+								@</span>@
+							}
+						|
+							#readIdentifier:sId
+							[
+								#check(keyword<this>(sId))
+								=> {
+									insertText(iPosition, "<span class=\"csharp_type\">");
+									@</span>@
+								}
+							]?
+						|
+							#readCString
+							=> {
+								insertText(iPosition, "<span class=\"csharp_ch\">");
+								@</span>@
+							}
+						|
+							#readCChar
+						|
+							"//" [~[['\r']? '\n']]*
+							=> {
+								insertText(iPosition, "<span class=\"cpp_comment\">");
+								@</span>@
+							}
+						|
+							"/*" [whitespace | ~"*/"]* "*/"
+							=> {
+								insertText(iPosition, "<span class=\"cpp_comment\">");
+								@</span>@
+							}
+						|
+							whitespace
+						|
+							#readChar	
+					]
+				]*
+				=> if this.multilineScript {@</pre>@}
+				;
+		whitespace ::=
+				#explicitCopy
+				[
+						['\r']? '\n'
+						=> if !this.multilineScript {@<br/>@} else {@@endl()@@}
+					|
+						' '
+						=> if !this.multilineScript {@&nbsp;@} else {@ @}
+					|
+						'\t'
+						=> {
+							local iPosition = $countInputCols() - 1$;
+							do {
+								if !this.multilineScript {@&nbsp;@} else {@ @}
+								increment(iPosition);
+							} while $(iPosition % 4) != 0$;
+						}
+				]
+				;
+	}, temp, sScript);
+}
+
+// Si un nom de fichier du CWcode contient un $ suivi d'un identifiant,
+// il s'agit de substituer ce brin par la valeur de la variable
+// d'environnement correspondante.
+function normalizeFilename(sFilename : value) {
+	return translateString({
+				#implicitCopy
+				normalize ::=
+						[
+								->[
+									#explicitCopy
+									'$'
+									#readIdentifier:sVar
+									=> {@@getEnv(sVar)@@}
+								]
+						]*
+						->#empty
+						;
+			}, project, sFilename);
+}
+
+// En théorie, toute balise hérite des attributs suivants, à exécuter avant
+// son action.
+function preexecuteOptions(options : node) {
+	foreach i in options {
+		if i.key() == "reference" {
+			@<a name="@i@"></a>@
+		}
+	}
+}
+
+// En théorie, toute balise hérite des attributs suivants, à exécuter après
+// son action.
+function postexecuteOption(name : value, option : node) {
+	if name == "reference" return true;
+	return false;
+}
+
+// Règle principale. On redéfinit la règle de tête déclarée au tout début,
+// par l'inclusion de la grammaire.
+#overload mainCWcode ::=
+		=> {
+			@<html>
+  <head>
+    <title>@newFloatingLocation("title");@</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+    <meta name="generator" content="developpez-com" />
+    <meta name="description" content=@newFloatingLocation("description");@ />
+    <meta name="keywords" content=@newFloatingLocation("keywords");@ /> 
+    <link rel="stylesheet" type="text/css" href="http://www.developpez.com/mainstyle2.css" />
+    <link rel="stylesheet" type="text/css" media="print" href="http://www.developpez.com/template/printer.css" />
+    <link rel="stylesheet" type="text/css" href="./CodeWorker.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="./article.css">
+  </head>
+  <body>
+    <table cellspacing="1" width="100%" class="tbnoir"><tr><td class="fondart"><table class="cadrearticle" width="90%" cellpadding="10" cellspacing="0">
+      <tr>
+        <td> 
+@
+		}
+		#super::mainCWcode
+		=> {
+			if existFloatingLocation("TOC", false) insertText(getFloatingLocation("TOC"), "<p/><br/>");
+			@        </td>
+      </tr>
+    </table></td></tr></table>
+@
+			if this.docinfo.author {
+				local iYear = formatDate(getNow(), "%Y");
+				if this.docinfo.creation && this.docinfo.creation.formatDate("%Y") != iYear {
+					iYear = this.docinfo.creation.formatDate("%Y") + '-' + iYear;
+				}
+				@<br><table class="noteBasPage"></table><hr><div class="licence">
+		&copy; @iYear@ @composeHTMLLikeString(this.docinfo.author)@ - Tous droits r&eacute;serv&eacute;s : @composeHTMLLikeString(this.docinfo.author)@. Toute reproduction,
+		utilisation ou diffusion de ce document par quelque moyen que ce soit autre que pour
+		un usage personnel doit faire l'objet d'une autorisation &eacute;crite pr&eacute;alable de la part
+		de : @composeHTMLLikeString(this.docinfo.author)@ , le propri&eacute;taire des droits intellectuels.
+	</div>
+@
+			}
+@  </body>
+</html>
+@
+		}
+		;
+
+// Traitement du fin de ligne :
+//   - juste après une ponctuation telle que '.' | ':' | '!' | '?' -> saut de ligne
+//   - plusieurs sauts de ligne d'affilée -> compte pour un seul
+#overload EOL ::=
+		['.' | ':' | '!' | '?']
+		['\r']? '\n'
+		[
+				#explicitCopy [['\r']? '\n']+
+				=> {@<p/>@}
+			|
+				=> {@<br/>@}
+		]
+	|
+		['\r']? '\n'
+		[
+			#explicitCopy [['\r']? '\n']+
+			=> {@<p/>@}
+		]?
+		;
+
+// Lecture générique d'une balise CWcode, et appel de la bonne implémentation
+// de règle de production 'CWcode<balise>'.
+#overload readCode<T> ::=
+		'[' #readIdentifier:sCode
+		#check(!T || (sCode == T))
+		=> local options = $getOutputLocation() - sCode.length() - 1$;
+		[
+			=> local sValue;
+			[
+				'='
+				readValue:sValue
+				=> insert options[sCode] = sValue;
+			]?
+			[
+				','
+				#readIdentifier:sKey
+				'='
+				readValue:sValue
+				=> insert options[sKey] = sValue;
+			]*
+		]?
+		[
+				"/]"
+				CWcode<sCode + '/'>(options)
+			|
+				']'
+				CWcode<sCode>(options)
+		]
+		;
+
+// Les balises doivent traiter elles-même la détection de leur balise terminale.
+// La balise terminale n'est simplement pas recopiée dans le fichier cible.
+#overload endCode<T> ::= #explicitCopy "[/" #readText(T) ']';
+
+/**[description]
+[chapter]Les balises de structuration du document[/chapter]
+
+Les documents possèdent un titre, et se conforment à une structure hiérarchique : synopsis, chapîtres, sections et
+sous-sections. Ils disposent éventuellement d'informations générales sur l'auteur et sur l'historique des mises à jour.
+
+[section]Le titre[/section]
+
+Le titre du document se place dans la balise [code][b][[/b][b]title][/b][/code].
+
+Exemple :
+[list]
+[*] [code][b][[/b][b]title][/b]La programmation générative : perspectives[b][/[/b][b]title][/b][/code]
+[/list]
+[/description]
+ **/
+#overload CWcode<"title">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=>{@<h1>@}
+		text:sText
+		=>{@</h1>@}
+		=> insertText(getFloatingLocation("title"), removeLayout(sText));
+		endCode<"title">
+		;
+
+/**[description]
+[section]Les informations sur le document[/section]
+
+Les informations sur le document sont placées dans la balise [code][b][[/b][b]docinfo][/b][/code].
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]author[/b][/code][/cell][cell]Nom et prénom de l'auteur.[/cell][/row]
+[row][cell][code][b]creation[/b][/code][/cell][cell]Date de création du document.[/cell][/row]
+[row][cell][code][b]email[/b][/code][/cell][cell]L'adresse courriel de l'auteur.[/cell][/row]
+[row][cell][code][b]keywords[/b][/code][/cell][cell]Liste de mot-clés, séparés par une virgule.[/cell][/row]
+[row][cell][code][b]profileId[/b][/code][/cell][cell]ID du profil de l'auteur chez [url=http://www.developpez.com]Developpez.com[/url].[/cell][/row]
+[row][cell][code][b]profileName[/b][/code][/cell][cell]Abréviation du nom de l'auteur chez [url=http://www.developpez.com]Developpez.com[/url].[/cell][/row]
+[/table]
+
+Les mot-clés sont injectés directement dans les méta-informations de l'entête du fichier HTML cible.
+
+[/description]
+ **/
+#overload CWcode<"docinfo/">(options : node) ::=
+		removeCodeBegin(options)
+		=> {
+			foreach i in options {
+				switch(i.key()) {
+					case "author":
+						insert this.docinfo.author = i;
+						break;
+					case "creation":
+						insert this.docinfo.creation = i;
+						break;
+					case "profileId":
+						insert this.docinfo.author.profileId = i;
+						break;
+					case "profileName":
+						insert this.docinfo.author.profileName = i;
+						break;
+					case "keywords":
+						insert this.docinfo.keywords = i;
+						break;
+				}
+			}
+			if this.docinfo.creation {
+				@<p class="dateArticle">Date de publication : @this.docinfo.creation.formatDate("%d/%m/%Y")@</p>
+@
+			}
+			@<p class="dateArticle">Date de mise a jour : @formatDate(getNow(), "%d/%m/%Y")@</p>
+@
+			if this.docinfo.author {
+				@<p align="center">Par @
+				if this.docinfo.author.profileId {
+					@<a class="auteur" href="http://www.developpez.net/forums/profile.php?mode=viewprofile&amp;u=@this.docinfo.author.profileId@">@
+					if this.docinfo.author.profileName {
+						@@this.docinfo.author.profileName@@
+					} else {
+						@@this.docinfo.author@@
+					}
+					@</a>@
+				} else {
+					@@this.docinfo.author@@
+				}
+				@<br>&nbsp;</p>
+@
+			}
+			if this.docinfo.keywords {
+				insertTextToFloatingLocation("keywords", "\"" + this.docinfo.keywords + "\"");
+			}
+		}
+		;
+
+/**[description]
+[section]Le synopsis[/section]
+
+Le synopsis est annoncé par la balise [code][b][[/b][b]synopsis][/b][/code]. Dans la structure du document, elle se place
+avant l'écriture des chapîtres. Le synopsis est injecté directement dans le champ 'description' des méta-informations
+de l'entête du fichier HTML cible.
+
+Exemple :
+[list]
+[*] [code][b][[/b][b]synopsis][/b]Cet article traite du ramassage des feuilles à l'approche de la mousson.[b][[/b][b]/synopsis][/b][/code]
+[/list]
+[/description]
+ **/
+#overload CWcode<"synopsis">(options : node) ::=
+		removeCodeBegin(options)
+		=> {@<p class="synopsis">@}
+		#super::CWcode<"synopsis">(options):sText
+		=> sText = removeLayout(sText);
+		=> sText = sText.replaceString('\r', "");
+		=> sText = sText.replaceString('\n', " ");
+		=> insertTextToFloatingLocation("description", "\"" + sText + "\"");
+		=> {@</p>@}
+		;
+
+/**[description]
+[section]L'introduction[/section]
+
+La balise [code][b][[/b][b]introduction][/b][/code] sert à annoncer l'introduction, mais aussi la préface ou l'avant-propos.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]introduction[/b][/code][/cell][cell]Nom à utiliser par la balise [reference=reference][code][b][[/b][b]reference][/b][/code][/reference] pour pointer ici.[/cell][/row]
+[/table]
+
+Exemples :
+[list]
+[*] [code][b][[/b][b]introduction][/b]introduction[b][[/b][b]/introduction][/b][/code]
+[*] [code][b][[/b][b]introduction=avant_propos][/b]Avant-propos[b][[/b][b]/introduction][/b][/code]
+[/list]
+[/description]
+ **/
+#overload CWcode<"introduction">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> local sAnchor = 'L' + this.toc.size();
+		=> local sNumber;
+		=> {
+			if $!existFloatingLocation("TOC", false)$ {
+				newFloatingLocation("TOC");
+			}
+			if options["introduction"] {
+				sAnchor = options["introduction"];
+			}
+			@<div class="TitreSection0"><a name="@sAnchor@"></a>@
+		}
+		text:sText
+		=> {
+			sText = sText.removeLayout();
+			insertText(getFloatingLocation("TOC"), "<br/><a class=\"summaryIndent0\" href=\"#" + sAnchor + "\">" + sText + "</a>");
+			@</div>@
+			insert this.toc[sText];
+		}
+		endCode<"introduction">
+		;
+
+/**[description]
+[section=chapitre]Les chapîtres[/section]
+
+Les chapîtres sont annoncés par la balise [code][b][[/b][b]chapter][/b][/code].
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]chapter[/b][/code][/cell][cell]Nom à utiliser par la balise [reference=reference][code][b][[/b][b]reference][/b][/code][/reference] pour pointer ici.[/cell][/row]
+[/table]
+
+Exemples :
+[list]
+[*] le chapitre courant : [code][b][[/b][b]chapter][/b]Les balises de structuration du document[b][[/b][b]/chapter][/b][/code]
+[*] [code][b][[/b][b]chapter=fondements_reseaux_neurones][/b]Les fondements des réseaux de neurones[b][[/b][b]/chapter][/b][/code]
+[/list]
+[/description]
+ **/
+#overload CWcode<"chapter">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> local sAnchor = 'L' + this.toc.size();
+		=> local sNumber;
+		=> {
+			if !this.toc.empty() && this.toc#back sNumber = $this.toc#back + 1$;
+			else sNumber = 1;
+			if $!existFloatingLocation("TOC", false)$ {
+				newFloatingLocation("TOC");
+			}
+			if options["chapter"] {
+				sAnchor = options["chapter"];
+			}
+			@<div class="TitreSection0"><a name="@sAnchor@"></a>@sNumber@ @
+		}
+		text:sText
+		=> {
+			sText = sText.removeLayout();
+			@</div>@
+			insertText(getFloatingLocation("TOC"), "<br/><a class=\"summaryIndent0\" href=\"#" + sAnchor + "\">" + sNumber + ' ' + sText + "</a>");
+			insert this.toc[sText] = sNumber;
+		}
+		endCode<"chapter">
+		;
+
+/**[description]
+[section]Les sections[/section]
+
+Les sections sont annoncés par la balise [code][b][[/b][b]section][/b][/code]. Dans la structure du document, elles ne
+peuvent se placer que directement sous un chapître.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]section[/b][/code][/cell][cell]Nom à utiliser par la balise [reference=reference][code][b][[/b][b]reference][/b][/code][/reference] pour pointer ici.[/cell][/row]
+[/table]
+
+Exemples :
+[list]
+[*] la section courante : [code][b][[/b][b]section][/b]Les sections[b][[/b][b]/section][/b][/code]
+[*] [code][b][[/b][b]section=histoire][/b]Un peu d'histoire[b][[/b][b]/section][/b][/code]
+[/list]
+[/description]
+ **/
+#overload CWcode<"section">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> local sAnchor = 'L' + this.toc.size() + '_' + this.toc#back.size();
+		=> local sNumber;
+		=> {
+			if this.toc.empty() error("cannot find a section outside of a chapter");
+			if this.toc#back.empty() sNumber = this.toc#back + ".1";
+			else {
+				sNumber = incrementSection(this.toc#back#back);
+			}
+			if options["section"] {
+				@<a name="@options["section"]@"></a>@
+			}
+			if options["section"] {
+				sAnchor = options["section"];
+			}
+			@<div class="TitreSection1"><a name="@sAnchor@"></a>@sNumber@ @
+		}
+		text:sText
+		=> {
+			sText = sText.removeLayout();
+			@</div>@
+			insertText(getFloatingLocation("TOC"), "<br/><a class=\"summaryIndent1\" href=\"#" + sAnchor + "\">" + sNumber + ' ' + sText + "</a>");
+			insert this.toc#back[sText] = sNumber;
+		}
+		endCode<"section">
+		;
+
+/**[description]
+[section]Les sous-sections[/section]
+
+Les sous-sections sont annoncés par la balise [code][b][[/b][b]subsection][/b][/code]. Dans la structure du document, elles ne
+peuvent se placer que directement sous une section.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]subsection[/b][/code][/cell][cell]Nom à utiliser par la balise [reference=reference][code][b][[/b][b]reference][/b][/code][/reference] pour pointer ici.[/cell][/row]
+[/table]
+
+[/description]
+ **/
+#overload CWcode<"subsection">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> local sAnchor = 'L' + this.toc.size() + '_' + this.toc#back.size() + '_' + this.toc#back#back.size();
+		=> local sNumber;
+		=> {
+			if this.toc.empty() || this.toc#back.empty() error("cannot find a subsection outside of a section");
+			if this.toc#back#back.empty() sNumber = this.toc#back#back + ".1";
+			else {
+				sNumber = incrementSection(this.toc#back#back#back);
+			}
+			if options["subsection"] {
+				sAnchor = options["subsection"];
+			}
+			@<div class="TitreSection2"><a name="@sAnchor@"></a>@sNumber@ @
+		}
+		text:sText
+		=> {
+			sText = sText.removeLayout();
+			@</div>@
+			insertText(getFloatingLocation("TOC"), "<br/><a class=\"summaryIndent2\" href=\"#" + sAnchor + "\">" + sNumber + ' ' + sText + "</a>");
+			insert this.toc#back#back[sText] = sNumber;
+		}
+		endCode<"subsection">
+		;
+
+/**[description]
+[section]Les sous-sous-sections[/section]
+
+Les sous-sous-sections sont annoncés par la balise [code][b][[/b][b]subsubsection][/b][/code]. Dans la structure du document, elles ne
+peuvent se placer que directement sous une sous-section.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]subsubsection[/b][/code][/cell][cell]Nom à utiliser par la balise [reference=reference][code][b][[/b][b]reference][/b][/code][/reference] pour pointer ici.[/cell][/row]
+[/table]
+
+[/description]
+ **/
+#overload CWcode<"subsubsection">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> local sAnchor = 'L' + this.toc.size() + '_' + this.toc#back.size() + '_' + this.toc#back#back.size() + '_' + this.toc#back#back#back.size();
+		=> local sNumber;
+		=> {
+			if this.toc.empty() || this.toc#back.empty() || this.toc#back#back.empty() error("cannot find a subsubsection outside of a subsection");
+			if this.toc#back#back#back.empty() sNumber = this.toc#back#back#back + ".1";
+			else {
+				sNumber = incrementSection(this.toc#back#back#back#back);
+			}
+			if options["subsubsection"] {
+				sAnchor = options["subsubsection"];
+			}
+			@<div class="TitreSection3"><a name="@sAnchor@"></a>@sNumber@ @
+		}
+		text:sText
+		=> {
+			sText = sText.removeLayout();
+			@</div>@
+			insertText(getFloatingLocation("TOC"), "<br/><a class=\"summaryIndent3\" href=\"#" + sAnchor + "\">" + sNumber + ' ' + sText + "</a>");
+			insert this.toc#back#back#back[sText] = sNumber;
+		}
+		endCode<"subsubsection">
+		;
+
+/**[description]
+[section]La bibliographie[/section]
+
+Chaque référence bibliographique est annoncée par la balise [code][b][[/b][b]bibliography][/b][/code]. Elles peuvent
+se placer n'importe où dans le document, mais sont alors décrites là où elles sont déclarées, et non pas recueillies
+à la fin du document.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]bibliography[/b][/code][/cell][cell]Nom à utiliser par la balise [reference=reference][code][b][[/b][b]reference][/b][/code][/reference] pour pointer ici.[/cell][/row]
+[row][cell][code][b]title[/b][/code][/cell][cell]Titre de l'ouvrage.[/cell][/row]
+[row][cell][code][b]author[/b][/code][/cell][cell]Auteur de l'ouvrage.[/cell][/row]
+[row][cell][code][b]publisher[/b][/code][/cell][cell]Editeur de l'ouvrage.[/cell][/row]
+[/table]
+
+[/description]
+ **/
+#overload CWcode<"bibliography">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> {
+			if options["bibliography"] {
+				@<a name="@options["bibliography"]@"></a>@
+			}
+			if !options["title"] error("'title' attribute expected in a bibliography entry");
+			if options["url"] {
+				@<a href="@options["url"]@">@options["title"].composeHTMLLikeString()@</a>@
+			} else {
+				@<b>@options["title"].composeHTMLLikeString()@</b>@
+			}
+			if options["author"] {
+				@ by <i>@options["author"].composeHTMLLikeString()@</i>@
+			}
+			if options["publisher"] {
+				@ - @options["publisher"].composeHTMLLikeString()@@
+			}
+			if options["date"] {
+				@ - @options["date"].composeHTMLLikeString()@@
+			}
+		}
+		text:sText
+		=> {
+			@<br/>@
+		}
+		endCode<"bibliography">
+		;
+
+/**[description]
+[chapter]Les styles[/chapter]
+
+[section]Mise en valeur du texte[/section]
+
+Les balises existent pour le passage du texte en gras, italique et emphatique.
+
+[table]
+[header][cell]Balise[/cell][cell]Description[/cell][/header]
+[row][cell][code][b][[/b][b]i][/b][/code][/cell][cell]Basculement du texte en [i]mode italique[/i].[/cell][/row]
+[row][cell][code][b][[/b][b]b][/b][/code][/cell][cell]Basculement du texte en [b]gras[/b].[/cell][/row]
+[row][cell][code][b][[/b][b]a][/b][/code][/cell][cell]Basculement du texte en [a]mode emphatique[/a].[/cell][/row]
+[/table]
+
+Exemple :
+
+[list]
+[*] [code][b][[/b][b]i][/b]Jeux Olympiques[b][[/b][b]/i][/b] en [b][[/b][b]b][/b]Grèce[b][[/b][b]/b][/b] pour [b][[/b][b]a][/b]2004[b][[/b][b]/a][/b][/code]
+[/list]
+
+Cela donne :
+
+[i]Jeux Olympiques[/i] en [b]Grèce[/b] pour [a]2004[/a]
+[/description]
+ **/
+#overload CWcode<"i">(options : node) ::= removeCodeBegin(options) => {@<i>@} #super::CWcode<"i">(options) => {@</i>@};
+#overload CWcode<"b">(options : node) ::= removeCodeBegin(options) => {@<b>@} #super::CWcode<"b">(options) => {@</b>@};
+#overload CWcode<"a">(options : node) ::= removeCodeBegin(options) => {@<b><i>@} #super::CWcode<"a">(options) => {@</i></b>@};
+
+/**[description]
+[section]Mise en valeur d'un mot-clé[/section]
+
+Un mot-clé peut être mis en valeur par la balise [code][b][[/b][b]keyword][/b][/code]. L'option [code]keyword[/code] peut
+éventuellement préciser le langage d'appartenance du mot-clé.
+
+[table]
+[header][cell=2]Options de la balise [code][b][[/b][b]keyword][/b][/code][/cell][/header]
+[row][cell][code][b]keyword[/b][/code][/cell][cell]Langage d'appartenance du mot-clé. Pour l'instant, seul CodeWorker est reconnu, et cela établit un lien vers l'explication du mot-clé dans le manuel de référence.[/cell][/row]
+[/table]
+
+Exemple :
+[list]
+[*] [code]Déclaration d'une classe en C++ ou en Java : [b][[/b][b]keyword][/b]class[b][[/b][b]/keyword][/b][/code]
+[*] [code]Exécuter un modèle de génération de code avec CodeWorker : la fonction [b][[/b][b]keyword=CodeWorker][/b]generate()[b][[/b][b]/keyword][/b][/code]
+[/list]
+
+Cela donne :
+
+Déclaration d'une classe en C++ ou en Java : [keyword]class[/keyword][line/]
+Exécuter un modèle de génération de code avec CodeWorker : la fonction [keyword=CodeWorker]generate()[/keyword]
+[/description]
+ **/
+#overload CWcode<"keyword">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		CWcodeKeyword<options["keyword"]>
+		endCode<"keyword">;
+CWcodeKeyword<""> ::= #continue => {@<kbd>@} text_code => {@</kbd>@};
+CWcodeKeyword<"CodeWorker"> ::=
+		#continue
+		=> local iPosition;
+		=> {
+			@<kbd><a href="manual_The_scripting_language.html#@
+			iPosition = getOutputLocation();
+			@" class="procedure">@
+		}
+		text_code:sKeyword
+		=> {
+			sKeyword = sKeyword.replaceString('#', '_');
+			insertText(iPosition, sKeyword);
+			@</a></kbd>@
+		}
+		;
+
+/**[description]
+[section]Les listes[/section]
+
+Une liste est annoncée par la balise [code][b][[/b][b]list][/b][/code]. Chaque entrée dans la liste est annoncée par le
+symbole [code][b][[/b][b]*][/b][/code], qui ne possède pas de balise terminale.
+
+Exemple :
+
+[code]
+[b][[/b][b]list][/b]
+[b][[/b][b]*][/b] faire les courses,
+[b][[/b][b]*][/b] chauffer le four,
+[b][[/b][b]*][/b] cuire la pizza,
+[b][[/b][b]/list][/b]
+[/code]
+
+Cela donne :
+
+[code]
+[list]
+[*] faire les courses,
+[*] chauffer le four,
+[*] cuire la pizza,
+[/list][/code]
+
+
+[/description]
+ **/
+#overload CWcode<"list">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> {@<ul>@}
+		#skipIgnore(blanks)
+		[
+			[#explicitCopy "[*]"]
+			=> {@<li>@} text => {@</li>@}
+		]*
+		#skipIgnore(blanks)
+		=> {@</ul>@}
+		endCode<"list">
+		;
+
+/**[description]
+[section]Les encadrés[/section]
+
+Une portion de texte que l'on désire mettre en valeur dans un encadré, est annoncée par la balise [code][b][[/b][b]frame][/b][/code]. Le texte
+figure alors dans un cadre.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][b]frame[/b][/cell][cell]Titre porté par la partie encadrée.[/cell][/row]
+[/table]
+
+Exemples :
+
+[list]
+[*] [code][b][[/b][b]frame][/b]Ceci est un exemple d'encadré simple[b][[/b][b]/frame][/b][/code]
+	[frame]Ceci est un exemple d'encadré simple[/frame]
+[*] [code][b][[/b][b]frame="Le titre de l'encadré"][/b]Ceci est un exemple d'encadré portant un titre[b][[/b][b]/frame][/b][/code]
+	[frame="Le titre de l'encadré"]Ceci est un exemple d'encadré portant un titre[/frame]
+[/list]
+
+[/description]
+ **/
+#overload CWcode<"frame">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> {
+			preexecuteOptions(options);
+			@<table class="tableau" cellspacing="0" border="1" align="center">
+@
+			if options["frame"] {
+				@<tr class="entete"><td class="colonne_entete">@options["frame"].composeHTMLLikeString()@</td></tr>@
+			}
+			@<tr><td class="colonne">@
+		}
+		text
+		#skipIgnore(blanks)
+		=> {
+			@</td></tr></table>
+@
+		}
+		endCode<"frame">
+		;
+
+/**[description]
+
+Il existe une nature particulière d'encadrés, annoncée par la balise [code][b][[/b][b]rationale][/b][/code], et qui est chargée
+de mettre en valeur une explication ou des motivations.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][b]rationale[/b][/cell][cell]Titre porté par cette explication.[/cell][/row]
+[/table]
+
+Exemple :
+
+[code][b][[/b][b]rationale][/b]Ceci est un exemple d'explication mise en valeur[b][[/b][b]/rationale][/b][/code]
+[rationale]Ceci est un exemple d'explication mise en valeur[/rationale]
+
+[/description]
+ **/
+#overload CWcode<"rationale">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> {
+			preexecuteOptions(options);
+			@<table class="tableau" cellspacing="0" border="2" align="center">
+@
+			if options["rationale"] {
+				@<tr class="entete"><td class="colonne_entete">@options["rationale"].composeHTMLLikeString()@</td></tr>@
+			}
+			@<tr class="entete"><td class="colonne_entete">&nbsp;</td></tr><tr><td class="colonne">@
+		}
+		text
+		#skipIgnore(blanks)
+		=> {
+			@<tr class="entete"><td class="colonne_entete">&nbsp;</td></tr></td></tr></table>
+@
+		}
+		endCode<"rationale">
+		;
+
+/**[description]
+[section=table]Les tables[/section]
+
+Une table est annoncée par la balise [code][b][[/b][b]table][/b][/code]. Elle se compose d'un entête, éventuellement suivi
+de une ou plusieurs lignes. Une ligne est composée de cellules, et une cellule peut fusionner ses voisines.
+
+[/description]
+ **/
+#overload CWcode<"table">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> {
+			preexecuteOptions(options);
+			@<table class="tableau" cellspacing="0" border="1" align="center">@
+		}
+		#skipIgnore(blanks)
+		readCode<"header">
+		[
+			#skipIgnore(blanks)
+			readCode<"row">
+		]*
+		#skipIgnore(blanks)
+		=> {@</table>@}
+		endCode<"table">
+		;
+/**[description]
+La ligne d'entête est annoncée par la balise [code][b][[/b][b]header][/b][/code]. Elle est composée de une ou plusieurs
+cellules.
+
+[/description]
+ **/
+#overload CWcode<"header">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> local oldTableCell = this.table_cell;
+		=> {
+			@<tr class="entete">@
+			insert this.table_cell = "header";
+		}
+		[#skipIgnore(blanks) readCode<"cell">]*
+		=> {
+			this.table_cell = oldTableCell;
+			@</tr>@
+		}
+		endCode<"header">
+		;
+/**[description]
+Une ligne de la table est annoncée par la balise [code][b][[/b][b]row][/b][/code]. Elle est composée de une ou plusieurs
+cellules.
+
+[/description]
+ **/
+#overload CWcode<"row">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> {@<tr>@}
+		[#skipIgnore(blanks) readCode<"cell">]*
+		=> {@</tr>@}
+		endCode<"row">
+		;
+/**[description]
+Une cellule est annoncée par la balise [code][b][[/b][b]cell][/b][/code]. Une cellule encadre son contenu textuel. Elle peut
+éventuellement fusionner avec ses voisines à sa droite, pour former une cellule plus grande.
+
+[table]
+[header][cell=2]Options de la balise [code][b][[/b][b]cell][/b][/code][/cell][/header]
+[row][cell][code][b]cell[/b][/code][/cell][cell]Nombre de cellules à fusionner, celle-ci comprise (vaut [i]1[/i] par défaut).[/cell][/row]
+[/table]
+
+Exemple :
+
+[code]
+[b][[/b][b]table][/b]
+[b][[/b][b]header][/b][b][[/b][b]cell=2][/b]Planning du début de soirée[b][[/b][b]/cell][/b][b][[/b][b]/header][/b]
+[b][[/b][b]row][/b][b][[/b][b]cell][/b]Faire les courses[b][[/b][b]/cell][[/b][b]cell][/b]18h30[b][[/b][b]/cell][[/b][b]/row][/b]
+[b][[/b][b]row][/b][b][[/b][b]cell][/b]Chauffer le four[b][[/b][b]/cell][[/b][b]cell][/b]19h00[b][[/b][b]/cell][[/b][b]/row][/b]
+[b][[/b][b]row][/b][b][[/b][b]cell][/b]Enfourner la pizza[b][[/b][b]/cell][[/b][b]cell][/b]19h10[b][[/b][b]/cell][[/b][b]/row][/b]
+[b][[/b][b]/table][/b]
+[/code]
+
+Cela donne:
+
+[table]
+[header][cell=2]Planning du début de soirée[/cell][/header]
+[row][cell]Faire les courses[/cell][cell]18h30[/cell][/row]
+[row][cell]Chauffer le four[/cell][cell]19h00[/cell][/row]
+[row][cell]Enfourner le pizza[/cell][cell]19h10[/cell][/row]
+[/table]
+
+[/description]
+ **/
+#overload CWcode<"cell">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> if this.table_cell == "header" {
+			@<td class="colonne_entete"@
+			if options["cell"] {
+				@ colspan="@options["cell"]@"@
+			}
+			@>@
+		} else {
+			@<td class="colonne">@
+		}
+		text
+		=> {@</td>@}
+		endCode<"cell">
+		;
+
+/**[description]
+[chapter]Les balises spéciales[/chapter]
+
+[section]Lien vers une URL[/section]
+
+La balise [code][b][[/b][b]url][/b][/code] sert à établir un lien vers une page Web, n'importe quelle URL. Le nom du lien
+est placé entre les balises initiales et terminales. Si le nom ne coïncide pas avec l'adresse du lien, celle-ci doit être
+assignée à l'option [code]url[/code].
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]url[/b][/code][/cell][cell]Adresse de l'URL sur laquelle pointer.[/cell][/row]
+[/table]
+
+Exemples :
+[list]
+[*] [code][b][[/b][b]url=http://www.developpez.com]Developpez.com[[/b][b]/url][/b][/code]
+[*] [code][b][[/b][b]url]http://www.codeworker.org[[/b][b]/url][/b][/code]
+[/list]
+
+Cela donne :
+
+[url=http://www.developpez.com]Developpez.com[/url][line/]
+[url]http://www.codeworker.org[/url]
+[/description]
+ **/
+#overload CWcode<"url">(options : node) ::=
+		removeCodeBegin(options)
+		=> local iLocation;
+		=> {
+			@<a href="@
+			if options["url"] {
+				@@options["url"]@@
+			} else {
+				iLocation = getOutputLocation();
+			}
+			@">@
+		}
+		#super::CWcode<"url">(options):sText
+		=> {
+			if iLocation insertText(iLocation, removeLayout(sText));
+			@</a>@
+		}
+		;
+
+/**[description]
+[section=reference]Référence vers un point du document[/section]
+
+La balise [code][b][[/b][b]reference][/b][/code] sert à pointer quelque part dans le document. Le nom que l'on veut donner
+à la référence est placé entre les balises initiales et terminales. L'identifiant de l'objet référé est assigné à l'option
+[code]reference[/code], champ obligatoirement renseigné.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]reference[/b][/code] [i](obligatoire)[/i][/cell][cell]Identifiant de l'objet pointé. L'identifiant est passé dans la propriété [code][b]reference[/b][/code] de l'objet pointé (voir la balise [reference=chapitre][b][[/b][b]chapter][/b][/reference] par exemple).[/cell][/row]
+[/table]
+
+Exemple :
+[list]
+[*] [code]Référence vers la balise [b][[/b][b]reference=[i]table[/i]]<table>[[/b][b]/reference][/b]... juste comme ça![/code]
+[/list]
+
+Cela donne :
+
+Référence vers la balise [reference=table][b]<table>[/b][/reference]... juste comme ça!
+[/description]
+ **/
+#overload CWcode<"reference">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> if !options["reference"] error("'[reference]' expects a link to the reference ('[reference=<link>]')!");
+		=> {@<a href="#@options["reference"]@">@}
+		text
+		=> {@</a>@}
+		endCode<"reference">
+		;
+
+/**[description]
+[section]Insertion d'une image[/section]
+
+La balise [code][b][[/b][b]image/][/b][/code] sert à inclure un fichier image (bmp, gif, png). Elle n'a pas de balise terminale.
+
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]image[/b][/code] [i](obligatoire)[/i][/cell][cell]Chemin complet du fichier image.[/cell][/row]
+[row][cell][code][b]tooltip[/b][/code] [i](facultatif)[/i][/cell][cell]Brève description de l'image.[/cell][/row]
+[row][cell][code][b]height[/b][/code] [i](facultatif)[/i][/cell][cell]Hauteur de l'image, éventuellement en pourcentage par rapport à la taille d'origine.[/cell][/row]
+[row][cell][code][b]width[/b][/code] [i](facultatif)[/i][/cell][cell]Largeur de l'image, éventuellement en pourcentage par rapport à la taille d'origine.[/cell][/row]
+[/table]
+
+Exemples :
+[list]
+[*] [code]La terre vue du ciel : [b][[/b][b]image=planete_terre.png/][/b][/code]
+[*] [code][b][[/b][b]image=noel_famille.png,tooltip="Photo prise à Noël dernier, aux iles Seychelles"/][/b][/code]
+[/list]
+
+[/description]
+ **/
+#overload CWcode<"image/">(options : node) ::=
+		removeCodeBegin(options)
+		=> {
+			if !options["image"] error("filename of the picture expected");
+			@<img src="@options["image"]@"@
+			if options["tooltip"] {
+				@ alt="@options["tooltip"]@"@
+			}
+			if options["height"] {
+				@ height="@options["height"]@"@
+			}
+			if options["width"] {
+				@ width="@options["width"]@"@
+			}
+			@ class="image"/>@
+		}
+		;
+
+/**[description]
+[section]Saut de ligne[/section]
+
+La balise [code][b][[/b][b]line/][/b][/code] impose de revenir à la ligne. Elle n'a pas de balise terminale, ni d'options
+particulières.
+
+Exemple :
+[list]
+[*] [code]Reproduction des vers de terre[b][[/b][b]line/][/b]Révélation sans précédent[/code]
+[/list]
+
+Cela donne :
+
+Reproduction des vers de terre[line/]Révélation sans précédent
+
+[/description]
+ **/
+#overload CWcode<"line/">(options : node) ::= removeCodeBegin(options) => {@<br/>@};
+
+/**[description]
+[section]Compteur de fréquentation [i]Xiti[/i][/section]
+
+La balise [code][b][[/b][b]xiti/][/b][/code] produit un compteur de fréquentation [url=http://www.xiti.com]Xiti[/url],
+pour un ID utilisateur fixé. On peut très bien imaginer plusieurs compteurs de fréquentation insérés dans un
+même document.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]xiti[/b][/code] [i](obligatoire)[/i][/cell][cell]Identifiant de session utilisateur. C'est un entier.[/cell][/row]
+[row][cell][code][b]page[/b][/code] [i](facultatif)[/i][/cell][cell]Nom que l'on souhaite attribuer à la page HTML.[/cell][/row]
+[/table]
+
+Exemples :
+[list]
+[*] [code][b][[/b][b]xiti=123456/][/b][/code]
+[*] [code][b][[/b][b]xiti=123456,page="Manuel Utilisateur"/][/b][/code]
+[/list]
+
+Un exemple réel est produit à la fin du document.
+
+[/description]
+ **/
+#overload CWcode<"xiti/">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		=> if !options["xiti"] error("'[xiti]' expects a user ID ('[xiti=<user-ID>]')!");
+		=> {
+			@				<a href="http://www.xiti.com/xiti.asp?s=@options["xiti"]@" target="_top">
+					<script language="JavaScript1.1">
+					<!--
+						hsh = new Date();
+						hsd = document;
+						hsr = hsd.referrer.replace(/[<>]/g, '');
+						hsi = '<img width="39" height="25" border=0 ';
+						hsi += 'src="http://logv24.xiti.com/hit.xiti?s=@options["xiti"]@';
+						hsi += '&p=@options["page"]@';
+						hsi += '&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+						if(parseFloat(navigator.appVersion)>=4)
+						{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' + Xiti_s.colorDepth;}
+						hsd.writeln(hsi + '&ref=' + hsr.replace(/&/g, '$') + '" title="Mesurez votre audience"><\!--');
+						//-->
+					</script>
+					<noscript>
+						<img width="39" height="25" border=0 src="http://logv24.xiti.com/hit.xiti?s=@options["xiti"]@&p=@options["page"]@&" title="Mesurez votre audience">
+					</noscript>
+					<!--//-->
+				</a>
+@
+		}
+		;
+
+// Traitement des options de la balise '[code]' sur un source dont le langage n'est
+// pas spécifié, et à appliquer avant son action.
+function preexecuteCodeOptions<"">(options : node) {
+	preexecuteOptions(options);
+	local iLocation = getOutputLocation();
+	if options["title"] {
+		@<div class="titre_code">@options["title"]@</div>@
+		iLocation = getOutputLocation();
+	}
+	if options["save"] {
+		if !options["title"] {
+			@<div class="titre_code">@options["save"]@</div>@
+		}
+		iLocation = getOutputLocation();
+	}
+	if options["command"] {
+		@<div class="code">@options["command"]@</div>@
+		iLocation = getOutputLocation();
+	}
+	if options["load"] {
+		if !options["title"] {
+			@<div class="titre_code">@options["load"]@</div>@
+		}
+		iLocation = getOutputLocation();
+		if !options["command"] {
+			local sScript = loadFile(options["load"].normalizeFilename());
+			if options["script"] {
+				executeString(sScript, options["script"]);
+			}
+			sScript = formatCode(composeHTMLLikeString(sScript));
+			if options["post"] {
+				executeString(sScript, options["post"]);
+			}
+			@@sScript@@
+		}
+	}
+	return iLocation;
+}
+
+// Traitement des options de la balise '[code]' sur un source dont le langage est
+// donné par '<T>', et à appliquer avant son action.
+function preexecuteCodeOptions<T>(options : node) {
+	preexecuteOptions(options);
+	local iLocation = getOutputLocation();
+	if options["title"] {
+		@<div class="titre_code">@options["title"]@</div>@
+		iLocation = getOutputLocation();
+	}
+	if options["save"] {
+		if !options["title"] {
+			@<div class="titre_code">@options["save"]@</div>@
+		}
+		iLocation = getOutputLocation();
+	}
+	if options["command"] {
+		@<div class="code">@options["command"]@</div>@
+		iLocation = getOutputLocation();
+	}
+	if options["load"] {
+		if !options["title"] {
+			@<div class="titre_code">@options["load"]@</div>@
+		}
+		iLocation = getOutputLocation();
+		if !options["command"] {
+			local sScript = loadFile(options["load"].normalizeFilename());
+			if options["script"] {
+				executeString(sScript, options["script"]);
+			}
+			sScript = highlightScript<T>(sScript);
+			if options["post"] {
+				executeString(sScript, options["post"]);
+			}
+			@@sScript@@
+		}
+	}
+	return iLocation;
+}
+
+// Traitement des options de la balise '[code]' sur un source dont le langage n'est
+// pas spécifié, et à appliquer après son action.
+function postexecuteCodeOptions<"">(options : node, sScript : node) {
+	foreach i in options {
+		switch(i.key()) {
+			case "title":
+			case "load":
+			case "code":
+			case "post":
+				break;
+			case "script":
+				if !options["load"] || !options["command"] {
+					executeString(sScript, i);
+				}
+				break;
+			case "save":
+				saveToFile(normalizeFilename(i), sScript);
+				break;
+			case "command":
+				system(normalizeFilename(i));
+				if options["load"] {
+					local sScript = loadFile(options["load"].normalizeFilename());
+					if options["script"] {
+						executeString(sScript, options["script"]);
+					}
+					sScript = formatCode(composeHTMLLikeString(sScript));
+					if options["post"] {
+						executeString(sScript, options["post"]);
+					}
+					@@sScript@@
+				}
+				break;
+			default:
+				if !postexecuteOption(i.key(), i) error("in switch statement: unhandled case \"" + i.key() + "\"");
+		}
+	}
+}
+
+// Traitement des options de la balise '[code]' sur un source dont le langage est
+// donné par '<T>', et à appliquer après son action.
+function postexecuteCodeOptions<T>(options : node, sScript : node) {
+	foreach i in options {
+		switch(i.key()) {
+			case "title":
+			case "load":
+			case "code":
+			case "post":
+				break;
+			case "script":
+				if !options["load"] || !options["command"] {
+					executeString(sScript, i);
+				}
+				break;
+			case "save":
+				saveToFile(normalizeFilename(i), sScript);
+				break;
+			case "command":
+				system(normalizeFilename(i));
+				if options["load"] {
+					local sScript = loadFile(options["load"].normalizeFilename());
+					if options["script"] {
+						executeString(sScript, options["script"]);
+					}
+					sScript = highlightScript<T>(sScript);
+					if options["post"] {
+						executeString(sScript, options["post"]);
+					}
+					@@sScript@@
+				}
+				break;
+			default:
+				if !postexecuteOption(i.key(), i) error("in switch statement: unhandled case \"" + i.key() + "\"");
+		}
+	}
+}
+
+/**[description]
+[chapter=insertion_de_code_source]Insertion de code source[/chapter]
+
+L'insertion de code source dans un document mérite qu'on lui consacre un chapître à part entière. Ce chapître sera amené
+à s'étoffer, au fur et à mesure que de nouveaux langages seront reconnus pour la coloration syntaxique, ou que des extensions
+intéressantes seront apportées sur les options.
+
+Une portion de code source est annoncée par la balise [code][b][[/b][b]code][/b][/code]. Quelques options intéressantes sont
+proposées.
+
+[table]
+[header][cell=2]Options[/cell][/header]
+[row][cell][code][b]code[/b][/code][/cell][cell]Langage du code source présenté ici. Détermine ainsi le bon algorithme de coloration syntaxique.[/cell][/row]
+[row][cell][code][b]command[/b][/code][/cell][cell]Commande à exécuter : appel système d'un exécutable.[/cell][/row]
+[row][cell][code][b]load[/b][/code][/cell][cell]Le code source est à charger à partir d'un fichier.[/cell][/row]
+[row][cell][code][b]post[/b][/code][/cell][cell]Script [i]CodeWorker[/i] qui s'applique sur le code source après sa colorisation, mais avant son injection dans le fichier en cours de construction. Le code source est passé en tant que [a]this[/a] au script (voir signification des contextes [i]this[/i] dans la documentation de [i]CodeWorker[/i]).[/cell][/row]
+[row][cell][code][b]reference[/b][/code][/cell][cell]Attribue un identifiant pour pointer ici par la balise [reference=reference][code][b][[/b][b]reference][/b][/code][/reference][/cell][/row]
+[row][cell][code][b]save[/b][/code][/cell][cell]Le code source cité doit être sauvé dans un fichier.[/cell][/row]
+[row][cell][code][b]script[/b][/code][/cell][cell]Script [i]CodeWorker[/i] qui s'applique sur le code source avant sa colorisation. Typiquement, c'est très utile pour raccourcir un code source à l'affichage. Le code source est passé en tant que [a]this[/a] au script (voir signification des contextes [i]this[/i] dans la documentation de [i]CodeWorker[/i]).[/cell][/row]
+[row][cell][code][b]title[/b][/code][/cell][cell]Affiche un titre en tête du code source.[/cell][/row]
+[/table]
+
+Exemples :
+[list]
+[*] [code][b][[/b][b]code][/b]vitesse = 45;[b][[/b][b]/code][/b][/code]
+[*] [code][b][[/b][b]code,title="Vitesse maxi du yacht, en noeuds!"][/b]vitesse = 45;[b][[/b][b]/code][/b][/code]
+[*] [line/][code][b][[/b][b]code=CodeWorker.cws,save="$TMP/ManuelCWcode/exemple.cws",command="codeworker $TMP/ManuelCWcode/exemple.cws -nologo"][/b]
+local maClasse;
+insert maClasse.name = "Ciboulette";
+insert maClasse.parent = "HerbeAromatique";
+generate({#ifndef _@this.name@_h_
+#define _@this.name@_h_
+
+class @this.name@ : public @this.parent@ {
+};
+
+#endif
+@
+}, maClasse, getEnv("TMP") + "/ManuelCWcode/" + maClass.name + ".h");
+[b][[/b][b]/code][/b][/code]
+[*] [code][b][[/b][b]code=C++,load="$TMP/ManuelCWcode/Ciboulette.h"][[/b][b]/code][/b][/code]
+[/list]
+
+Nous obtenons respectivement les rendus suivants :
+[list]
+[*] aucune option spécifiée :
+	[code]vitesse = 45;
+[/code]
+[*] attribution d'un titre :
+	[code,title="Vitesse maxi du yacht, en noeuds!"]vitesse = 45;
+[/code]
+[*] coloration syntaxique, sauvegarde du code source dans un fichier puis exécution d'une commande :
+[code=CodeWorker.cws,save="$TMP/ManuelCWcode/exemple.cws",command="codeworker $TMP/ManuelCWcode/exemple.cws -nologo"]
+local maClasse;
+insert maClasse.name = "Ciboulette";
+insert maClasse.parent = "HerbeAromatique";
+generate({#ifndef _@this.name@_h_
+#define _@this.name@_h_
+
+class @this.name@ : public @this.parent@ {
+};
+
+#endif
+@
+}, maClasse, getEnv("TMP") + "/ManuelCWcode/" + maClasse.name + ".h");
+[/code][line/]
+[*] chargement d'un fichier source, produit à l'exécution du code source précédent :
+[code=C++,load="$TMP/ManuelCWcode/Ciboulette.h"][/code]
+[/list]
+
+Note : les retour-chariots, les espaces et les tabulations sont conservés dans le rendu.
+
+Lorsque plusieurs options sont requises, elles s'exécuteront en respectant l'ordre dans lequel vous les aurez placées, à
+l'exception du chargement du code source (option [a]load[/a]), toujours opéré en premier).
+
+Pour la coloration syntaxique, voici les différents langages reconnus à l'heure actuelle :
+
+[table]
+[header][cell]Option [a]code[/a][/cell][cell]Note[/cell][/header]
+[row][cell][code][b]C[/b][/code][/cell][cell]Coloration syntaxique du C.[/cell][/row]
+[row][cell][code][b]C++[/b][/code][/cell][cell]Coloration syntaxique du C++.[/cell][/row]
+[row][cell][code][b]CodeWorker[/b][/code][/cell][cell]Coloration syntaxique et lien des mot-clés et symboles vers le manuel HTML en ligne.
+	Il existe plusieurs formes dérivées de ce code :
+	[list]
+	[*] [code][b]CodeWorker.cws[/b][/code] : lecture d'un script standard,
+	[*] [code][b]CodeWorker.cwp[/b][/code] : lecture d'un script de parsing BNF ou d'un script de transformation,
+	[*] [code][b]CodeWorker.cwt[/b][/code] : lecture d'un modèle de génération de code,
+	[/list][/cell][/row]
+[row][cell][code][b]IDL[/b][/code][/cell][cell]Coloration syntaxique d'une IDL CORBA.[/cell][/row]
+[row][cell][code][b]Java[/b][/code][/cell][cell]Coloration syntaxique de Java.[/cell][/row]
+[row][cell][code][b]HTML[/b][/code][/cell][cell]Coloration syntaxique du HTML.[/cell][/row]
+[row][cell][code][b]XML[/b][/code][/cell][cell]Coloration syntaxique du XML.[/cell][/row]
+[/table]
+
+Vous ne pouvez pas incruster de [i]CWcode[/i] à l'intérieur d'un code source qui dispose d'une coloration syntaxique : le code
+source doit se conformer rigoureusement à la syntaxe du langage spécifié. En revanche, un code source dont le langage n'a
+pas été précisé, peut contenir des balises de style ou spéciales : mise en gras, listes à puce, images... Une condition
+tout de même : ce code formaté doit être placé entre les balises initiales et terminales, et non pas provenir d'un fichier
+chargé par l'option [a]load[/a].
+[/description]
+ **/
+#overload CWcode<"code">(options : node) ::=
+		#continue
+		removeCodeBegin(options)
+		CWcodeCode<options["code"]>(options)
+		;
+
+// Pour plus de clarté, on place le corps de la règle de
+// production 'CWcode<"code">' dans celle-ci.
+CWcodeCode<T>(options : node) ::=
+		#continue
+		=> local iLocation;
+		=> {
+			@<kbd>@
+			iLocation = preexecuteCodeOptions<T>(options);
+		}
+		#explicitCopy
+		#skipIgnore(blanks)
+		=> local sScript;
+		[
+				#check(T)
+				#continue
+				->(:sScript)"[/code]"
+			|
+				#continue
+				[
+					#implicitCopy
+					text_code:sScript
+				]
+				"[/code]"
+		]
+		=> {
+			postexecuteCodeOptions<T>(options, sScript);
+			if T {
+				sScript = highlightScript<T>(sScript);
+				if options["post"] {
+					executeString(sScript, options["post"]);
+				}
+				@@sScript@@
+			}
+/*			if $sScript.findString('\n') >= 0$ || options["load"] {
+				insertText(iLocation, "<div class=\"code\">");
+				@</div>@
+			}
+*/			@</kbd>@
+		}
+		;
+
+// Lecture récursive du texte coincé entre une balise initiale et
+// terminale.
+text_code ::=
+		[
+				!!["[/" #readIdentifier ']' | "[*]"] #break
+			|
+				readCode<"">
+			|
+				whitespace
+			|
+				#readChar	
+		]*
+		;
+
+// Retranscription des caractères blancs en HTML
+whitespace ::=
+			['\r']? '\n' => {@<br/>@}
+		|
+			#explicitCopy ' ' => {@&nbsp;@}
+		|
+			#explicitCopy '\t'
+			=> {
+				local iPosition = $countInputCols() - 1$;
+				do {
+					@&nbsp;@
+					increment(iPosition);
+				} while $(iPosition % 4) != 0$;
+			}
+		;
+
+// Fonction à appeler au début de chaque traitement de balise, pour venir
+// écraser dans le fichier cible, la balise initiale déjà recopiée implicitement.
+removeCodeBegin(iLocation : value) ::= => setOutputLocation(iLocation); ;
+
+/**[description]
+[chapter]Les outils livrés avec le [i]CWcode[/i][/chapter]
+
+Les outils sont des scripts CodeWorker, à lancer en ligne de commande.
+
+[section]Génération du document en HTML pour Developpez.com[/section]
+
+Une fois le document rédigé en [i]CWcode[/i], il suffit de taper une ligne de commande pour générer le document au format HTML,
+en conformité avec la charte graphique de [url=http://www.developpez.com]Developpez.com[/url] :
+
+[code]codeworker [b]-translate[/b] [url=CWcode2DevCom.cwp.html]CWcode2DevCom.cwp[/url] [i]<votre-document-CWcode.txt>[/i] [i]<votre-document.html>[/i][/code]
+
+Exemples :
+[list]
+[*] La ligne de commande qui a généré ce document HTML :
+	[code]codeworker [b]-translate[/b] [url=CWcode2DevCom.cwp.html]CWcode2DevCom.cwp[/url] [i]manuelCWcode.txt[/i] [i]ManuelCWcode.html[/i][/code]
+[*] La ligne de commande qui a généré le tutoriel sur [i]CodeWorker[/i] pour [url=http://www.developpez.com]Developpez.com[/url] :
+	[code]codeworker [b]-translate[/b] [url=CWcode2DevCom.cwp.html]CWcode2DevCom.cwp[/url] [i]developpez.com.txt[/i] [url=decouverteCW.html][i]decouverteCW.html[/i][/url][/code]
+[/list]
+
+[section]Reconstitution d'un document [i]CWcode[/i] disséminé dans un source[/section]
+
+Vous pouvez écrire une partie des commentaires de votre code source en [i]CWcode[/i]. Ceux qui n'éclairent que sur les aspects
+fortement techniques, sur des points très locaux de l'implémentation, ne sont généralement pas de ceux qui méritent de
+figurer dans un document. En revanche, ceux destinés à une présentation générale du code source ou à son exploitation
+peuvent sembler dignes d'être rassemblés dans un document.
+
+Ce document pourrait bien sûr faire l'objet d'une rédaction à part. Dans ce cas, il est fort à parier que son contenu
+divergerait rapidement des fonctionnalités offertes par ce code, au gré des évolutions, maintenances et corrections que ce
+dernier subira. En revanche, si la description d'une caractéristique se fait au niveau de son implémentation dans le code
+source, le développeur l'aura sous les yeux lorsqu'il interviendra sur le code source, et sera plus enclin à la mettre
+à jour.
+
+Fusionner la documentation et le code source dans même fichier, malgré l'avantage majeur cité plus haut, présente un
+inconvénient : comment extraire la documentation du fichier, séparer le bon grain de l'ivraie ? Cet inconvénient
+est levé grâce au script CodeWorker [url=DocExtractor.cwp.html]DocExtractor.cwp[/url], qui se charge de récupérer tous les
+commentaires en [i]CWcode[/i] et de le mettre bout à bout pour former un document [i]CWcode[/i] complet. Il s'applique ainsi :
+
+[code]codeworker [b]-translate[/b] [url=DocExtractor.cwp.html]DocExtractor.cwp[/url] [i]<votre-code-source>[/i] [i]<votre-document-CWcode.txt>[/i][/code]
+
+Point d'importance : comment exprimer qu'un commentaire figure un fragment de [i]CWcode[/i] ? Il doit simplement commencer
+par [code][b]/[/b][b]**[[/b][b]description][/b][/code] et s'achever par [code][b][[/b][b]/description]**[/b][b]/[/b][/code]. Cette
+spécification sera étendue plus tard pour accepter des types de commentaires variés, et pas seulement ceux issus du [i]C[/i].
+
+Exemple :
+[list]
+[*] Le [i]CWcode[/i] de ce document HTML est issu du script [url=CWcode2DevCom.cwp.html]CWcode2DevCom.cwp[/url], qui porte ainsi
+	l'écriture de tout ce manuel :
+	[code]codeworker [b]-translate[/b] [url=DocExtractor.cwp.html]DocExtractor.cwp[/url] [url=CWcode2DevCom.cwp.html]CWcode2DevCom.cwp[/url] [i]manuelCWcode.txt[/i][/code][line/]
+	
+    Il ne reste plus qu'à générer la page HTML correspondante, comme nous avons pu le voir dans la section précédente :
+	[code]codeworker [b]-translate[/b] [url=CWcode2DevCom.cwp.html]CWcode2DevCom.cwp[/url] [i]manuelCWcode.txt[/i] [i]manuelCWcode.html[/i][/code]
+[/list]
+
+[xiti=134058,page="ManuelCWcode"/]
+[/description]
+ **/

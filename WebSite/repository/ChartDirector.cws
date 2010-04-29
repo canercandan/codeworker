@@ -1,0 +1,9 @@
+parseAsBNF("chartDirector.cwp", project, _ARGS#front);
+
+local sPath = _ARGS#front;
+sPath = sPath.replaceString('\\', '/');
+local iIndex = sPath.findLastString("/include/");
+if $iIndex <= 0$ error("\"chartdir.h\" expected in a \"include/\" directory!");
+sPath = sPath.leftString($iIndex + 1$);
+
+generate("chartDirector.cwt", project, sPath + "plugins/CodeWorker/CHARTcw.cpp");

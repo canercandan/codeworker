@@ -1,0 +1,123 @@
+/*
+	this.precompilerPrefix = precompiler prefix that the developer has chosen to
+							 put before the file name for the #ifdef/#define/#endif stuff
+*/
+
+#include "C1-Parser.cwp"
+
+function getInlineFilename() {
+	local sFile = canonizePath(getInputFilename());
+	local iIndex = sFile.findLastString("/c1/");
+	if $iIndex < 0$ error("C1 file '" + getInputFilename() + "' is misplaced in the file tree");
+	set sFile = sFile.subString($iIndex + 4$);
+	set iIndex = sFile.findLastString('.');
+	if $iIndex >= 0$ set sFile = sFile.leftString(iIndex);
+	set iIndex = sFile.findLastString('/');
+	if $iIndex < 0$ error("C1 file '" + getInputFilename() + "' should be put in a package");
+	set sFile = sFile.leftString(iIndex) + ".private" + sFile.subString(iIndex);
+	return sFile + ".inl";
+}
+
+#overload translation_unit	::=
+		#implicitCopy
+		["/*" #continue ->"*/" ->'\n']?
+		=> {
+			insert this.fileShortName = canonizePath(getInputFilename());
+			local iIndex = this.fileShortName.findLastString('/');
+			if $iIndex >= 0$ set this.fileShortName = this.fileShortName.subString($iIndex + 1$);
+			set iIndex = this.fileShortName.findLastString('.');
+			if $iIndex >= 0$ set this.fileShortName = this.fileShortName.leftString(iIndex);
+@#ifndef _@newFloatingLocation("ifdef prefix");@@replaceString('.', '_', this.fileShortName.toUpperString())@_
+#define _@newFloatingLocation("define prefix");@@replaceString('.', '_', this.fileShortName.toUpperString())@_
+@
+		}
+		#super::translation_unit
+		=> {
+			if this.precompilerPrefix {
+				insertText(getFloatingLocation("ifdef prefix"), this.precompilerPrefix + '_');
+				insertText(getFloatingLocation("define prefix"), this.precompilerPrefix + '_');
+			}
+			if this.has_inline {
+@
+#include "@getInlineFilename()@"
+@
+			}
+@
+#endif // _@
+			if this.precompilerPrefix {@@this.precompilerPrefix@_@}
+			@@replaceString('.', '_', this.fileShortName.toUpperString())@_
+@
+			indentText("C++");
+		}
+		;
+
+#overload C1_declaration	::=
+		#explicitCopy
+		#readIdentifier:{"public", "private"}:sType
+		'{'
+		#continue
+		[
+				#check(sType == "public")
+				#skipIgnore
+				#implicitCopy
+				body_internal_definition
+				#skipIgnore
+				#explicitCopy
+				'}'
+				#!ignore
+				->'\n'
+			|
+				body_internal_definition
+				'}'
+				#ignore(blanks)
+				#skipIgnore
+		]
+		;
+
+#overload declare_type<"namespace"> : value	::=
+		#readIdentifier:declare_type
+		#continue
+		'{'
+		=> pushItem this.namespaces = declare_type;
+		[declare_type]*
+		'}'
+		=> this.namespaces.removeLastElement();
+		;
+
+#overload declare_type<"class"> : value	::=
+		#super::declare_type<"class">:declare_type
+		=> if declare_type == this.fileShortName && !this.precompilerPrefix {
+			foreach i in this.namespaces {
+				if !first(i) set this.precompilerPrefix += '_';
+				insert this.precompilerPrefix += i.toUpperString();
+			}
+		}
+		;
+
+#overload body_definition	::=
+		=> {@;@}
+		#explicitCopy
+		#super::body_definition
+		;
+
+#overload class_member<"inline">	::=
+	=> insert this.has_inline = true;
+	#super::class_member<"inline">
+	;
+
+
+#overload class_member<"static">	::=
+	#continue
+	common_member_declaration
+	[
+			#explicitCopy '=' #continue static_member_initialization #implicitCopy ';'
+		|
+			'(' #continue parameters ')' [~'{']*
+			#explicitCopy #skipIgnore #implicitCopy
+			body_definition
+	]
+	;
+
+
+#overload signature ::= #super::signature #explicitCopy #skipIgnore;
+#overload constructor_initializer	::= #explicitCopy #super::constructor_initializer;

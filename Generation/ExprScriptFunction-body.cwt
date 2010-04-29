@@ -1,0 +1,518 @@
+@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+if getMarkupKey() == "declarations" {
+	foreach i in project.functionList if !findElement("info", i.modifierList) {
+		@
+class ExprScript@transformUnderscores(i.name)@ : public ExprScriptFunction {
+private:
+	static unsigned int _iCounter;
+    ExprScript@transformUnderscores(i.name)@(@
+		if findElement("user", i.modifierList) {@GrfBlock& block@}
+	@) {
+@
+		if findElement("user", i.modifierList) {
+			setProtectedArea(i.name + "::constructor");
+		}
+@	}
+
+@
+		if findElement("user", i.modifierList) {
+			@
+private:
+@
+			setProtectedArea(i.name + "::attributes");
+			@
+@
+		}
+@public:
+    virtual ~ExprScript@transformUnderscores(i.name)@() {@
+		if findElement("user", i.modifierList) {
+			@
+@
+			setProtectedArea(i.name + "::destructor");
+		}
+		@	}
+
+	virtual const char* getName() const { return "@i.name@"; }
+	virtual unsigned int getArity() const { return @i.parameterList.size()@; }
+@
+		local iIndex = 0;
+		local bHasDefault = false;
+		foreach j in i.parameterList {
+			if j.default {
+				if !bHasDefault {
+					bHasDefault = true;
+					@	virtual unsigned int getMinArity() const { return @iIndex@; }
+	virtual ExprScriptExpression* getDefaultParameter(unsigned int iIndex) const {
+@
+				}
+				@		static @
+				local sText = j.default;
+				if sText.startString('"') || sText.charAt(0) in {'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'} {
+					@ExprScriptConstant@
+				} else {
+					@ExprScriptVariable@
+					sText = '"' + sText + '"';
+				}
+				@ _internal@j.name@(@sText@);
+		if (iIndex == @iIndex@) return &_internal@j.name@;
+@
+			}
+			increment(iIndex);
+		}
+		if bHasDefault {
+			@		return NULL;
+	}
+@
+		}
+@	virtual EXPRESSION_TYPE getParameterType(unsigned int iIndex) const {
+@
+		iIndex = 0;
+		foreach j in i.parameterList {
+			@		if (iIndex == @iIndex@) return @
+			switch(j.type) {
+				case "int":
+				case "bool":
+				case "double":
+				case "string":
+				case "ulong":
+				case "ushort":
+					@VALUE@
+					break;
+				case "doubleref":
+				case "boolref":
+				case "stringref":
+				case "stringlist":
+				case "tree":
+				case "treeref":
+				case "treexpr":
+					@NODE@
+					break;
+				case "iterator":
+					@ITERATOR@
+					break;
+				case "script":					
+					@SCRIPTFILE_@j.type.script.toUpperString()@@
+					break;
+			}
+			@_EXPRTYPE;
+@
+			increment(iIndex);
+		}
+		@		return UNKNOWN_EXPRTYPE;
+	}
+@
+		if i.mode == "generate" {
+			@	virtual bool isAGenerateFunction() const { return true; }
+@
+		}
+		if i.mode == "parse" {
+			@	virtual bool isAParseFunction() const { return true; }
+@
+		}
+		if findElement("user", i.modifierList) {
+			@	virtual void initializationDone() {
+@
+			setProtectedArea(i.name + "::initializationDone");
+			@	}
+
+@
+		}
+		if i.method {
+			local sParameter = project.methodList[i.method].thisParameter;
+			if sParameter {
+				local iIndex = 0;
+				foreach j in i.parameterList {
+					if j.name == sParameter break;
+					increment(iIndex);
+				}
+				if isPositive(iIndex) {
+					@	virtual int getThisPosition() const { return @iIndex@; }
+@
+				}
+			}
+		}
+@
+    virtual std::string getValue(DtaScriptVariable& visibility) const {
+		_iCounter++;
+@
+		if findElement("user", i.modifierList) {
+			switch(i.return_type) {
+				case "bool":
+				case "int":
+				case "double":
+					@		@i.return_type@ returnValue;
+@
+					break;
+				case "string":
+					@		std::string returnValue;
+@
+					break;
+				case "ulong":
+					@		unsigned long returnValue;
+@
+					break;
+				case "ushort":
+					@		unsigned short returnValue;
+@
+					break;
+			}
+			setProtectedArea(i.name + "::execute");
+		} else {
+			if !isEmpty(i.parameterList) {
+				@		std::vector<ExprScriptExpression*>::const_iterator cursor = _parameters.begin();
+@
+			}
+			local bOutParams;
+			foreach j in i.parameterList {
+				if !first(j) {
+					@		++cursor;
+@
+				}
+				switch(j.type) {
+					case "int":
+						@		std::string @getCppVariable(j.name, "string")@ = (*cursor)->getValue(visibility);
+		@getCppType(j.type)@ @getCppVariable(j.name, j.type)@ = atoi(@getCppVariable(j.name, "string")@.c_str());
+@
+						break;
+					case "bool":
+						@		std::string @getCppVariable(j.name, "string")@ = (*cursor)->getValue(visibility);
+		@getCppType(j.type)@ @getCppVariable(j.name, j.type)@ = !@getCppVariable(j.name, "string")@.empty();
+@
+						break;
+					case "double":
+						@		std::string @getCppVariable(j.name, "string")@ = (*cursor)->getValue(visibility);
+		@getCppType(j.type)@ @getCppVariable(j.name, j.type)@ = atof(@getCppVariable(j.name, "string")@.c_str());
+@
+						break;
+					case "string":
+						@		@getCppType(j.type)@ @getCppVariable(j.name, j.type)@ = (*cursor)->getValue(visibility);
+@
+						break;
+					case "ulong":
+						@		std::string @getCppVariable(j.name, "string")@ = (*cursor)->getValue(visibility);
+		char* tc@transformUnderscores(j.name)@;
+		@getCppType(j.type)@ @getCppVariable(j.name, j.type)@ = strtoul(@getCppVariable(j.name, "string")@.c_str(), &tc@transformUnderscores(j.name)@, 10);
+@
+						break;
+					case "ushort":
+						@		std::string @getCppVariable(j.name, "string")@ = (*cursor)->getValue(visibility);
+		@getCppType(j.type)@ @getCppVariable(j.name, j.type)@ = (@getCppType(j.type)@) atoi(@getCppVariable(j.name, "string")@.c_str());
+@
+						break;
+					case "doubleref":
+						set bOutParams = "true";
+						@		DtaScriptVariable* @getCppVariable(j.name, "tree")@ = visibility.getVariable(*dynamic_cast<ExprScriptVariable*>(*cursor));
+		double @getCppVariable(j.name, "double")@ = @getCppVariable(j.name, "tree")@->getDoubleValue();
+@
+						break;
+					case "boolref":
+						set bOutParams = "true";
+						@		DtaScriptVariable* @getCppVariable(j.name, "tree")@ = visibility.getVariable(*dynamic_cast<ExprScriptVariable*>(*cursor));
+		bool @getCppVariable(j.name, "bool")@ = @getCppVariable(j.name, "tree")@->getBooleanValue();
+@
+						break;
+					case "stringref":
+						set bOutParams = "true";
+						@		DtaScriptVariable* @getCppVariable(j.name, "tree")@ = visibility.getVariable(*dynamic_cast<ExprScriptVariable*>(*cursor));
+		std::string @getCppVariable(j.name, "string")@;
+		const char* t@getCppVariable(j.name, "string")@ = @getCppVariable(j.name, "tree")@->getValue();
+		if (t@getCppVariable(j.name, "string")@ != NULL) @getCppVariable(j.name, "string")@ = t@getCppVariable(j.name, "string")@;
+@
+						break;
+					case "stringlist":
+						@		DtaScriptVariable* @getCppVariable(j.name, "tree")@ = visibility.getVariable(*dynamic_cast<ExprScriptVariable*>(*cursor));
+		@getCppType(j.type)@ @getCppVariable(j.name, "stringlist")@;
+@
+						break;
+					case "treeref":
+						@		DtaScriptVariable* @getCppVariable(j.name, j.type)@ = visibility.get@
+						if i.name == "existVariable" {
+							@NoWarning@
+						}
+						@ExistingVariable(*dynamic_cast<ExprScriptVariable*>(*cursor));
+@
+						break;
+					case "tree":
+						@		DtaScriptVariable* @getCppVariable(j.name, j.type)@ = visibility.getVariable(*dynamic_cast<ExprScriptVariable*>(*cursor));
+@
+						break;
+					case "treexpr":
+						@		ExprScriptVariable& @getCppVariable(j.name, j.type)@ = *dynamic_cast<ExprScriptVariable*>(*cursor);
+@
+						break;
+					case "iterator":
+						@		DtaScriptVariable* @getCppVariable(j.name, j.type)@ = visibility.getIterator(dynamic_cast<ExprScriptVariable*>(*cursor)->getName().c_str());
+		if (@getCppVariable(j.name, j.type)@ == NULL) @getCppVariable(j.name, j.type)@ = visibility.getVariable(*dynamic_cast<ExprScriptVariable*>(*cursor));
+@
+						break;
+				}
+			}
+			switch(i.return_type) {
+				case "int":
+					@		int returnValue = @
+					break;
+				case "bool":
+					@		bool returnValue = @
+					break;
+				case "double":
+					@		double returnValue = @
+					break;
+				case "string":
+					@		std::string returnValue = @
+					break;
+				case "ulong":
+					@		unsigned long returnValue = @
+					break;
+				case "ushort":
+					@		unsigned short returnValue = @
+					break;
+			}
+			@CGRuntime::@i.name@(@
+			foreach j in i.parameterList {
+				if !first(j) {
+					@, @
+				}
+				@@getCppVariable(j.name, j.type)@@
+			}
+			@);
+@
+			if bOutParams {
+				foreach j in i.parameterList {
+					if j.type == "stringref" {
+						@		@getCppVariable(j.name, "tree")@->setValue(@getCppVariable(j.name, "string")@.c_str());
+@
+					} else if j.type == "stringlist" {
+						@		@getCppVariable(j.name, "tree")@->setValue(@getCppVariable(j.name, "stringlist")@);
+@
+					} else if j.type == "doubleref" {
+						@		@getCppVariable(j.name, "tree")@->setValue(@getCppVariable(j.name, "double")@);
+@
+					} else if j.type == "boolref" {
+						@		@getCppVariable(j.name, "tree")@->setValue(@getCppVariable(j.name, "bool")@);
+@
+					}
+				}
+			}
+		}
+		local sCompileType;
+		switch(i.return_type) {
+			case "int":
+				set sCompileType = "Int";
+				@		char tcNumber[16];
+		sprintf(tcNumber, "%d", returnValue);
+		return tcNumber;
+@
+				break;
+			case "bool":
+				set sCompileType = "Boolean";
+				@		return (returnValue ? "true" : "");
+@
+				break;
+			case "double":
+				set sCompileType = "Double";
+				@		return CGRuntime::toString(returnValue);
+@
+				break;
+			case "string":
+				set sCompileType = "String";
+				@		return returnValue;
+@
+				break;
+			case "ulong":
+				set sCompileType = "UnsignedLong";
+				@		char tcNumber[16];
+		sprintf(tcNumber, "%Lu", returnValue);
+		return tcNumber;
+@
+				break;
+			case "ushort":
+				set sCompileType = "UnsignedShort";
+				@		char tcNumber[16];
+		sprintf(tcNumber, "%hu", returnValue);
+		return tcNumber;
+@
+				break;
+		}
+@    }
+
+	virtual EXPRESSION_RETURN_TYPE compileCpp(CppCompilerEnvironment& theCompilerEnvironment) const {
+		compileCpp@sCompileType@(theCompilerEnvironment@
+		if sCompileType == "Boolean" {
+			@, false@
+		}
+		@);
+		return @toUpperString(i.return_type)@_TYPE;
+	}
+
+@
+		if i.return_type == "int" {
+			@	virtual bool compileCppDouble(CppCompilerEnvironment& theCompilerEnvironment) const {
+		CW_BODY_STREAM << "(double) ";
+		return compileCppInt(theCompilerEnvironment);
+	}
+
+	virtual bool compileCppString(CppCompilerEnvironment& theCompilerEnvironment) const {
+		CW_BODY_STREAM << "CGRuntime::toString(";
+		bool bSuccess = compileCppInt(theCompilerEnvironment);
+		if (bSuccess) CW_BODY_STREAM << ")";
+		return bSuccess;
+	}
+
+@
+		} else if i.return_type == "double" {
+			@	virtual bool compileCppInt(CppCompilerEnvironment& theCompilerEnvironment) const {
+		CW_BODY_STREAM << "(int) ";
+		return compileCppDouble(theCompilerEnvironment);
+	}
+
+	virtual bool compileCppString(CppCompilerEnvironment& theCompilerEnvironment) const {
+		CW_BODY_STREAM << "CGRuntime::toString(";
+		bool bSuccess = compileCppDouble(theCompilerEnvironment);
+		if (bSuccess) CW_BODY_STREAM << ")";
+		return bSuccess;
+	}
+
+@
+		}
+@	virtual bool compileCpp@sCompileType@(CppCompilerEnvironment& theCompilerEnvironment@
+		if sCompileType == "Boolean" {
+			@, bool bNegative) const {
+		if (bNegative) CW_BODY_STREAM << "!";
+@
+		} else {
+			@) const {
+@
+		}
+		if findElement("user", i.modifierList) {
+			setProtectedArea(i.name + "::compileCpp" + sCompileType);
+		} else {
+			@		CW_BODY_STREAM << "CGRuntime::@i.name@(";
+@
+			if !isEmpty(i.parameterList) {
+				@		std::vector<ExprScriptExpression*>::const_iterator cursor = _parameters.begin();
+@
+			}
+			foreach j in i.parameterList {
+				if !first(j) {
+					@		CW_BODY_STREAM << ", ";
+		++cursor;
+@
+				}
+				switch(j.type) {
+					case "bool":
+						@		(*cursor)->compileCppBoolean(theCompilerEnvironment, false);
+@
+						break;
+					case "int":
+						@		(*cursor)->compileCppInt(theCompilerEnvironment);
+@
+						break;
+					case "double":
+						@		(*cursor)->compileCppDouble(theCompilerEnvironment);
+@
+						break;
+					case "string":
+						@		(*cursor)->compileCppString(theCompilerEnvironment);
+@
+						break;
+					case "ulong":
+						@		(*cursor)->compileCppUnsignedLong(theCompilerEnvironment);
+@
+						break;
+					case "ushort":
+						@		(*cursor)->compileCppUnsignedShort(theCompilerEnvironment);
+@
+						break;
+					case "doubleref":
+					case "boolref":
+					case "stringref":
+					case "stringlist":
+						@		dynamic_cast<ExprScriptVariable*>(*cursor)->compileCppForSet(theCompilerEnvironment);
+@
+						break;
+					case "iterator":
+					case "treeref":
+					case "tree":
+						@		(*cursor)->compileCpp(theCompilerEnvironment);
+@
+						break;
+					case "treexpr":
+						@		(*cursor)->compileCppExpr(theCompilerEnvironment);
+@
+						break;
+				}
+			}
+			@		CW_BODY_STREAM << ")";
+@
+		}
+@		return true;
+	}
+
+	static ExprScriptFunction* create(GrfBlock&@
+		if findElement("user", i.modifierList) {@ block@}
+		@) {
+        return new ExprScript@transformUnderscores(i.name)@@
+		if findElement("user", i.modifierList) {@(block)@}
+		@;
+	}
+
+	static void registerFunction(DtaFunctionInfo& info) {
+		info.constructor = create;
+		info.pCounter = &_iCounter;
+	}
+};
+unsigned int ExprScript@transformUnderscores(i.name)@::_iCounter = 0;
+
+@
+	}
+} else if getMarkupKey() == "registration" {
+	foreach i in project.functionList {
+		@		ExprScript@transformUnderscores(i.name)@::registerFunction(_functionRegister["@i.name@"]);
+@
+	}
+} else if getMarkupKey() == "create::deprecated" {
+	local bFirst = true;
+	foreach i in project.functionList if existVariable(i.deprecated) {
+		@	@
+		if bFirst {
+			bFirst = false;
+		} else {
+			@} else @
+		}
+		@if (sFunction == "@i.deprecated.name@") {
+		std::string sErrorMessage = "warning: function '@i.deprecated.name@' has been deprecated since version @i.deprecated.version@ -> replace it by function '@i.name@'" + CGRuntime::endl();
+		sErrorMessage += DtaProject::getInstance().getTraceStack(script);
+		if (DtaProject::getInstance().addWarning(sErrorMessage) == 1) CGRuntime::traceLine(sErrorMessage);
+		sFunctionName = "@i.name@";
+@
+	}
+} else if getMarkupKey() == "createMethod" {
+	foreach i in project.methodList {
+		if i.function != key(i) {
+			@	if (sFunction == "@key(i)@") return create(block, script, "@i.function@", sTemplate, bGenericKey);
+@
+		}
+	}
+}
+@

@@ -1,0 +1,566 @@
+#include "AspectOOScanner.cwp"
+#include "CommonLanguage-Parser.cwp"
+
+#parameters X(myAspect : node) X in {"aspect_body", "pointcut", "advice", "advice_type", "aspect_declare", "aspect_member"}
+#parameters X(myObject : node) X=="type_name"
+#parameters X(myFunction : node) X=="formal" || X=="formals"
+#parameters X(myType : node) X=="target_language_type"
+#parameters X(myExpr : node) X=="primitive_pointcut" || X=="user_defined_pointcut"
+#parameters X(myExpr : node) X.endString("pointcut_expression")
+#parameters X(myExpr : node) X=="target_language_expression"
+#parameters X(myBody : node) X.startString("body<")
+#parameters X(myPattern : node) X.endString("_pattern")
+#parameters X(myMemberType : node) X=="type_for_member"
+
+#overload class ::=
+		CLASS #continue
+		=> local className;
+		type_name(className)
+		=> setall this.classes[className] = className;
+		';';
+
+#overload aspect	::=
+		[PRIVILEGED]?
+		=> local listOfModifiers;
+		modifiers(listOfModifiers)
+		ASPECT #continue #readIdentifier:sAspectName
+		=> if this.aspects.findElement(sAspectName) error("aspect '" + sAspectName + "' is already defined");
+		=> insert this.aspects[sAspectName];
+		=> localref myAspect = this.aspects[sAspectName];
+		[
+			EXTENDS #continue
+			type_name(myAspect.extends)
+		]?
+		[
+			IMPLEMENTS #continue
+			=> pushItem myAspect.implements;
+			type_name(myAspect.implements#back)
+			[
+				',' #continue
+				=> pushItem myAspect.implements;
+				type_name(myAspect.implements#back)
+			]*
+		]?
+		[
+			DOMINATES #continue
+			type_name(myAspect.dominates)
+		]?
+		'{'
+		aspect_body(myAspect)
+		'}';
+
+#overload pointcut(myAspect : node)	::=
+		=> local listOfModifiers;
+		modifiers(listOfModifiers)
+		POINTCUT #continue
+		#readIdentifier:sPointcutName
+		=> if myAspects.pointcuts.findElement(sPointcutName) error("pointcut '" + sPointcutName + "' already exists");
+		=> insert myAspects.pointcuts[sPointcutName];
+		=> localref myPointcut = myAspects.pointcuts[sPointcutName];
+		=> if !listOfModifiers.empty() setall myPointcut.modifiers = listOfModifiers;
+		'(' formals(myPointcut) ')'
+		[
+				#check(listOfModifiers.findElement("abstract")) #continue ';'
+			|
+				#continue ':' pointcut_expression(myPointcut.expression) ';'
+		]
+		;
+
+#overload formal(myFunction : node) ::=
+		=> local myType;
+		target_language_type(myType)
+		#readIdentifier:sParamName
+		=> if myFunction.parameters.findElement(sParamName) error("parameter '" + sParamName + "' found twice");
+		=> insert myFunction.parameters[sParamName].name = sParamName;
+		=> setall myFunction.parameters[sParamName].type = myType;
+		;
+
+
+#overload advice(myAspect : node)	::=
+		[STRICTFP]?
+		advice_type(myAspect) #continue
+		=> localref myAdvice = myAspect.advices#back;
+		[
+			THROWS #continue
+			=> pushItem myAdvice.throws;
+			type_name(myAdvice.throws#back)
+			[
+				',' #continue
+				=> pushItem myAdvice.throws;
+				type_name(myAdvice.throws#back)
+			]*
+		]?
+		':' pointcut_expression(myAdvice.expression)
+		'{'
+		body<"advice">(myAdvice.body)
+		=> trimRight(myAdvice.body);
+		'}';
+
+#overload advice_type(myAspect : node) ::=
+		BEFORE #continue
+		=> pushItem myAspect.advices = "before";
+		'(' formals(myAspect.advices#back) ')'
+	|
+		AFTER #continue
+		=> pushItem myAspect.advices = "after";
+		'(' formals(myAspect.advices#back) ')'
+		[
+			#readIdentifier:{"returning", "throwing"}:myAspect.advices#back.parameters
+			['(' #continue formal(myAspect.advices#back) ')']?
+		]?
+	|
+		=> local myType;
+		['*' => set myType = '*'; | target_language_type(myType)]
+		AROUND #continue
+		=> pushItem myAspect.advices = "around";
+		'(' formals(myAspect.advices#back) ')'
+	;
+
+#overload body<sType>(myBody : node) ::=
+		#!ignore
+		[
+				['@' | "<%"]
+				[
+						#readCString
+					|
+						^['@' | "%>"]
+				]*
+				['@' | "%>"]
+			|
+				'{' #continue body<sType>(myBody) '}'
+			|
+				^['}' | #check(sType=="expression") ';']
+		]*:myBody;
+
+#overload formal(myFunction : node) ::=
+		#pushItem(myFunction.parameters)
+		target_language_type(myFunction.parameters#back.type)
+		#readIdentifier:myFunction.parameters#back.name;
+
+#overload target_language_expression(myExpr : node)::= body<"expression">(myExpr);
+
+#overload aspect_declare(myAspect : node)	::=
+		DECLARE
+		#continue
+		[
+				PARENTS
+				#continue
+				':'
+				=> pushItem myAspect.declare.parents;
+				=> localref myParent = myAspect.declare.parents#back;
+				type_pattern(myParent.class_pattern)
+				[
+						EXTENDS #continue type_name(myParent.extends_pattern)
+					|
+						IMPLEMENTS #continue
+						=> pushItem myParent.implements;
+						type_name(myParent.implements#back)
+						[
+							',' #continue
+							=> pushItem myParent.implements;
+							type_name(myParent.implements#back)
+						]*
+				]
+			|
+				#readIdentifier:{"warning", "error"}
+				#continue
+				=> traceLine("declare warning/error not parsed yet!");
+				':'
+				=> localref myParent = myAspect.declare.parents#back;
+				pointcut_expression
+				':'
+				#readCString
+			|
+				SOFT
+				#continue
+				=> traceLine("declare soft not parsed yet!");
+				':'
+				type_pattern
+				':'
+				pointcut_expression
+			|
+				PRECEDENCE
+				#continue
+				=> traceLine("declare precedence not parsed yet!");
+				':'
+				type_pattern [',' #continue type_pattern]*
+		]
+		';'
+		;
+
+#overload aspect_member(myAspect : node) ::=
+		=> local listOfModifiers;
+		modifiers(listOfModifiers)
+		[
+				// Abstract method
+				#check(listOfModifiers.findElement("abstract"))
+				=> local targetType;
+				target_language_type(targetType)
+				=> local memberType;
+				[type_for_member(memberType)]?
+				#readIdentifier:sMemberName
+				#continue
+				=> pushItem myAspect.members;
+				=> localref myMember = myAspect.members#back;
+				=> setall myMember.target_type = targetType;
+				=> if !memberType.empty() setall myMember.member_type = memberType;
+				=> setall myMember.method_name = sMemberName;
+				'(' formals(myMember) ')'
+				[
+					THROWS
+					#continue
+					=> pushItem myMember.throws;
+					type_name(myMember.throws#back)
+					[
+						',' #continue
+						=> pushItem myMember.throws;
+						type_name(myMember.throws#back)
+					]*
+				]?
+				';'
+			|
+				// constructor or method
+				=> local targetType;
+				=> local memberType;
+				=> local sMemberName;
+				[
+						type_for_member(memberType)
+						NEW
+					|
+						target_language_type(targetType)
+						=> clearVariable(memberType);
+						[type_for_member(memberType)]?
+						#readIdentifier:sMemberName
+				]
+				'(' #continue
+				=> pushItem myAspect.members;
+				=> localref myMember = myAspect.members#back;
+				=> if targetType setall myMember.target_type = targetType;
+				=> if !memberType.empty() setall myMember.member_type = memberType;
+				=> if sMemberName setall myMember.method_name = sMemberName;
+				formals(myMember) ')'
+				[
+					THROWS
+					#continue
+					=> pushItem myMember.throws;
+					type_name(myMember.throws#back)
+					[
+						',' #continue
+						=> pushItem myMember.throws;
+						type_name(myMember.throws#back)
+					]*
+				]?
+				'{' #continue
+				body<"member">(myMember)
+				=> trimRight(myMember);
+				'}'
+			|
+				// Attribute
+				=> local targetType;
+				target_language_type(targetType)
+				=> local memberType;
+				[type_for_member(memberType)]?
+				#readIdentifier:sMemberName
+				#continue
+				=> pushItem myAspect.members;
+				=> localref myMember = myAspect.members#back;
+				=> setall myMember.target_type = targetType;
+				=> if !memberType.empty() setall myMember.member_type = memberType;
+				=> setall myMember.attribute_name = sMemberName;
+				[
+					'='
+					#continue
+					target_language_expression(myMember.expression)
+				]?
+				';'
+		]
+		=> if !listOfModifiers.empty() setall myAspect.members#back.modifiers = listOfModifiers;
+		;
+
+#overload method_pattern(myPattern : node) ::=
+		=> local listOfModifiers;
+		[modifier_pattern(listOfModifiers)]*
+		=> local targetType;
+		target_language_type_pattern(targetType)
+		=> local typePattern;
+		[type_pattern(typePattern) '.']?
+		=> local idPattern;
+		id_pattern(idPattern)
+		'(' #continue
+		=> if !listOfModifiers.empty() setall myPattern.modifiers = listOfModifiers;
+		=> insert myPattern = "method";
+		=> setall myPattern.return_type = targetType;
+		=> if typePattern setall myPattern.object_type = typePattern;
+		=> setall myPattern.method_name = idPattern;
+		parameters_pattern(myPattern)
+		')'
+		[THROWS #continue throws_pattern(myPattern.throws)]?
+		;
+
+#overload constructor_pattern(myPattern : node) ::=
+		=> local listOfModifiers;
+		[modifier_pattern(listOfModifiers)]*
+		=> local typePattern;
+		[type_pattern(typePattern) '.']?
+		NEW
+		'(' #continue
+		=> if !listOfModifiers.empty() setall myPattern.modifiers = listOfModifiers;
+		=> insert myPattern = "constructor";
+		=> if typePattern setall myPattern.object_type = typePattern;
+		parameters_pattern(myPattern)
+		')'
+		[THROWS #continue throws_pattern(myPattern.throws)]?
+		;
+
+#overload field_pattern(myPattern : node) ::=
+		=> local listOfModifiers;
+		[modifier_pattern(listOfModifiers)]*
+		=> local targetType;
+		target_language_type_pattern(targetType)
+		=> local typePattern;
+		[type_pattern(typePattern) '.']?
+		=> local idPattern;
+		id_pattern(idPattern)
+		!'('
+		=> if !listOfModifiers.empty() setall myPattern.modifiers = listOfModifiers;
+		=> insert myPattern = "method";
+		=> setall myPattern.return_type = targetType;
+		=> if typePattern setall myPattern.object_type = typePattern;
+		=> setall myPattern.field_name = idPattern;
+		;
+
+#overload parameters_pattern(myPattern : node) ::=
+		[
+			#pushItem(myPattern.parameters)
+			target_language_type_pattern(myPattern.parameters#back)
+			[
+				',' #continue
+				=> pushItem myPattern.parameters;
+				target_language_type_pattern(myPattern.parameters#back)
+			]*
+		]?;
+
+#overload target_language_type_pattern(myPattern : node) ::=
+		and_target_language_type_pattern(myPattern)
+		[
+			"||" #continue
+			=> slideNodeContent(myPattern, left);
+			=> insert myPattern = "||";
+			and_target_language_type_pattern(myPattern.right)
+		]*;
+
+#overload and_target_language_type_pattern(myPattern : node) ::=
+		literal_target_language_type_pattern(myPattern)
+		[
+			"&&" #continue
+			=> slideNodeContent(myPattern, left);
+			=> insert myPattern = "&&";
+			literal_target_language_type_pattern(myPattern.right)
+		]*;
+
+#overload literal_target_language_type_pattern(myPattern : node) ::=
+		id_pattern(myPattern)
+		#!ignore
+		['+' => insert myPattern.plus = true;]?
+		["[]" => insert myPattern.array = true;]?
+	|
+		'!' #continue
+		=> insert myPattern = '!';
+		target_language_type_pattern(myPattern.pattern)
+	|
+		'(' #continue target_language_type_pattern(myPattern) ')'
+	;
+
+#overload type_pattern(myPattern : node) ::=
+		and_type_pattern(myPattern)
+		[
+			"||" #continue
+			=> slideNodeContent(myPattern, left);
+			=> insert myPattern = "||";
+			and_type_pattern(myPattern.right)
+		]*
+		;
+
+#overload and_type_pattern(myPattern : node) ::=
+		literal_type_pattern(myPattern)
+		[
+			"&&" #continue
+			=> slideNodeContent(myPattern, left);
+			=> insert myPattern = "&&";
+			literal_type_pattern(myPattern.right)
+		]*
+		;
+
+#overload literal_type_pattern(myPattern : node) ::=
+		id_pattern(myPattern)
+		#!ignore
+		['+' => insert myPattern.plus = true;]?
+		["[]" => insert myPattern.array = true;]?
+	|
+		'!' #continue
+		=> insert myPattern = '!';
+		type_pattern(myPattern.pattern)
+	|
+		'(' #continue type_pattern(myPattern) ')'
+	;
+
+#overload id_pattern(myPattern : node) ::=
+		"..":myPattern
+	|
+		"*":myPattern
+	|
+		#readIdentifier:myPattern.id #!ignore ['*' => insert myPattern.star = true;]?
+		=> insert myPattern = "id";
+	;
+
+#overload type_name(myObject : node) ::=
+		#readIdentifier:sIdentifier
+		[
+			['.'| "::"] #continue
+			=> pushItem myObject.nested_names = sIdentifier;
+			#readIdentifier:sIdentifier
+		]*
+		=> insert myObject = sIdentifier;
+		;
+
+#overload pointcut_expression(myExpr : node) ::=
+		and_pointcut_expression(myExpr)
+		[
+			"||" #continue
+			=> slideNodeContent(myExpr, left);
+			=> set myExpr = "||";
+			and_pointcut_expression(myExpr.right)
+		]*;
+
+#overload and_pointcut_expression(myExpr : node) ::=
+		literal_pointcut_expression
+		[
+			"&&" #continue
+			=> slideNodeContent(myExpr, left);
+			=> set myExpr = "&&";
+			literal_pointcut_expression(myExpr.right)
+		]*;
+
+#overload literal_pointcut_expression(myExpr : node)::=
+		'(' #continue pointcut_expression(myExpr) ')'
+	|
+		'!' #continue
+		=> set myExpr = '!';
+		literal_pointcut_expression(myExpr.expression)
+	|
+		primitive_pointcut(myExpr)
+	|
+		user_defined_pointcut(myExpr);
+
+#overload primitive_pointcut(myExpr : node) ::=
+		#readIdentifier:{"call", "execution", "withincode"}:sPointcut
+		'('
+		#continue
+		=> insert myExpr = sPointcut;
+		[method_pattern(myExpr.pattern) | constructor_pattern(myExpr.pattern)]
+		')'
+	|
+		#readIdentifier:{"initialization", "preinitialization"}:sPointcut
+		'('
+		#continue
+		=> insert myExpr = sPointcut;
+		constructor_pattern(myExpr.pattern)
+		')'
+	|
+		#readIdentifier:{"staticinitialization", "handler", "within"}:sPointcut
+		'('
+		#continue
+		=> insert myExpr = sPointcut;
+		type_pattern(myExpr.pattern)
+		')'
+	|
+		#readIdentifier:{"get", "set"}:sPointcut
+		'('
+		#continue
+		=> insert myExpr = sPointcut;
+		field_pattern(myExpr.pattern)
+		')'
+	|
+		#readIdentifier:"adviceexecution":sPointcut
+		'('
+		#continue
+		=> insert myExpr = sPointcut;
+		')'
+	|
+		#readIdentifier:{"cflow", "cflowbelow"}:sPointcut
+		'('
+		#continue
+		=> insert myExpr = sPointcut;
+		pointcut_expression(myExpr.expression)
+		')'
+	|
+		IF
+		'('
+		#continue
+		=> insert myExpr = "if";
+		target_language_expression(myExpr.expression)
+		')'
+	|
+		#readIdentifier:{"this", "target"}:sPointcut
+		'('
+		#continue
+		=> insert myExpr = sPointcut;
+		[type_pattern(myExpr.pattern) | variable_pattern(myExpr.pattern)]
+		')'
+	|
+		ARGS
+		'('
+		#continue
+		=> insert myExpr = "args";
+		=> pushItem myExpr.patterns;
+		[type_pattern(myExpr.patterns#back) | variable_pattern(myExpr.patterns#back)]
+		[
+			','
+			#continue
+			=> pushItem myExpr.patterns;
+			[type_pattern(myExpr.patterns#back) | variable_pattern(myExpr.patterns#back)]
+		]*
+		')'
+	;
+
+#overload user_defined_pointcut(myExpr : node) ::=
+		=> local sAspectName;
+		[
+			=> local sTemp;
+			#readIdentifier:sTemp
+			'.'
+			=> set sAspectName = sTemp;
+		]?
+		#readIdentifier:sPointcut
+		'(' #continue
+		=> insert myExpr = sPointcut;
+		=> if sAspectName insert myExpr.aspect_name = sAspectName;
+		[
+			#readIdentifier:sParam
+			=> pushItem myExpr.parameters = sParam;
+			[
+				',' #continue
+				#readIdentifier:sParam
+				=> pushItem myExpr.parameters = sParam;
+			]*
+		]?
+		')';
+
+#overload type_for_member(myMemberType : node) ::=
+		[
+			#readIdentifier:sType
+			['.'| "::"]
+			=> pushItem myMemberType = sType;
+		]+;
+
+/*
+special_forms	::=
+		#readIdentifier:{"thisJoinPoint", "thisJoinPointStaticPart", "thisEnclosingJoinPointStaticPart"}
+	|
+		PROCEED '(' #continue arguments ')' // only in an 'around' advice
+	;
+
+
+variable_pattern	::= type_pattern;
+modifier_pattern	::= modifier;
+*/

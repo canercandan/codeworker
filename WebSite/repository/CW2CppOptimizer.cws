@@ -1,0 +1,31 @@
+forfile i in "*.cpp" {
+	local sTemp = i.rsubString(3) + "out";
+	pushItem project = i;
+	translate("CW2CppOptimizer.cwp", project#back, _ARGS#front, sTemp);
+	if project#back.implicit_copy insert project.implicit_copy = true;
+}
+
+if !project.implicit_copy insert project.explicit_copy = true;
+
+foreach i in project {
+	local sTemp = i.rsubString(3) + "out";
+	if i.variables.existVariable() {
+		if project.explicit_copy {
+			foreach j in i.variables {
+				if startString(j.key(), "_compilerClauseImplicitCopy_") {
+					insert j.used = false;
+					insert j.active = true;
+				}
+			}
+		}
+		translate("CW2CppOptimizer.cwp", project#back, sTemp, sTemp);
+	}
+	if project.explicit_copy insert i.explicit_copy = true;
+	if i.explicit_copy {
+		translate("CW2CppOptimizer.cwp", project#back, sTemp, sTemp);
+	}
+}
+
+foreach i in sorted project.CGRuntime {
+	traceLine(i.key());
+}

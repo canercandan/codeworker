@@ -1,0 +1,456 @@
+[title]Practice of parsing and code generation for generative programming with CodeWorker[/title]
+[docinfo,author="Cedric Lemaire",email="codeworker@free.fr",profileName="codengine",keywords="BNF parsing tool,source code generator,code generator,generative programming,generative software,DSL,domain specific language,DSM,domain specific modeling,source to source translation,program transformation"/]
+
+[synopsis]A [url=http://www.codegeneration.net/tiki-read_article.php?articleId=64]Generative Programming[/url]
+approach consists of automating programming tasks for software and product-line software families. The combination
+of parsing and code generation helps greatly to accelerate development processes. This tutorial tackles some of the
+functionality of [url=http://www.codeworker.org]CodeWorker[/url], a parsing tool and a source code generator,
+and shows some concrete uses for inspiring the reader.[/synopsis]
+
+[chapter]Textbook case and features we'll study[/chapter]
+
+Let's say you are writing software for controlling all the traffic lights of a town, applying strategies that may
+react in real-time to the state of the traffic. Sensors count the number of vehicles per hour reaching or leaving
+a crossroad by a given street.
+A lot of well-specified control strategies have to be implemented both in C++ for the real-time application and
+in Java for a traffic light simulator. The documentation of the project must include a diagram for each strategy,
+representing them as graphs in [url=http://www.w3.org/Graphics/PNG]PNG pictures[/url].
+You can't build a generic mechanism for interpreting strategies dynamically, because you use a third party rule
+engine for executing them whose framework obliges you to hard-code them almost entirely.
+
+As you know [url=http://www.w3.org/XML]XML[/url], you decided to specify the strategies in XML and, from here, to generate as much code as possible
+with an [url=http://www.w3.org/TR/xslt]XSL transformation[/url] or a similar process. But two constraints could make it difficult. Firstly, you have
+to preserve some hand-typed code in the core of the generated code and secondly, you would like to inject
+generated code somewhere in a hand-typed piece of source code.
+Another constraint will decide for you. The customer wants to be able to control the strategies you wrote in XML,
+to change them or simply to contribute new ones. But he doesn't feel confident enough with this syntax, so you
+propose that they spend a few days on writing a GUI for editing strategies in a graphical way. Not granted.
+
+Never mind, you finally decide to write your own little language, using a quite convenient syntax. You'll parse
+it and generate the required source code, pictures and documentation from the syntactic tree. To have a glance
+at what the language of strategies looks like, see [reference=BusinessDayNight_TLC]next section[/reference].
+
+For a more concise description and for recapitulating the items, we'll explore further:
+[list]
+[*] Creation of a [url=http://en.wikipedia.org/wiki/Domain-specific_programming_language]Domain-Specific Language[/url]:
+	[list]
+	[*] definition of a syntax for the language,
+	[*] [reference=Parser]writing of the corresponding parser[/reference],
+	[/list]
+[*] From specifications written in the precedent [url=http://en.wikipedia.org/wiki/Domain-specific_programming_language]DSL[/url]:
+	[list]
+	[*] [reference=CodeGeneration]C++ code generation with hand-typed areas[/reference],
+	[*] [reference=ProgramTransformation]Program transformation of the DSL on boolean expressions[/reference],
+	[*] [reference=CodeExpansion]Java code generation by expanding code[/reference],
+	[*] Generation of a graph to a [url=http://www.w3.org/Graphics/PNG]PNG picture[/url], using [url=http://www.graphviz.org]Graphviz[/url],
+	[*] [reference=Translation]Translation of a strategy[/reference] to an [url=http://www.openoffice.org]Open Office 2.0[/url] text document with the syntax highlighting of the [url=http://en.wikipedia.org/wiki/Domain-specific_programming_language]DSL[/url],
+	[/list]
+[/list]
+
+All these tasks require a highly tailor-made solution, depending on the technical and Business constraints
+imposed on the project. They will be fully implemented in [url=http://www.codeworker.org]CodeWorker[/url], a
+well-adapted tool for this kind of development process automation.
+
+[chapter]How parsing and code generation are chained[/chapter]
+
+[url=http://www.codeworker.org]CodeWorker[/url] executes a [i]leader script[/i], which takes charge the driving
+of these parsing and code generation tasks:
+
+[code=CodeWorker.cws,load="demo.cws",script="this = translateString({#implicitCopy t ::= ->[#explicitCopy ['\\r']? '\\n' \"//--------\"];}, this, this);"][/code]
+
+This script iterates all files of the current directory describing one or more strategies. For each strategy
+contained in a file, it parses the content and generates the C++ source code and produces a picture. Then, it
+generates an Open Office 2.0 text document of the file.
+
+The following command line runs the script:
+[code]codeworker demo.cws[/code]
+
+[chapter]Creation and parsing of the DSL[/chapter]
+
+Here is a sample of what a description of strategy looks like:
+
+[code=TLC,load="BusinessDayNight.tlc",reference=BusinessDayNight_TLC][/code]
+
+[section]Specification of a strategy[/section]
+
+A name is assigned to each strategy, for referencing them without ambiguity. A strategy is inactive by default,
+and a [b]start[/b] clause specifies when to wake it up. Then, the rules attached to an active strategy are executed
+regularly. A rule triggers some actions if its antecedent (a boolean expression) is valid.
+
+In the precedent section, the sample shows a strategy named [i]BusinessDayNight[/i], becoming active after 17h30. The
+first rule triggers an action once the number of vehicles coming to [i]place de l'Opéra[/i] crossroad from
+[i]boulevard des Italiens[/i] street exceeds 600 per hour.
+
+[image=images/Crossroad.jpg,width=534,tooltip="Modeling of crossroads and street segments"/]
+
+An action may activate another rule, desactivate the current one or change the time during when a traffic light
+stays green. The latter action is called [i]duration[/i] and requires the coordinates of the traffic light (street,
+crossroad and direction: coming in or out of the crossroad) and the duration for staying green. It may be followed by
+other durations, to apply on other traffic lights, revolving around the crossroad in the anticlockwise.
+
+Note that for facilitating the translation of the [url=http://en.wikipedia.org/wiki/Domain-specific_programming_language]DSL[/url] to C++ or Java, boolean expressions used for expressing
+conditions and antecedents of rules are common enough to compile directly in these two programming languages.
+
+[section=Parser]Parsing of a strategy written in the DSL[/section]
+
+Now, let's attack the parse script of the [url=http://en.wikipedia.org/wiki/Domain-specific_programming_language]DSL[/url] in
+[url=http://www.codeworker.org]CodeWorker[/url]. The script defines
+[url=http://en.wikipedia.org/wiki/Backus-Naur_form]BNF (Backus-Naur Form)[/url] production rules, with some
+variations in the notation and enriching of various features to help build a grammar faster for the purpose
+of being pragmatic. 
+
+[frame="BNF vocabulary"]
+We have to define the vocabulary currently used in BNF notations. Please, don't run away. We'll explain each
+word further in situation.
+
+The declaration of a BNF production rule starts with its name, generally followed by the symbol [b][code]::=[/code][/b],
+which announces the definition of the production rule itself. The definition is a sequence of BNF symbols or
+alternatives of BNF sequences, which ends with a semi-comma.
+
+A BNF symbol may be a call to a production rule (known as a [i]non-terminal[/i]) or a well-defined sequence of
+characters (known as a [i]terminal[/i]), which must match exactly the current scanned input as a subset. [url=http://www.codeworker.org]CodeWorker[/url]
+accepts another type of BNF symbols that it calls [i]BNF directive[/i]. It may be a hard-coded non-terminal, such
+as the production rule of a C-like string or a C-like identifier, or a directive concerning the way the parser works,
+such as the indication of what kind of insignificant characters to ignore in the scanned input, between each
+BNF symbol execution. A BNF directive always starts with the symbol [code]#[/code].
+
+A BNF sequence is a sequence of BNF symbols, which are applied in the order of the controlling sequence. If a
+symbol fails in matching the scanned input, the iteration of the BNF sequence stops and the BNF sequence is
+considered having failed.
+
+An alternative of BNF sequences executes BNF sequences in the order of the controlling sequence up to the first
+one to succeed.
+[/frame]
+
+Once serialized in XML, the [url=http://www.codeworker.org]CodeWorker[/url]'s internal parse tree of the strategy [reference=BusinessDayNight_TLC]BusinessDayNight[/reference]
+should look like:
+
+[code=XML,load="strategies.xml"][/code]
+
+We'll see step by step how to populate this parse tree:
+
+[code=CodeWorker.cwp,load="TrafficLight.cwp",script="this = translateString({#implicitCopy r ::= ->[';' ['\\r']? '\\n' #explicitCopy ['\\r']? '\\n'];}, this, this);"][/code]
+
+[frame=Translation]This production rule consists of reading zero, one or more strategies, ignoring whitespaces and
+C++-like comments. Once all strategies have been parsed, the end of file must be reached or a syntax error occurs.[/frame]
+
+This production rule is called [i]TrafficLightControl[/i] and its definition is composed of a unique BNF sequence,
+ending with a semi-comma.
+The BNF sequence contains 3 [i]BNF directives[/i] and one repetition. The first directive, [code]#ignore(C++)[/code], means
+that whitespaces and C++-like comments are insignificant for the parsing: the grammar won't see them.
+The second directive, [code]#continue[/code] obliges the rest of the BNF sequence to be valid. If a BNF symbol
+fails, a syntax error will occur automatically, reporting as accurately as possible the BNF symbol which fails and
+the location in the scanned input (line and column numbers).
+The third and last directive expects the end of file, and then fails if the current position in the scanned input
+isn't at the end.
+The repetition [code][strategy]*[/code] is a regular expression, which means that the [i]non-terminal[/i] [code]strategy[/code]
+may apply zero, one or more times with success.
+
+[code=CodeWorker.cwp,load="TrafficLight.cwp",title="BNF declaration of a strategy",script="this = translateString({r ::= ->[';' [['\\r']? '\\n']2] #implicitCopy ->[';' ['\\r']? '\\n' #explicitCopy ['\\r']? '\\n'];}, this, this);"][/code]
+
+[frame=Translation]If the production rule matches an identifier and if this identifier is worth the keyword
+[code]strategy[/code], then there is no ambiguity: it's about a strategy description and so, the BNF sequence must
+be correct up to the trailing brace. The strategy must never have been defined before or an explicit error message
+raises. The production rule inserts the new strategy into the parse tree and parses the [i]start clause[/i] and
+all rules.[/frame]
+
+The production rule [i]strategy[/i] is also composed of a unique BNF sequence. The BNF directive [code]#readIdentifier[/code]
+is a hard-coded non-terminal, which scans a C-like identifier. In [code]#readIdentifier:"strategy"[/code], the
+scanned identifier is compared to the constant string [code]"strategy"[/code] and must be equal, whereas in
+[code]#readIdentifier:sName[/code], the scanned identifier is assigned to the local variable [code]sName[/code],
+declared implicitly here.
+
+The [code]=>[/code] symbol is followed by an instruction ending with a semi-comma or a block of instructions enclosed
+between braces. This looks like a kind of escape mode which notifies the BNF engine that this code has nothing to do
+with BNF and that it is more common scripting intructions, like control statement, computations, variable
+assignments... The first one serves to raise an error message if the association table containing the parse tree
+of each strategy already owns an entry key with the name of the current strategy. The next ones serve to populate
+the parse tree or to declare a local variable pointing to the parse tree of the strategy.
+
+Note that [b][code]'{'[/code][/b] and [b][code]'}'[/code][/b] are both [i]terminals[/i].
+
+[code=CodeWorker.cwp,load="TrafficLight.cwp",title="The 'start' clause",script="this = translateString({r ::= [->[';' [['\\r']? '\\n']2]]2 #implicitCopy ->[';' ['\\r']? '\\n' #explicitCopy ['\\r']? '\\n'];}, this, this);"][/code]
+
+[frame=Translation]This production rule must match an identifier being worth [code]start[/code]. A condition ending
+with a semi-comma must follow the keyword. The condition isn't decomposed to a syntactic tree: it's sufficient for
+us to keep it as a sequence of characters stored into the strategy.[/frame]
+
+[i]start_condition[/i] requires an argument, which is a reference to the parse tree of the strategy. This parse
+tree will receive a new branch (or attribute) called [i]start[/i] and being worth the scanned condition.
+
+[code=CodeWorker.cwp,load="TrafficLight.cwp",title="BNF declaration of a rule",script="this = translateString({r ::= [->[';' [['\\r']? '\\n']2]]3 #implicitCopy ->[';' ['\\r']? '\\n' #explicitCopy ['\\r']? '\\n'];}, this, this);"][/code]
+
+[frame=Translation]If it finds an antecedent, [i]rule[/i] parses the antecedent and the consequent of a strategy rule.
+The antecedent is simply a condition ending with the symbol [code]=>[/code]. The consequent is a series of actions
+separated by a comma. It ends with a semi-comma.[/frame]
+
+The parse tree of the new rule is pushed at the end of the list of rules (instruction [keyword=CodeWorker]pushItem[/keyword]),
+called [code]theStrategy.rules[/code]. The last element of the list is accessible by writing [code]theStrategy.rules#back[/code].
+
+To prevent an eventual growth of action types, the grammar uses generic non-terminals. [i]generic[/i] is to understand
+with a similar meaning as in [i]generic programming[/i]. A generic non-terminal is a concept developed in [url=http://www.codeworker.org]CodeWorker[/url],
+which consists of writing several instances of a BNF production rule. For example, the little language admits three
+action types for the moment. We'll write 3 instances of the production rule [i]rule_action[/i], parameterized by a
+constant string being the name of the action:
+[list]
+[*] [code]rule_action<"duration">(theAction : node) ::= ... // parsing of a 'duration' action[/code]
+[*] [code]rule_action<"activate">(theAction : node) ::= ... // parsing of a 'activate' action[/code]
+[*] [code]rule_action<"desactivate">(theAction : node) ::= ... // parsing of a 'desactivate' action[/code]
+[/list]
+
+The BNF engine will resolve the call to the correct instantiation of the production rule at runtime. Here, one
+reads the name of the action, used to resolve the switching on the correct instantiation.
+[code]...
+#readIdentifier:sAction // keyword of the action to execute
+// call of a generic BNF non-terminal, resolved by 'sAction'
+rule_action<sAction>(theStrategy.rules#back.actions#back)
+[/code]
+
+[code=CodeWorker.cwp,load="TrafficLight.cwp",title="BNF declaration of a street segment",script="this = translateString({r ::= [->[';' [['\\r']? '\\n']2]]7 #implicitCopy ->[';' ['\\r']? '\\n' #explicitCopy ['\\r']? '\\n'];}, this, this);"][/code]
+
+[frame="Translation"]A street segment gives the coordinates of a traffic light, knowing the street and the
+crossroad and the direction: an arrow indicates whether it enters or leaves the crossroad by the street. Some
+clarifications about the consistency: to avoid any ambiguity, the map is seen as an oriented graph, where
+crossroads are the nodes; when [i]leaving[/i] a crossroad, the traffic light is the one on the other lane.[/frame]
+
+One of the only interest on this production rule is to show what an alternative of two BNF sequences looks like. The
+sequences are separated by the alternate symbol [b]|[/b]. The second sequence is executed if and only if the first
+one has failed.
+
+Note that the BNF directive [code]#readCString[/code] is an hard-coded non-terminal, which reads a C-like constant
+string put between double quotes. It transforms the scanned value before returning, removing the double quotes and
+resolving escaped characters.
+
+[code=CodeWorker.cwp,load="TrafficLight.cwp",title="Scans a time and converts it to seconds",script="this = translateString({r ::= [->[';' [['\\r']? '\\n']2]]9 #implicitCopy ->[';' ['\\r']? '\\n' #explicitCopy ['\\r']? '\\n'];}, this, this);"][/code]
+
+[frame="Translation"]This production rule reads a time like [code]1min20[/code] and converts it to seconds (80 seconds
+for the example) and returns this transformed value, rather than the scanned characters as usual.[/frame]
+
+If a production rule intends to transform the scanned value before it returns, it must indicate that willing in the
+prototype, using the keyword [b][code]value[/code][/b] after the rule's name, looking like
+[code]timeInSeconds[b]:value[/b] ::= ...;[/code]. Then, the production rule declares a local variable having
+the same name, [code]timeInSeconds[/code] for the example. The transformation of the scanned value must be assigned
+to this variable.
+
+Note that [url=http://www.codeworker.org]CodeWorker[/url] works on strings by default and isn't aware of numeric values, but you can force the resolution
+of an arithmetic expression, enclosing it between [b][code]$[/code][/b] symbols. So,
+[code=CodeWorker.cws]timeInSeconds = $timeInSeconds + iSec$;[/code] sums [code]timeInSeconds[/code] and [code]iSec[/code],
+while [code=CodeWorker.cws]timeInSeconds = timeInSeconds + iSec;[/code] concatenates the string value of the variable
+[code]iSec[/code] to the end of [code]timeInSeconds[/code].
+
+[chapter=CodeGeneration]Code generation and program transformation[/chapter]
+
+In [url=http://www.codeworker.org]CodeWorker[/url], scripts generating code are called [i]template-based scripts[/i] and work in the same spirit as
+PHP scripts. Syntactically, they mix both rough text to write to the output file and scripting instructions to
+execute.
+
+[section]Traditional generation of code: example with the C++ header file[/section]
+
+The most widespread way of generating code consists of writing 100% of a file, erasing what could have been
+included by hand between two cycles of generation. The C++ header file we want to generate from the
+[reference=BusinessDayNight_TLC]BusinessDayNight strategy[/reference] should look like:
+
+[code=C++,load="output/BusinessDayNight.h"][/code]
+
+The following template-based script takes charge of the whole generation of the C++ header file:
+
+[code=CodeWorker.cwt,load="TrafficLight-headerC++.cwt"][/code]
+
+A template-based script starts directly in rough text. The symbol [b][code]@[/code][/b] (or [b][code]<%[/code][/b]
+alternatively) toggles the execution of scripting instructions, which may end by another occurence of the
+[b][code]@[/code][/b] symbol (or [b][code]%>[/code][/b]) to come back to rough text.
+
+[code=CodeWorker.cwt,title="Example"]...
+	private:
+@
+foreach i in this.rules {
+	@		bool executeRule@
+	//...
+}[/code]
+
+Note: an expression enclosed between [b][code]@...@[/code][/b] (or [b][code]<%...%>[/code][/b]) is resolved and the
+result is written to the output file. Example: [code=CodeWorker.cwt]#ifndef _@this.name@_h_[/code] means that the
+name of the current strategy must be written between some rough text.
+
+[section]Generation preserving hand-typed code: example with the C++ body file[/section]
+
+We'll assume that the developer may have to implement some specific code by hand before the method [code]executeRules()[/code]
+returns while the strategy is active.
+
+A manner of inserting hand-typed code in the core of a generated file is to anchor a protected area the interpreter
+detects and preserves from a generation cycle to another. In the source code, a protected area starts and finishes with
+a special comment. The special comment begins with [code]##protect##[/code] and is followed by a C-like string,
+which is a unique key designating the protected area without ambiguity into the output file. Write the hand-typed
+code directly between the special comments.
+
+[frame="Format of comments"]By default, a comment starts with [b][code]//[/code][/b] and finishes with an end of line (or file),
+exactly like a C++ inline comment. Of course, if you decide to insert a protected area into a HTML file or other,
+you can stipulate a new format, calling the functions [keyword=CodeWorker]setCommentBegin[/keyword] and
+[keyword=CodeWorker]setCommentEnd[/keyword]. If the syntax of comments is too sophisticated to be represented as
+a free sequence of characters enclosed between two well-known invariant tags like [b][code]<!--[/code][/b] and
+[b][code]-->[/code][/b], you can describe the BNF grammar of comments (among others) in the function
+[keyword=CodeWorker]setGenerationTagsHandler[/keyword].[/frame]
+
+[code=C++,load="output/BusinessDayNight.cpp"][/code]
+
+To anchor a protected area at the current position of the output file, use the function [keyword=CodeWorker]setProtectedArea[/keyword]
+that expects the unique key of the protected area as parameter. The first time, the protected area is empty and
+you have to fill it by hand in the output file once the generation has been achieved. The next time, the protected area
+will be preserved, even if you change the position of the anchor.
+
+The following template-based script takes charge of the generation of the C++ body file and shows how to anchor
+a protected area called [code]"Post Processing, to handle by hand!"[/code]:
+
+[code=CodeWorker.cwt,load="TrafficLight-bodyC++.cwt"][/code]
+
+Perhaps, you have noticed the preprocessor directive [code=CodeWorker.cws]#include "TrafficLight-sharedFunctions.cws"[/code]. It
+means that the content of the referenced file must be included in the script, to replace the directive exactly like
+in C or C++. Here, we implement the instantiations of generic functions in charge of generating the Java or C++
+source code of each action. They are the equivalent of generic BNF production rules we have encountered in the
+parser, but for generating code. They won't learn anything to us, contrary to the function [code]convertAntecedent2Cpp[/code],
+explained in the next section.
+
+[section=ProgramTransformation]Program transformation[/section]
+
+A [i]program transformation[/i] consists of applying some changes on the source code, like refactoring or optimization for
+instance.
+
+The script [code]"TrafficLight-sharedFunctions.cws"[/code] contains some functions shared between Java and C++ to
+generate a strategy, but one of them has to transform a strategy antecedent to another syntax, also accepted by the
+grammar of the DSL and which has the great advantage of conforming to the C++ and Java syntax too!
+
+It seems pretentious to call this manipulation a [i]program transformation[/i], as it applies on a little piece
+of strategy description and not on the whole strategy, but it uses exactly the same mechanisms as on a complete
+file!
+
+The aim of this [i]program transformation[/i] is to change [code=C++]vehicles_hour(place_opera->"boulevard des Capucines")[/code]
+to [code=C++]vehicles_hour("boulevard des Capucines", "place_opera", "c->s")[/code]. A program-transformation script
+is a [i]translation[/i] script, being able to both execute BNF rules and generate code. Such a script is executed
+through the function [keyword=CodeWorker]translate[/keyword] (input/output are files) or
+[keyword=CodeWorker]translateString[/keyword] (input/output are strings).
+
+[code=CodeWorker.cws,load="TrafficLight-sharedFunctions.cws",script="this = translateString({r ::= [~\"function convertAntecedent2Cpp(\"]* #implicitCopy ->\"street_segment(theSegment : node) ::=\" =>{@ /*[skip]...*/ do not care;@} [#explicitCopy ->\"\\t;\"] ->#empty;}, this, this);"][/code]
+
+The key of a program-transformation script is based on the BNF directive [code=CodeWorker.cwp]#implicitCopy[/code]. It
+stipulates that what is scanned from the input must be copied to the output file simultaneously. For our example,
+the output is equivalent to the input, except on the function [i]vehicles_hour[/i] returning a sensor value.
+
+[section]Code generation with an external tool[/section]
+
+[url=http://www.codeworker.org]CodeWorker[/url] doesn't generate PNG pictures by itself, neither graphs nor charts, but it can generate the input
+file of a tool capable of generating pictures. [url=http://www.graphviz.org]Graphviz[/url] is such a tool which
+has developed its own [url="http://en.wikipedia.org/wiki/Domain-specific_programming_language"]Domain-Specific Language[/url]
+for describing a graph, with nodes and relationships and their graphical properties.
+
+The description of the graph corresponding to the strategy [reference=BusinessDayNight_TLC]BusinessDayNight[/reference] is:
+
+[code=GRZ,load="BusinessDayNight.grz"][/code]
+
+In the [i]leader script[/i], the instruction [code]system("utils/dot.exe -Tpng -o BusinessDayNight.png BusinessDayNight.grz")[/code]
+runs [url=http://www.graphviz.org]Graphviz[/url] with the appropriate parameters:
+
+[image=images/BusinessDayNight.png,width=785,tooltip="Diagram of the business day night strategy"/]
+
+The template-based script generating the [url=http://www.graphviz.org]Graphviz[/url] input file from the parse tree
+of a strategy has no singularities, and so, doesn't deserve to be shown here.
+
+[chapter=CodeExpansion]Code expansion or how to inject generated code into a hand-typed file[/chapter]
+
+Let's imagine that the developer has decided to include all strategies as inner classes directly in the Java file
+of the simulator manager ([code]"TrafficLightSimulator.java"[/code]), perhaps for not generating a Java file per
+strategy and having then to purge these files properly when a strategy changes its name or disappears.
+
+[code=Java,load="TrafficLightSimulator.java",script="this = translateString({#implicitCopy r ::= ->[!!\"//##begin##\"] [#explicitCopy ->[\"//##end##\" #continue ->'\\n']] ->[!!\"//##begin##\"] [#explicitCopy ->[\"//##end##\" #continue ->'\\n']] ->#empty;}, this, this);"][/code]
+
+The strategies have to be injected as inner Java classes at the position marked by the special comment
+[code=CodeWorker.cws]//##markup##"strategies"[/code]. When [url=http://www.codeworker.org]CodeWorker[/url] applies a code-expansion, it scrutinizes
+the whole processed file for detecting such special comments, then it executes the [i]template-based[/i] script
+to inject generated code just below the markup. To isolate properly the injected code from the rest of the source
+code, the generator encloses the injected code between tags [code=CodeWorker.cws]//##begin##"strategies"[/code] and
+[code=CodeWorker.cws]//##end##"strategies"[/code] (in our example).
+
+As the same [i]template-based[/i] script applies to the whole processed file, a key identifies the markup, put as
+a constant string, between double quotes. Contrary to protected area keys, they haven't to be unique here. The
+[i]template-based[/i] script can query the key of the markup currently generated, thanks to the function
+[keyword=CodeWorker]getMarkupKey[/keyword], and then it can decide what to generate at this place.
+
+For instance, this sample of the [i]template-based script[/i] [code]"TrafficLight-embeddedJava.cwt"[/code]:
+
+[code=CodeWorker.cws,load="TrafficLight-embeddedJava.cwt",script="this = translateString({r ::= ->[!!\"if getMarkupKey()\"] #implicitCopy ->['}' !!\" else\"];}, this, this);"][/code]
+
+will inject the following code below the [code]"strategies"[/code] markup in [code]"TrafficLightSimulator.java"[/code]:
+
+[code=Java,load="TrafficLightSimulator.java",script="this = translateString({r ::= ->[!!\"//##markup##\"] [#implicitCopy [->'\\n']4] =>{@	// [part without any interest skipped] ...@endl()@@} ->[!!['}' #skipIgnore(blanks) \"//##end##\"]] #implicitCopy ->\"//##end##\" ->'\\n';}, this, this);"][/code]
+
+In some cases, it's interesting to attach specific data to the markup. The special comment [code]//##data##[/code]
+both starts and ends the data section, whose content is avalable thanks to the function [keyword=CodeWorker]getMarkupValue[/keyword].
+
+Here, for instance, the developer wants to write temporary or test strategies directly in the Java file of the
+simulator. The best way is to populate the data section of markups like [code]//##markup##"DSL: TrafficLight"[/code]. As
+the DSL code doesn't compile under a Java compiler, the whole markup is put into a multi-line comment:
+
+[code=Java,load="TrafficLightSimulator.java",script="this = translateString({r ::= ->[!!\"/*\"] #implicitCopy [->'\\n']2 ->\"//##data##\" ->[\"//##data##\" #continue ->'\\n'] => {@*/@};}, this, this);"][/code]
+
+The following sample of the [i]template-based script[/i] [code]"TrafficLight-embeddedJava.cwt"[/code] will inject
+the source code of temporary strategies:
+
+[code=CodeWorker.cws,load="TrafficLight-embeddedJava.cwt",script="this = translateString({r ::= ->\"if getMarkupKey()\" ->\"} else \" #implicitCopy ->#empty;}, this, this);"][/code]
+
+The function [keyword=CodeWorker]parseAsString[/keyword] parses the data section of any DSL markup and populates
+a local parse tree, passed to a function taking charge of the generation of each extracted strategy.
+
+[chapter=Translation]Source-to-source translation[/chapter]
+
+A source-to-source translation consists of converting a file to another format. In [url=http://www.codeworker.org]CodeWorker[/url], a translation script
+is a [i]BNF-parse[/i] script including parts of [i]template-based[/i] scripts, similarly to a
+[reference=ProgramTransformation]program transformation[/reference]. Most of the time, a source-to-source
+translation doesn't require the BNF directive [code]#implicitCopy[/code], contrary to a [reference=ProgramTransformation]program transformation[/reference].
+
+As an example, we'll translate a ".tlc" file describing strategies in our DSL to an Open Office 2.0 text
+document. Such a document is a zipped file containing XML files and sub-directories and pictures, where the file
+extension has changed to [code]".odt"[/code]. The main file [code]"content.xml"[/code] contains the document itself,
+with used styles only and references to pictures.
+
+Here, we'll just focus on the generation of the main file, [code]"content.xml"[/code]. The leader script executes
+the translation with the instruction [code=CodeWorker.cws]translate("TrafficLight2OpenOffice20.cwp", project, strategyFile, "OpenOffice2.0/content.xml");[/code].
+
+The following screen shot of the PDF document shows the translation of the strategy [reference=BusinessDayNight_TLC]BusinessDayNight[/reference]
+to Open Office 2.0:
+
+[image=images/OpenOffice20.jpg,width=795,tooltip="Screen shot of the Open Office 2.0 document generated from a strategy"/]
+
+The translation script generating the precedent document looks like:
+
+[code=CodeWorker.cwp,load="TrafficLight2OpenOffice20.cwp",script="this = translateString({#implicitCopy r ::= ->\"xmlns:office:1.0\\\"\" [#explicitCopy [~'@']*] '@' => {@// skipped...@} ->#empty;}, this, this);"][/code]
+
+[chapter]Conclusion[/chapter]
+
+Coupled with high-level specifications, code generation accelerates the development of tedious and repetitive
+tasks, but also builds flexible, reactive and reliable software or software families. [url="http://en.wikipedia.org/wiki/Domain-specific_programming_language"]Domain-Specific
+Languages[/url] are a way to describe high-level specifications not depending on the implementation choices and growing
+the Business coverage without introducing new bugs. The technical skills on how to translate the specifications
+to various implementations are capitalized in [i]template-based[/i] scripts as much as possible, bringing a new
+axis to reusability. Changing technical choices, such as the framework of the architecture or applications,
+amounts to writing other [i]template-based[/i] scripts for a large part, the one depending on the high-level
+specifications.
+
+Building a [url="http://en.wikipedia.org/wiki/Domain-specific_programming_language"]DSL[/url] may be an efficent
+bridge between the Business requirements and the development. It allows working in domains where requirements are
+constantly moving or growing, as the code is generated as much as possible from the high-level specifications. Some
+highly-customized diagrams or documents can be generated for helping the Business to understand the specifications
+and to improve them. If some new Business features may appear and have to be formalized later, they will enrich the
+[url="http://en.wikipedia.org/wiki/Domain-specific_programming_language"]DSL[/url] and some changes in
+[i]template-based[/i] scripts will take them into account, generating their code or documentation.
+
+The specifications may already exist as IDL files or C API or HTML documentation..., when you are retrieving
+information from an existent application for improving it or building other software. In that case, it makes no
+sense to invent a new DSL. You just have to write a parser for these files, IDL or other, just for extracting
+pertinent data. It means that you don't need a complete parser of the language and I hope to have convinced you
+how easy it is to write a parser. Otherwise, the script repository of [url=http://www.codeworker.org]CodeWorker[/url]
+contains both an IDL and a C parser, for instance.
+
+The code generator should be efficient enough to generate source code or text in several manners: traditional code
+generation, with or without preserving hand-typed areas, code expansion by injecting generated code, source-to-source
+translation or program transformation. The code generator offers a lot of features we didn't have had time
+to show, such as inserting code into a part of the output file already generated or changing the output stream
+during a generation process.

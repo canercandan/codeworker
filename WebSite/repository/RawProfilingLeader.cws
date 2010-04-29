@@ -1,0 +1,39 @@
+/*description:
+{
+	Leader script that drives the intrusion of profiling code in C++ source files. This
+	is called a \textit{raw profiling}, because it doesn't pretend to offer a smart and
+	efficient profiling mechanism. It is more like an illustration of what is possible as
+	a program transformation.
+
+	Two properties must be passed on the command line:
+	\begin{itemize}
+		\item \textbf{SOURCES} gives the file masks of C++ bodies to select for the
+			transformation. If more than one mask, one cancatenates them, separated by a
+			semi-comma.
+		\item \textbf{RAW_PROFILING_DIR} provides the directory where to generate the
+			\textit{profiling module}. The \textit{profiling module} manages the time spent
+			in each profiled function and how many times they have been called.
+	\end{itemize}
+
+	The \textit{profiling module} is implemented in files \samp{"RawProfiling.h"} and
+	\samp{"RawProfiling.cpp"}.
+}
+*/
+
+if !getProperty("SOURCES") error("property 'SOURCES' must contain the file masks of C++ bodies, separated by semi commas.");
+if !getProperty("RAW_PROFILING_DIR") error("property 'RAW_PROFILING_DIR' must contain the directory where to generate the profiling module.");
+
+local listOfMasks;
+cutString(getProperty("SOURCES"), ";", listOfMasks);
+
+local sProfilingDir = canonizePath(getProperty("RAW_PROFILING_DIR"));
+if !endString(sProfilingDir, "/") set sProfilingDir += "/";
+
+foreach i in listOfMasks {
+	forfile j in i {
+		translate("RawProfilingCppTransformation.cwp", project, j, j);
+	}
+}
+
+expand("RawProfilingHpp.cwt", project, sProfilingDir + "RawProfiling.h");
+generate("RawProfilingCpp.cwt", project, sProfilingDir + "RawProfiling.cpp");

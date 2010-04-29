@@ -1,0 +1,625 @@
+#ignore ::=
+		[
+			#skipIgnore(C++)
+			[
+					'#' #continue
+					#readIdentifier:sDirective
+					directive<sDirective>
+				|
+					#break
+			]
+		]*
+		;
+
+specification ::= #ignore [import]* [definition(this)]+;
+
+definition(parent : node) ::=
+		type_dcl(parent) ';' | const_dcl(parent) /*';'*/ | except_dcl /*';'*/ | interface(parent) /*';'*/ | module(parent) /*';'*/
+			|
+		value /*';'*/ | type_id_dcl ';' | type_prefix_dcl ';' | event ';' | component /*';'*/ | home_dcl /*';'*/
+		;
+
+module(parent : node) ::=
+		#readIdentifier:"module" #continue
+		identifier:sId
+		=> insert parent.modules[sId].name = sId;
+		=> traceLine("nouveau module '" + sId + "' dans :");
+		=> traceObject(parent);
+		=> traceLine("-------------------------------");
+		'{' [definition(parent.modules[sId])]+ '}' ';';
+
+interface(parent : node) ::=
+		=> local sModifier;
+		[#readIdentifier:{"abstract", "local"}:sModifier]?
+		#readIdentifier:"interface"
+		#continue
+		identifier:sId
+		=> insert parent.interfaces[sId].name = sId;
+		=> ref interf = parent.interfaces[sId];
+		=> if sModifier insert interf.modifier = sModifier;
+		[
+				// forward declaration
+				';'
+			|
+				// interface declaration
+				[ interface_inheritance_spec(interf) ]?
+				'{'
+				#continue
+				interface_body(interf) '}'
+				';'
+		]
+		;
+
+interface_inheritance_spec(interf : node) ::=
+		':' #continue
+		=> pushItem interf.extends;
+		interface_name:interf.extends#back
+		[
+			',' #continue
+			=> pushItem interf.extends;
+			interface_name:interf.extends#back
+		]*
+		;
+
+interface_body(interf : node) ::= [export(interf)]*;
+
+export(parent : node) ::= type_dcl(parent) ';'
+| const_dcl(parent) /*';'*/
+| except_dcl /*';'*/
+| attr_dcl ';'
+| op_dcl ';'
+| type_id_dcl ';'
+| type_prefix_dcl ';';
+
+
+interface_name:value ::= scoped_name;
+
+scoped_name:value ::=
+	identifier:scoped_name
+	[
+		"::":+scoped_name #continue
+		identifier:+scoped_name
+	]*
+	;
+
+
+//July 2002 CORBA, v3.0: OMG IDL Grammar 3-13
+//3
+value ::= value_dcl | value_abs_dcl | value_box_dcl | value_forward_dcl;
+
+value_forward_dcl ::= [#readIdentifier:"abstract"]? #readIdentifier:"valuetype" identifier ';';
+
+value_box_dcl ::= #readIdentifier:"valuetype" identifier type_spec(type) ';';
+
+value_abs_dcl ::= #readIdentifier:"abstract" #readIdentifier:"valuetype" identifier [value_inheritance_spec]? '{' #continue [export(parent)]* '}' ';';
+
+value_dcl ::= value_header '{' #continue [value_element]* '}' ';';
+
+value_header ::= [#readIdentifier:"custom" ]? #readIdentifier:"valuetype" identifier [ value_inheritance_spec ]?;
+
+value_inheritance_spec ::=
+		[
+			':' #continue
+			[ #readIdentifier:"truncatable" ]?
+			value_name [',' #continue value_name]*
+		]?
+		[
+			#readIdentifier:"supports" #continue
+			interface_name [',' #continue interface_name]*
+		]?;
+
+value_name ::= scoped_name;
+
+value_element ::= export(parent) |  state_member | init_dcl;
+
+state_member ::= #readIdentifier:{"public", "private"} #continue type_spec(type) declarators(myDeclarators) ';';
+
+init_dcl ::=
+		#readIdentifier:"factory" identifier
+		'(' #continue [ init_param_decls ]? ')'
+		[ raises_expr ]? ';';
+
+init_param_decls ::= init_param_decl [ ',' #continue init_param_decl]*;
+
+init_param_decl ::= init_param_attribute param_type_spec(type) simple_declarator(parent);
+
+init_param_attribute ::= #readIdentifier:"in";
+
+const_dcl(parent : node) ::=
+		#readIdentifier:"const" #continue
+		=> pushItem parent = "const";
+		const_type(parent.type) identifier:parent.variable '=' const_exp(parent.expr) ';';
+
+const_type(type : node) ::=
+			integer_type(type)
+		|
+			char_type(type)
+		|
+			wide_char_type(type)
+		|
+			boolean_type(type)
+		|
+			floating_pt_type(type)
+		|
+			string_type(type)
+		|
+			wide_string_type(type)
+		|
+			fixed_pt_const_type(type)
+		|
+			scoped_name
+		|
+			octet_type(type)
+		;
+
+const_exp(expr : node) ::= or_expr(expr);
+or_expr(expr : node) ::=
+		xor_expr(expr)
+		[
+			'|' !'|' #continue
+			=> slideNodeContent(expr, eft);
+			=> expr = '|';
+			xor_expr(expr.right)
+		]*;
+xor_expr(expr : node) ::=
+		and_expr(expr)
+		[
+			'^' #continue
+			=> slideNodeContent(expr, left);
+			=> expr = '^';
+			and_expr(expr.right)
+		]*;
+and_expr(expr : node) ::=
+		shift_expr(expr)
+		[
+			'&' !'&' #continue
+			=> slideNodeContent(expr, left);
+			=> expr = '&';
+			shift_expr(expr.right)
+		]*;
+shift_expr(expr : node) ::=
+		add_expr(expr)
+		[
+			[">>" | "<<"]:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> expr = sOperator;
+			add_expr(expr.right)
+		]*;
+
+//3-14 Common Object Request Broker Architecture (CORBA), v3.0 July 2002
+//3
+add_expr(expr : node) ::=
+		mult_expr(expr)
+		[
+			['+' | '-']:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> expr = sOperator;
+			mult_expr(expr.right)
+		]*;
+mult_expr(expr : node) ::=
+		unary_expr(expr)
+		[
+			['*' | '/' | '%']:sOperator #continue
+			=> slideNodeContent(expr, left);
+			=> expr = sOperator;
+			unary_expr(expr.right)
+		]*;
+unary_expr(expr : node) ::=
+			unary_operator:expr.operator
+			#continue
+			=> expr = "unary";
+			primary_expr(expr.unary)
+		|
+			primary_expr(expr)
+		;
+unary_operator ::= '-' | '+' | '~';
+
+primary_expr(expr: node) ::=
+			literal(expr)
+		|
+			scoped_name:expr.name
+			=> expr = "name";
+		|
+			'(' #continue const_exp(expr) ')'
+		;
+
+literal(expr : node) ::=
+			#readInteger:expr.value
+			!['.' | 'e' | 'E']
+			=> expr = "int";
+		|
+			#readCString:expr.value
+			=> expr = "string";
+//| wide_string_literal
+		|
+			#readCChar:expr.value
+			=> expr = "char";
+//| wide_character_literal
+		|
+			#readNumeric:expr.value
+			=> expr = "double";
+		|
+			#readIdentifier:{"TRUE", "FALSE"}:expr.value
+			=> expr = "bool";
+		;
+
+positive_int_const(expression : node) ::= const_exp(expression);
+
+type_dcl(parent : node) ::=
+		#readIdentifier:"typedef" #continue
+		type_declarator(parent.typedefs)
+	|
+		struct_type(type)
+		=> setall parent.structs[type.name] = type;
+	|
+		union_type(type)
+		=> setall parent.unions[type.name] = type;
+	|
+		enum_type(type)
+		=> setall parent.enums[type.name] = type;
+	|
+		#readIdentifier:"native" #continue
+		simple_declarator(parent)
+	|
+		constr_forward_decl
+		;
+
+type_declarator(parent : node) ::=
+		=> local myType;
+		type_spec(myType)
+		declarators(parent)
+		=> foreach i in myDeclarators {
+			setall i.type = myType;
+		}
+		;
+
+type_spec(type : node) ::= simple_type_spec(type) | constr_type_spec(type);
+
+simple_type_spec(type : node) ::=
+			base_type_spec(type)
+		|
+			template_type_spec(type)
+		|
+			scoped_name
+		;
+
+base_type_spec(type : node) ::=
+			floating_pt_type(type) | integer_type(type) | char_type(type) | wide_char_type(type) | boolean_type(type)
+		|
+			octet_type(type) | any_type(type) | object_type(type) | value_base_type(type)
+		;
+
+template_type_spec(type : node) ::= sequence_type(type) | string_type(type) | wide_string_type(type) | fixed_pt_type(type);
+
+constr_type_spec(type : node) ::= struct_type(type) | union_type(type) | enum_type(type);
+
+declarators(parent : node) ::= declarator(parent) [ ',' #continue declarator(parent)]*;
+
+declarator(parent : node) ::= complex_declarator(parent) | simple_declarator(parent);
+
+simple_declarator(parent : node) ::= identifier:sId => insert parent[sId];;
+
+complex_declarator(parent : node) ::= array_declarator(parent);
+
+floating_pt_type(type : node) ::=
+			#readIdentifier:{"float", "double"}:type
+		|
+			#readIdentifier:"long" #readIdentifier:"double"
+			=> type = "long double";
+		;
+
+integer_type(type : node) ::= signed_int(type) | unsigned_int(type);
+
+signed_int(type : node) ::= signed_short_int(type) | signed_long_int(type) | signed_longlong_int(type);
+
+signed_short_int(type : node) ::= #readIdentifier:"short":type;
+
+signed_long_int(type : node) ::= #readIdentifier:"long":type;
+
+signed_longlong_int(type : node) ::= #readIdentifier:"long" #readIdentifier:"long" => type = "long long";;
+
+unsigned_int(type : node) ::= #readIdentifier:"unsigned" #continue signed_int(type) => type = "unsigned " + type;;
+
+char_type(type : node) ::= #readIdentifier:"char":type;
+
+wide_char_type(type : node) ::= #readIdentifier:"wchar":type;
+
+boolean_type(type : node) ::= #readIdentifier:"boolean":type;
+
+octet_type(type : node) ::= #readIdentifier:"octet":type;
+
+any_type(type : node) ::= #readIdentifier:"any":type;
+
+object_type(type : node) ::= #readIdentifier:"Object":type;
+
+struct_type(type : node) ::= #readIdentifier:"struct" #continue identifier '{' #continue member_list '}';
+
+member_list ::= [member]+;
+
+member ::= type_spec(type) declarators(myDeclarators) ';';
+
+union_type(type : node) ::=
+		#readIdentifier:"union" identifier #readIdentifier:"switch" #continue
+		'(' switch_type_spec ')'
+		'{' switch_body '}';
+
+switch_type_spec ::= integer_type(type) | char_type(type) | boolean_type(type) | enum_type(type) | scoped_name;
+
+switch_body ::= [case]+;
+
+//3-16 Common Object Request Broker Architecture (CORBA), v3.0 July 2002
+//3
+case ::= [case_label(parent)]+ #continue element_spec ';';
+
+case_label(parent : node) ::=
+		#readIdentifier:"case"
+		=> pushItem parent = "case";
+		#continue const_exp(parent#back.expr) ':'
+	|
+		#readIdentifier:"default"
+		=> pushItem parent = "case";
+		#continue ':'
+	;
+
+element_spec ::= type_spec(type) declarator(parent);
+
+enum_type(type : node) ::= #readIdentifier:"enum" identifier '{' #continue enumerator [',' #continue enumerator]* '}';
+
+enumerator ::= identifier;
+
+sequence_type(type : node) ::= #readIdentifier:"sequence" #continue '<' simple_type_spec(type) [',' #continue positive_int_const(expr)]? '>';
+
+string_type(type : node) ::= #readIdentifier:"string" ['<' #continue positive_int_const(expr) '>']?;
+
+wide_string_type(type : node) ::= #readIdentifier:"wstring" ['<' #continue positive_int_const(expr) '>']?;
+
+array_declarator(parent : node) ::= identifier:sId => insert parent[sId]; [fixed_array_size(parent[sId])]+;
+
+fixed_array_size(parent : node) ::=
+		'[' #continue
+		=> pushItem parent.fixed_array_size;
+		positive_int_const(parent.fixed_array_size#back) ']'
+		;
+
+attr_dcl ::= readonly_attr_spec | attr_spec;
+
+except_dcl ::= #readIdentifier:"exception" #continue identifier '{' [member]* '}' ';';
+
+op_dcl ::= [op_attribute]? op_type_spec(type) identifier parameter_dcls [ raises_expr ]? [ context_expr ]?;
+
+op_attribute ::= #readIdentifier:"oneway";
+
+op_type_spec(type : node) ::= param_type_spec(type) | #readIdentifier:"void";
+
+parameter_dcls ::= '(' [param_dcl #continue [ ',' #continue param_dcl]*]? ')';
+
+param_dcl ::= param_attribute param_type_spec(type) simple_declarator(parent);
+
+param_attribute ::= #readIdentifier:{"in", "out", "inout"};
+
+raises_expr ::= #readIdentifier:"raises" #continue '(' scoped_name [ ',' #continue scoped_name]* ')';
+
+context_expr ::= #readIdentifier:"context" #continue '(' #readCString [ ',' #continue #readCString]* ')';
+
+param_type_spec(type : node) ::= base_type_spec(type) | string_type(type) | wide_string_type(type) | scoped_name;
+
+fixed_pt_type(type : node) ::= #readIdentifier:"fixed" '<' #continue positive_int_const(expr1) ',' positive_int_const(expr2) '>';
+
+fixed_pt_const_type(type : node) ::= #readIdentifier:"fixed";
+
+value_base_type(type : node) ::= #readIdentifier:"ValueBase";
+
+constr_forward_decl ::= #readIdentifier:"struct" identifier | #readIdentifier:"union" identifier;
+
+
+//July 2002 CORBA, v3.0: OMG IDL Grammar 3-17
+//3
+import ::= #readIdentifier:"import" #continue imported_scope ';';
+
+imported_scope ::= scoped_name | #readCString;
+
+type_id_dcl ::= #readIdentifier:"typeid" #continue scoped_name #readCString;
+
+type_prefix_dcl ::= #readIdentifier:"typeprefix" #continue scoped_name #readCString;
+
+readonly_attr_spec ::= #readIdentifier:"readonly" #continue #readIdentifier:"attribute" param_type_spec(type) readonly_attr_declarator;
+
+readonly_attr_declarator::= simple_declarator(parent) [raises_expr | [',' #continue simple_declarator(parent)]*];
+
+attr_spec ::= #readIdentifier:"attribute" #continue param_type_spec(type) attr_declarator;
+
+attr_declarator ::= simple_declarator(parent) attr_raises_expr | simple_declarator(parent) [',' #continue simple_declarator(parent)]*;
+
+attr_raises_expr ::= get_excep_expr [ set_excep_expr ]? | set_excep_expr;
+
+get_excep_expr ::= #readIdentifier:"getraises" #continue exception_list;
+
+set_excep_expr ::= #readIdentifier:"setraises" #continue exception_list;
+
+exception_list ::= '(' #continue scoped_name [',' #continue scoped_name]* ')';
+
+
+
+//Note – Grammar rules 1 through 111 with the exception of the last three lines of rule
+//2 constitutes the portion of IDL that is not related to components.
+component ::=
+		#readIdentifier:"component" #continue identifier
+		[
+				// forward declaration
+				';'
+			|
+				[component_inheritance_spec]?
+				[supported_interface_spec]?
+				#continue
+				'{' component_body '}'
+				';'
+		]
+		;
+
+supported_interface_spec ::= #readIdentifier:"supports" #continue scoped_name [',' #continue scoped_name]*;
+
+component_inheritance_spec ::= ':' #continue scoped_name;
+
+component_body ::= [component_export]*;
+
+component_export ::=
+		#readIdentifier:sKeyword
+		#continue
+		component_export<sKeyword>
+		';'
+		;
+
+component_export<"provides"> ::= #continue interface_type identifier;
+interface_type ::= scoped_name | #readIdentifier:"Object";
+
+component_export<"uses"> ::= [#readIdentifier:"multiple"]? #continue interface_type identifier;
+
+
+//3-18 Common Object Request Broker Architecture (CORBA), v3.0 July 2002
+//3
+component_export<"emits"> ::= #continue scoped_name identifier;
+
+component_export<"publishes"> ::= #continue scoped_name identifier;
+
+component_export<"consumes"> ::= #continue scoped_name identifier;
+
+component_export<"readonly">  ::= #continue #readIdentifier:"attribute" param_type_spec(type) readonly_attr_declarator;
+
+component_export<"attribute"> ::= #continue param_type_spec(type) attr_declarator;
+
+
+
+home_dcl ::= home_header #continue home_body ';';
+
+home_header ::= #readIdentifier:"home" #continue identifier
+[ home_inheritance_spec ]?
+[ supported_interface_spec ]?
+#readIdentifier:"manages" scoped_name
+[ primary_key_spec ]?;
+
+home_inheritance_spec ::= ':' #continue scoped_name;
+
+primary_key_spec ::= #readIdentifier:"primarykey" #continue scoped_name;
+
+home_body ::= '{' #continue [home_export]* '}' ';';
+
+home_export ::= export(parent) | factory_dcl ';' | finder_dcl ';';
+
+factory_dcl ::= #readIdentifier:"factory" identifier '(' [ init_param_decls ]? ')' [ raises_expr ]?;
+
+finder_dcl ::= #readIdentifier:"finder" #continue identifier '(' [ init_param_decls ]? ')' [ raises_expr ]?;
+
+
+
+event ::= [ event_dcl | event_abs_dcl | event_forward_dcl];
+
+event_forward_dcl ::= [#readIdentifier:"abstract"]? #readIdentifier:"eventtype" identifier;
+
+event_abs_dcl ::= #readIdentifier:"abstract" #readIdentifier:"eventtype" identifier	[ value_inheritance_spec ]? '{' #continue [export(parent)]* '}';
+
+event_dcl ::= event_header '{' #continue [value_element]* '}';
+
+event_header ::= [#readIdentifier:"custom"]? #readIdentifier:"eventtype" identifier [ value_inheritance_spec ]?;
+
+
+
+identifier ::=
+		#readIdentifier:sIdentifier
+		!#check(sIdentifier in {"abstract", "any", "attribute", "boolean", "case", "char", "component", "const", "consults", "context", "custom", "default", "double", "emits", "enum", "eventtype", "exception", "factory", "FALSE", "finder", "fixed", "float", "getraises", "home", "import", "in", "inout", "interface", "local", "long", "manages", "module", "multiple", "native", "Object", "octet", "oneway", "out", "primarykey", "private", "provides", "public", "publishes", "raises", "readonly", "sequence", "setraises", "short", "string", "struct", "supports", "switch", "TRUE", "truncatable", "typedef", "typeid", "typeprefix", "union", "unsigned", "uses", "ValueBase", "valuetype", "wchar", "wstring"})
+		;
+
+
+//***********************************************
+//           P R E P R O C E S S O R
+//***********************************************
+
+directive<"define"> ::=
+		#skipIgnore(blanks)
+		#continue
+		#readIdentifier:sDefinition
+		->(:sValue)['\\' ['\r']? '\n' #nextStep #check(false) | ['\r']? '\n']
+		=> {
+			sValue.trim();
+//			if sValue setProperty(sDefinition, sValue);
+//			else setProperty(sDefinition, true);
+		}
+		;
+
+directive<"include"> ::=
+		#skipIgnore(blanks)
+		#continue
+		[
+				#readCString
+			|
+				'<' ->'>'
+		]
+		;
+
+directive<"ifdef"> ::=
+		#skipIgnore(blanks)
+		#continue
+		#readIdentifier:sDefinition
+		->'\n'
+		[
+				#check(getProperty(sDefinition))
+			|
+				ignore_processor_block:sDirective
+				[
+					#check(sDirective == "elif")
+					directive<"elif">
+				]?
+		]
+		;
+directive<"ifndef"> ::=
+		#skipIgnore(blanks)
+		#continue
+		#readIdentifier:sDefinition
+		->'\n'
+		[
+			#check(getProperty(sDefinition))
+			#continue
+			ignore_processor_block:sDirective
+			[
+				#check(sDirective == "elif")
+				directive<"elif">
+			]?
+		]?
+		;
+
+directive<"elif"> ::= directive<"ifdef">;
+
+directive<"else"> ::=
+		#continue ->'\n'
+		ignore_processor_block
+		;
+
+directive<"endif"> ::= #continue ->'\n';
+
+ignore_processor_block	::= ignore_processor_block_internal(0);
+ignore_processor_block_internal(n : value) : value ::=
+		[
+				#readCString
+			|
+				"'" ['\\']? #readChar "'"
+			|
+				'#'
+				#skipIgnore(blanks)
+				#readIdentifier:sDirective
+				ignore_processor_block_internal<sDirective>(n)
+			|
+				~'#'
+		]*
+		#continue
+		'#'
+		#skipIgnore(blanks)
+		#readIdentifier:{"else", "elif", "endif"}:ignore_processor_block_internal
+		;
+
+ignore_processor_block_internal<sDirective>(n : value) : value  ::= #check(true);
+ignore_processor_block_internal<"if">(n : value) : value  ::= ignore_processor_block_internal(increment(n));
+ignore_processor_block_internal<"ifdef">(n : value) : value  ::= ignore_processor_block_internal(increment(n));
+ignore_processor_block_internal<"ifndef">(n : value) : value  ::= ignore_processor_block_internal(increment(n));
+
+ignore_processor_block_internal<"else">(n : value) : value  ::= #check($n > 0$);
+ignore_processor_block_internal<"elif">(n : value) : value  ::= #check($n > 0$);
+ignore_processor_block_internal<"endif">(n : value) : value  ::= #check(false);

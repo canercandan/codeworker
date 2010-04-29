@@ -1,0 +1,393 @@
+//**************************************************************************
+//             Translate the HTML documentation of the C++ API
+//
+//
+// This script generates an HTML file for CodeWorker while the parsing of
+// the corresponding file coming from the C++ API.
+//
+// It illustrates how CodeWorker proceeds for program transformation
+// (translation where the source and the target languages are the same).
+//**************************************************************************
+
+// Return the class name and the function name (if any, it could be the
+// description of a class), deduced of the HTML file name.
+function getClassFunctionName(sClassName : node, sFunctionName : node) {
+	sClassName = rsubString(getShortFilename(getInputFilename()), 4);
+	sFunctionName = sClassName.subString($sClassName.findString('.') + 1$);
+	sClassName = sClassName.rsubString($sFunctionName.length() + 1$);
+}
+
+// The header BNF production rule of the grammar (entry point of the grammar).
+// As the transformation is very straight-forward and because of lazyness, the
+// whole transformation is written into this unique rule.
+HTMLdoc ::=
+	// ignore whitespaces and carriage returns between BNF terminals and
+	// non-terminals
+	#ignore(blanks)
+	// means that the rest of the sequence MUST NOT fail; if so, a detailed
+	// error message interrupts the parsing
+	#continue
+	// what you read if what you generate:
+	// the input file is automatically copied to the output file, while parsing
+	#implicitCopy
+	// jump directly to the version number of Chart Director
+	->"<p class=\"heading0\">ChartDirector Ver"
+	// be sure the version number has the expected format
+	#readInteger ['.' #continue #readInteger]*
+	[
+		// desactivate the implicit copy:
+		// we don't copy anymore what is read to the output file
+		#explicitCopy
+		"(C++ Edition)"
+		// write '(CodeWorker Edition)' to the output file, in place of
+		// '(C++ Edition)'
+		=> {@(CodeWorker Edition)@}
+	]
+	"</p>"
+	// at least one template must be recognized, but we could find more.
+	// Each template gives rise to a specific translation.
+	[
+		// jump to one of the following template alternatives
+		->[
+				// First template: it detects an embedded C++ example
+				"[The following code is available in \""
+				#continue // must be valid up to the end of the sequence
+				// don't copy the input file to the output file automatically
+				// anymore
+				#explicitCopy
+				"cppdemo/"
+				// the local variable 'sExample' contains the name of the C++ example
+				#readIdentifier:sExample
+				// replace the example path by the one for CodeWorker
+				=> {@cwdemo/@sExample@".]@endl()@@}
+				// the following terminal is read, but certainly not copied!
+				// (implicit copy still desactivated)
+				"\". A MFC version of the code is available in \"mfcdemo\" (Windows edition only).]"
+				[
+					// what you read is what you write, just for this block
+					#implicitCopy
+					"<table width=\"98%\" border=\"0\" cellpadding=\"10\"><tr><td bgcolor=\"#cccccc\"><pre>"
+				]
+				// load the CodeWorker script and convert the special characters for HTML.
+				// Close it with the tag '</pre>' that will be ignored 2 lines below
+				=> {@@composeHTMLLikeString(loadFile(getWorkingPath() + "cwdemo/" + sExample + '/' + sExample + ".cws"))@</pre>@}
+				// ignore the C++ example upto the tag '</pre>' included
+				->"</pre>"
+				// what you read is what you write
+				#implicitCopy
+				"</tr></td></table>"
+			|
+				// Second template: it detects a C++ function prototype
+				"<p class=\"heading2a\">Usage</p>"
+				#continue
+				"<div class=\"content\">"
+				#skipIgnore // force the reading of blanks
+				// from here, the implicit copy is desactivated
+				#explicitCopy
+				// How many parameters does this prototype exposes?
+				// We need this information further, to determine the
+				// corresponding CodeWorker prototype
+				=> local iParamSize = 0;
+				// The '|>' is special: the left-hand side BNF expression
+				// covers an area in the input file and the right-hand
+				// side parses it, restricted to the covered area.
+				// Here, the rhs jumps from parameters to parameters,
+				// looking for ',' and ')', not limited to the end of
+				// the input file, but to the first "</div>" encountered
+				// (excluded).
+				[
+						[~"</div>"]*
+					|>
+						[
+							// jump to the beginning of the parameters
+							// declaration
+							->'('
+							[
+								// at least one parameter
+								!')' => increment(iParamSize);
+								// iterate on commas
+								[
+										// count another parameter for each comma
+										// encountered
+										',' => increment(iParamSize);
+									|
+										// continue the loop, looking for commas,
+										// except if the trailing parenthesis
+										// was reached
+										~')'
+								]*
+							]?
+							// consume the trailing parenthesis
+							')'
+						]
+				]
+				=> {
+					// extract the class name and the method name
+					//   or
+					// the 'Chart' namespace and the function name
+					local sClassName, sFunctionName;
+					getClassFunctionName(sClassName, sFunctionName);
+					local theClass;
+					// searching for the class in the parse tree
+					if !this.classes.findElement(sClassName) {
+						// The class wasn't found.
+						if sClassName in {"CChartViewer", "DoubleArray", "IntArray", "MemBlock", "StringArray"} {
+							// Perhaps is it an utility class? In that case, we don't care because CodeWorker
+							// manages them differently.
+							@The class @sClassName@ doesn't exist in the CodeWorker's plugin. Please ignore this file.
+@
+						} else if sClassName == "Chart" {
+							// no, but perhaps is it the namespace 'Chart'?
+							// Yes, so we point to the namespace declaration
+							// (don't care if it isn't a class: the parse tree of
+							// the namespace is the same as for a class)
+							ref theClass = this.namespaces["Chart"];
+						} else {
+							// interrupt the parsing: it doesn't concern the C++ API
+							error("class '" + sClassName + "' not found");
+						}
+					} else {
+						// It is a class, so we point to its declaration
+						ref theClass = this.classes[sClassName];
+					}
+					if !theClass.functions.empty() {
+						// look for the function in the class.
+						if theClass.functions[sFunctionName].empty() {
+							if theClass.functions[sFunctionName.rsubString(1)].empty() {
+								// if no prototype found, even without the trailing digit if any,
+								// for the function name, write a warning both in the console
+								// and in the output file.
+								// Note: the trailing digit is found on HTML function names,
+								// which have more than one occurrence in a class
+								local sMessage = "method '" + sClassName + "::" + sFunctionName + "' not found in the C++ API!";
+								traceLine("warning: " + sMessage);
+								@@sMessage@
+@
+							} else {
+								// it works without the last character: we assume that it is a
+								// trailing digit, so we remove it from the name of the function
+								sFunctionName = sFunctionName.rsubString(1);
+							}
+						}
+					}
+					// we iterate all prototypes of the function, which have been binded into the
+					// plugin (is_packaged) and which have the expected number of parameters.
+					// Then, for each of them, we generate the prototype
+					foreach i in theClass.functions[sFunctionName] if i.is_packaged && $i.parameters.size() == iParamSize$ {
+						@CHART::@sFunctionName@@
+						if sClassName != "Chart" {
+							@@i.parameters.size()@(<i>instance : node</i>@
+						} else {
+							@(@
+						}
+						foreach j in i.parameters {
+							if sClassName != "Chart" || !j.first() {
+								@, @
+							}
+							@@j.key()@ : @
+							if isNodeType(j.type) {
+								@node@
+							} else {
+								@value@
+							}
+						}
+						if i.output_param {
+							@, <b>returnValue : node</b>@
+						}
+						@);
+@
+					}
+				}
+			|
+				// Third template: it detects the description of C++ arguments
+				// of a function
+				"<p class=\"heading2\">Arguments</p>" #continue
+				"<div class=\"content\">"
+				=> local sClassName, sFunctionName;
+				=> local theClass;
+				=> {
+					// extract the class name and the method name
+					//   or
+					// the 'Chart' namespace and the function name
+					getClassFunctionName(sClassName, sFunctionName);
+					if this.classes.findElement(sClassName) {
+						@The argument <i>instance</i> is an object of kind <a href="@sClassName@.htm">@sClassName@</a>.<br/><br/>@
+						ref theClass = this.classes[sClassName];
+						if theClass.functions[sFunctionName].empty() && !theClass.functions[sFunctionName.rsubString(1)].empty() {
+							sFunctionName = sFunctionName.rsubString(1);
+						}
+					} else if sClassName == "Chart" {
+						ref theClass = this.namespaces[sClassName];
+					}
+				}
+				// Now, one have several alternatives
+				[
+						// no function name: this HTML file is about a class,
+						// not about a function. This template is ignored
+						#check(!theClass.functions.findElement(sFunctionName))
+					|
+						// this function has no arguments
+						#explicitCopy
+						"None" #continue
+						#implicitCopy
+						"</div>"
+					|
+						// this function has its arguments explained in a table
+						#continue
+						"<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\" width=\"98%\">"
+						"<tr>"
+						"<th width=\"19%\">Argument</th>"
+						// add a column into the table, indicating the type of the parameter
+						=> {@<th width="19%">Type</th>@}
+						"<th width=\"19%\">Default</th><th width=\"60%\">Description</th>"
+						"</tr>"
+						// count the number of lines into the table, to determine how many
+						// parameters the function has.
+						// Note: the BNF operator '!!' means to look ahead without moving the
+						// input file cursor
+						=> local iParamSize = 0;
+						!!["<tr>" ->"</tr>" => increment(iParamSize);]+
+						// retrieve the parameter types of the first function prototype, whose
+						// parameter size is the one expected
+						=> local params;
+						=> {
+							foreach i in theClass.functions[sFunctionName] if i.is_packaged {
+								if $i.parameters.size() == iParamSize$ {
+									ref params = i.parameters;
+									break;
+								}
+							}
+						}
+						=> local iParam = 0; // an index for iterating the 'params' array
+						[
+							"<tr>" #continue
+							// don't touch the first column of the table (name of the argument)
+							"<td>" ->"</td>"
+							=> if $params.size() == iParamSize$ {
+								// we have found a prototype of this function:
+								// we populate the column added for the type
+								@<td>@getHTMLType(params#[iParam].type)@</td>@
+							} else {
+								// manifestly, we didn't find a prototype: no type
+								@<td>&nbsp;</td>@
+							}
+							"<td>"
+							[
+								// check that we have found a prototype
+								#check($params.size() == iParamSize$)
+								// if the default value of the argument is a HTML link,
+								// and if the type is an enum, we change the presentation:
+								// an enum is seen as a constant string in the CodeWorker binding
+								// of Chart Director (it's a choice!).
+								"<a href=" #continue ->'>'
+								[
+									#check(params#[iParam].type == "enum" /*|| params#[iParam].type == "int"*/)
+									#continue
+									=> {@"@}
+									[~"</a>"]*
+									=> {@"@}
+								]?
+							]?
+							 ->"</td>"
+							"<td>" ->"</td>"
+							"</tr>"
+							=> increment(iParam);
+						]+
+				]
+			|
+				// Fourth template: it detects the description of all C++ methods
+				// belonging to a class
+				"<th width=\"19%\">Method</th><th width=\"19%\">Inherited</th><th width=\"60%\">Description</th>"
+				#continue
+				"</tr>"
+				[
+						// while reading the first column (name of the method), we extract the
+						// class name and the method name from the HTML link. If they don't
+						// exist in the parse tree, we don't change the presentation. 
+						#explicitCopy
+						"<tr>" "<td>" "<a href=\""
+						#readIdentifier:sClassName
+						'.'
+						#readIdentifier:sFunctionName
+						#check(!this.classes[sClassName].functions.findElement(sFunctionName))
+						// the function name might have a suffix to distinguish multi prototypes
+						// of the same function name
+						#check(!this.classes[sClassName].functions.findElement(sFunctionName.rsubString(1)))
+						->"</tr>"
+					|
+						"<tr>" #continue
+						[
+								// description of an existing method: we have to change the presentation
+								"<td>" #continue "<a href=\""
+								#readIdentifier:sClassName
+								'.'
+								#readIdentifier:sFunctionName
+								[
+									#check(!this.classes[sClassName].functions.findElement(sFunctionName))
+									// rectify the function name, if it ends with a digit as suffix, for
+									// classes with several prototypes attached to this name
+									=> sFunctionName = sFunctionName.rsubString(1);
+								]?
+								->'>'
+								// here is the change
+								=> {@CHART::@sFunctionName@@}
+								[
+									#explicitCopy
+									[~"</a>"]*
+								]
+								->"</a>"
+								"</td><td>" ->"</td>"
+								"<td>" ->"</td>"
+								"</tr>"
+							|
+								// this row contains only one column, certainly grey, showing a note:
+								// nothing to change
+								->"</tr>"
+						]
+				]+
+			|
+				// Fifth template: it detects a table showing all constants with their description.
+				// Nothing to do.
+				"<table width=\"98%\" border=\"1\" cellpadding=\"5\" cellspacing=\"0\"> <tr><th width=\"19%\">Constant<th width=\"19%%\">Value<th width=\"60%\">Description"
+				#continue
+				[
+					"<tr>" #continue
+					"<td>" => {@"@}
+					[~["</td>" | "<td>"]]* => {@"@}
+					[~["</tr>" | "</table" | "<tr>"]]*
+					["</tr>"]?
+				]+
+			|
+				// Sixth template: it detects some example titles with their description.
+				// Nothing to do.
+				"<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\" width=\"98%\">"
+				"<tr>"
+				"<th width=\"33%\">Title</th><th width=\"65%\">Description</th>"
+				"</tr>"
+			|
+				// Seventh template: it detects the C++ declaration of a constant value.
+				// Translates it for CodeWorker.
+				"<p class=\"heading2a\">"
+				[
+					#explicitCopy
+					"Declaration"
+					=> {@Usage@}
+				]
+				"</p>"
+				#continue
+				"<div class=\"content\">"
+				#explicitCopy
+				=> {
+					local sClassName, sFunctionName;
+					getClassFunctionName(sClassName, sFunctionName);
+					@A constant string that refers to the internal constant value, described below. The constant string is anyone among:
+<ul><li><b>"@sFunctionName@"</b></li><li><b>"Chart::@sFunctionName@"</b></li><li><b>"CHART::@sFunctionName@"</b></li></ul>
+@
+				}
+				[~"</div>"]*
+		]
+	]+
+	// jump up to the end of the file, constraining to copy the rest of the input file
+	// to the output file
+	->#empty
+	;

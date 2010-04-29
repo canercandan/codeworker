@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<HTML>
+<HEAD>
+	<TITLE>CodeWorker: un langage de script pour le parsing et la génération de code</title>
+	<META http-equiv="Content-Type" content="text/html; charset=windows-1252" />
+	<META name="Keywords" content="programmation générative,génération de code" />
+	<META name="Keywords" content="langage de script,interpréteur" />
+	<META name="Keywords" content="logiciel libre" />
+	<META name="Description" content="CodeWorker est un langage de script pour le parsing et la génération de code. Il insiste sur offrir toutes les fonctionnalités qui aident à générer du code intensivement.">
+	<META http-equiv="pragma" content="no-cache" />
+	<META http-equiv="cache-control" content="no-cache" />
+
+	<LINK rel="stylesheet" type="text/css" href="CodeWorker.css" />
+
+</HEAD>
+<BODY>
+	<table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr><td width="200"><a href="index.html"><img border=0 src="CodeWorker199x77.jpg"/></a></td><td>
+	<H1>CodeWorker</H1>
+	<H2>Un outil de parsing &amp; un générateur de code</H2>
+	</td></tr>
+	</table>
+	<TABLE border="0" cellpadding="0" cellspacing="7">
+		<TR>
+			<TD valign="top">
+				<IMG src="http://perso0.free.fr/cgi-bin/wwwcount.cgi?df=codeworker.dat&ft=0&dd=C"/>
+				<BR/>
+				... depuis le 19/01/2003
+			</TD>
+			<TD>
+				<H4>Version <I>Logiciel</I>+<I>Documentation</I>+<I>site Web</I> :
+<A href="LastChanges.html"><!--##markup##"version"--><!--##begin##"version"-->4.5.3
+<!--##end##"version"--></A>
+					<BR/>
+					Mise à jour :
+<!--##markup##"aujourd'hui"--><!--##begin##"aujourd'hui"-->27 avril 2010
+<!--##end##"aujourd'hui"-->
+				</H4>
+			</TD>
+			<TD class="license" valign="center">
+				Distributé sous <I>GNU Lesser General Public License</I>.
+			</TD>
+		</TR>
+	</TABLE>
+	<TABLE border="1" cellpadding="7" cellspacing="0">
+		<TR>
+			<TD width="180" class="links" valign="top">
+				<SPAN class="libcurl">Utilise</SPAN>
+				<A href="http://curl.haxx.se/libcurl/"><IMG border=0 src="http://curl.haxx.se/libcurl/small.png" alt="libcURL" width=90 height=25 /></A>
+				<H3>CHAPITRES</H3>
+				<UL>
+					<LI>
+						<B>Panorama</B>
+						<UL>
+							<LI>Presentation</LI>
+							<LI><A class="left" href="History.html">Historique</A></LI>
+<!--							<LI><A class="left" href="Maturation.html">Maturité</A></LI>-->
+						</UL>
+					</LI>
+					<LI><A class="left" href="ProjectManagement.html">Pourquoi cet outil?</A></LI>
+					<LI><A class="left" href="GettingStarted.html">Pour commencer<!--##markup##"size:manual_Getting_started.html"--><!--##begin##"size:manual_Getting_started.html"--> (47kb)<!--##end##"size:manual_Getting_started.html"--></A></LI>
+					<LI><A class="left" href="Documentation.html">Documentation</A></LI>
+					<LI><A class="left" href="Tutorials.html">Tutoriels</A></LI>
+					<LI><A class="left" href="ScriptsRepository.html">Dépôt de scripts</A></LI>
+					<LI><A class="left" href="Download.html">Téléchargement</A></LI>
+					<LI><A class="left" href="Links.html">Liens</A></LI>
+				</UL>
+				<BR/>
+				<H3>REVUE DE PRESSE</h3>
+				<P/>
+				<A href="http://www.toolinux.com/lininfo/news/news/news20030617003754.htm"><IMG border=0 src="logoTOOLINUX.gif"/></A>
+				<BR/>
+				<A href="http://www.posse-press.com/forum/showthread.php?s=&threadid=20235&highlight=codeworker"><IMG src="login114.jpg" height="50%" width="50%" alt="CodeWorker élu <<soft du mois>>"></A>
+				<A href="http://www.posse-press.com/forum/showthread.php?s=&threadid=22576&highlight=codeworker"><IMG src="login117.jpg" height="50%" width="50%" alt="Introduction au parsing et à la génération de code avec CodeWorker"></A>
+				<BR/>
+				<H3>VERSIONS IMPORTANTES</H3>
+				<P/>
+				<H4>
+					<A href="manual_The_scripting_language.html#_use">Extension par packages</A>
+					<BR/>depuis la version 3.0
+				</H4>
+				<H4>
+					<A href="Documentation.html#category_socket">Intégration des sockets</A>
+					<BR/>depuis la version 2.17
+				</H4>
+				<H4>
+					<A href="highlighting/CodeWorker_grammar.html">BNF du langage</A>
+					<BR/>depuis la version 2.14
+				</H4>
+				<H4>
+					<A href="ScriptsRepository.html#CGI_scripts">Programme CGI</A>
+					<BR/>depuis la version 2.10
+				</H4>
+				<H4>
+					<A href="ScriptsRepository.html#source__150_to__150_source_translation_XSL_to__I_template__150_based__I__script">fonctionnalités XSL</A>
+					<BR/>depuis la version 2.08
+				</H4>
+				<H4>
+					Envoi de requêtes HTTP
+					<BR/>depuis la version 2.07
+				</H4>
+				<H4>
+					Fichiers binaires
+					<BR/>depuis la version 2.04
+				</H4>
+				<BR/><BR/>
+				<H3>LANGAGES</H3>
+				<A href="index.html"><IMG border=0 src="english.jpg"/></A>
+				<P/>
+				<IMG border=0 src="french.jpg"/>
+				<BR/><BR/><BR/>
+				<A href="mailto:codeworker@free.fr"><H3>ME CONTACTER</H3></A>
+				<BR/><BR/>
+<!-- Début du bouton populassite 88*31 -->
+<a href="http://www.populassite.com?id_parrain=2867" target="_blank"><img src="http://www.populassite.com/images/bouton.jpg" alt="Populassite.free.fr : moteur de recherche entièrement gratuit faisant exploser votre trafic !" border="0"></a>
+<!-- Fin du bouton populassite 88*31 -->
+			</TD>
+			<TD class="content" valign="top">
+				<A name="presentation"/>
+				<H3>Presentation</H3>
+
+				<I class="CodeWorker">CodeWorker</I> est un outil de parsing et un générateur de code,
+				disponible en <I>logiciel libre</I> (distribué sous <I>GNU Lesser General Public License</I>)
+				et destiné à couvrir plusieurs aspects de la <I>programmation générative</I>.
+				La <I>programmation générative</I> est une approche de l'ingénierie logicielle pour
+				produire des systèmes informatique réutilisables, taillés sur mesure, facile à faire évoluer et robustes,
+				le tout avec un haut niveau d'automatisation.
+				<P/>
+				L'outil interprète un langage de script qui pilote les traitements de parsing et de génération de code
+				dans une syntaxe familière aux développeurs, le tout pour construire aisément des <I>DSL</I> (Domain Specific Language).
+				Il insiste sur adapter sa syntaxe aux particularités des tâches à accomplir (acquisition des spécifications, génération de code,
+				conduite du projet) et sur offrir de puissantes fonctionnalités pour faire de la génération de code intensive.
+				<P/>
+				N'hésitez surtout pas à <A href="mailto:codeworker@free.fr">me contacter</A> pour toutes questions, critiques, suggestions, ...
+
+				<H4>Le parsing</H4>
+
+				<I class="CodeWorker">CodeWorker</I> fournit deux méthodes distinctes pour réaliser un parsing:
+				<UL>
+					<LI>la <B>lecture de tokens</B> est procédurale,</LI>
+					<LI>la <B>description en notation BNF</B> est déclarative, et suit une sorte
+						de BNF (le <I>B</I>ackus-<I>N</I>aur <I>F</I>orm décrit une
+						grammaire suivant une syntaxe particulière) étendue avec des expressions régulières,
+						un peu semblable à <I>javacc</I> dans le monde JAVA ou à <I>ANTLR</I>.
+					</LI>
+				</UL>
+				Pendant le parsing de fichiers, <I class="CodeWorker">CodeWorker</I> renseigne une
+				structure de donnée appropriée, appelée un <I>arbre</I>, un <I>arbre de parsing</I> en l'occurrence.
+				Un arbre est une structure bien commode pour représenter un ensemble hierarchisé de noeuds, comme en
+				XML par exemple.
+				<P/>
+				Cet arbre de parsing est partagé à la fois par la tâche d'acquisition des spécifications, qui prend en charge
+				de le renseigner, et par la tâche de génération de code qui va le parcourir pour produire du texte.
+
+				<H4>La generation de code</H4>
+
+				Etant donné une spécification donnée dans n'importe quel format, <I class="CodeWorker">CodeWorker</I>
+				génèrera du code source, du texte ou des données binaires, tel qu'indiqué dans les scripts <I>patron de génération</I>.
+				<P/>
+				La génération de code peut exploiter trois modes : <I>génération</I> classique, <I>expansion</I> de fichier existant
+				ou <I>traduction</I> vers un autre format.
+				<UL>
+					<LI>Le mode <B>génération</B> laisse le script produire la plus grande part
+						du fichier de sortie, exécutant un <I>patron de génération</I> à la <I>server page</I>
+						comme il existe en JSP ou PHP. Seules quelques portions appelées
+						<I>zônes de code protégées</I> dans le vocabulaire de <I class="CodeWorker">CodeWorker</I>
+						sont préservées dans le fichier et destinées à contenir du code tapé à la main. Quelques outils de modélisation ont adopté
+						cette philosophie, et qui génèrent un squelette copieusement entrecoupé de zônes destinées
+						au développeur.
+					</LI>
+					<LI>Le mode <B>expansion</B> est utilisé quand le fichier est en partie écrit à la main
+						et ne doit pas se décliner en plusieurs fichiers générés. Les points où
+						insérer du code sont appelés <I>marqueurs</I> dans le vocabulaire de
+						<I class="CodeWorker">CodeWorker</I>. Le <I>Class Wizard</I> de
+						Visual C++ change le code source en suivant ce principe.
+					</LI>
+					<LI>Le mode <B>translation</B> quand à la fois le parsing/scan et la génération de code
+						sont requis pour traiter un fichier. Cela se produit dans les cas suivants:
+						<UL>
+							<LI>une transcription <I>source-à-source</I> : un fichier doit être
+						réécrit dans un format différent. Par exemple, un fichier LaTeX pourrait
+						devoir être retranscrit en HTML.
+							</LI>
+							<LI>une <I>transformation de programme</I> : un fichier doit subir des changements
+						pour optimisation, réorganisation, instrumentation ou réécriture de quelques portions.
+						Par exemple, un script pourrait ajouter une trace au début de chaque
+						corps de fonction d'un source JAVA ou C++. Pour réaliser cela, le scan servira
+						à détecter les corps de fonction, et la génération de code insérera le code C++ ou Java
+						qui implémente la trace.
+							</LI>
+						</UL>
+					</LI>
+				</UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD class="bottom" valign="top" colspan="2">
+				<a href="http://www.xiti.com/xiti.asp?s=134058" TARGET="_top">
+					<script language="JavaScript1.1">
+					<!--
+						hsh = new Date();
+						hsd = document;
+						hsr = hsd.referrer.replace(/[<>]/g, '');
+						hsi = '<img width="39" height="25" border=0 ';
+						hsi += 'src="http://logv24.xiti.com/hit.xiti?s=134058';
+						hsi += '&p=';
+						hsi += '&hl=' + hsh.getHours() + 'x' + hsh.getMinutes() + 'x' + hsh.getSeconds();
+						if(parseFloat(navigator.appVersion)>=4)
+						{Xiti_s=screen;hsi += '&r=' + Xiti_s.width + 'x' + Xiti_s.height + 'x' + Xiti_s.pixelDepth + 'x' + Xiti_s.colorDepth;}
+						hsd.writeln(hsi + '&ref=' + hsr.replace(/&/g, '$') + '" title="Mesurez votre audience"><\!--');
+						//-->
+					</script>
+					<noscript>
+						<img width="39" height="25" border=0 src="http://logv24.xiti.com/hit.xiti?s=134058&p=&" title="Mesurez votre audience">
+					</noscript>
+					<!--//-->
+				</a>
+				&nbsp;<I class="CodeWorker">CodeWorker</I> est maintenu par <A href="CVfrancais.html">Cédric Lemaire</A>.
+				SVP, envoyez un mail pour <A href="mailto:codeworker@free.fr">soumettre un bogue ou une amélioration</A>.<BR />
+			</TD>
+		</TR>
+	</TABLE>
+</BODY>
+</HTML>

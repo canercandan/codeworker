@@ -1,0 +1,290 @@
+forfile i in "BNF*.*" {
+	translate({
+		command ::=
+			#implicitCopy
+			#ignore(C++)
+			=> local sClass = getShortFilename(getInputFilename());
+			=> local bHeader = sClass.endString(".h");
+			=> if bHeader sClass = sClass.rsubString(2); else sClass = sClass.rsubString(4);
+			=> insert this[sClass] = sClass;
+			[
+					#check(bHeader)
+					header(sClass)
+				|
+					body(sClass)
+			]
+			->#empty
+			;
+
+		header(sClass : node) ::=
+			#continue
+			->[
+				'~' #readText(sClass) '(' ')'
+				#continue
+				';'
+				#!ignore
+				[
+						#ignore(C++)
+						"virtual" "void" "accept" '(' "DtaVisitor" '&'
+					|
+						->'\n'
+						=> {@
+		virtual void accept(DtaVisitor& visitor, DtaVisitorEnvironment& env);
+@
+						}
+				]
+			]
+			;
+
+		body(sClass : node) ::=
+			=> local bVisitorHeaderFound = false;
+			[
+				#check(!bVisitorHeaderFound)
+				->[
+					'#'
+					=> local iPosition= $getInputLocation() - 1$;
+					"include"
+					#readCString:sFile
+					[
+							#check(sFile == "DtaVisitor.h")
+							=> bVisitorHeaderFound  = true;
+						|
+							#check(sFile == sClass + ".h")
+							=> bVisitorHeaderFound  = true;
+							=> insertText(iPosition, "#include \"DtaVisitor.h\"" + endl());
+					]
+				]
+			]*
+			#continue
+			->[
+				#readText(sClass) "::" '~' #readText(sClass) '(' ')'
+				#continue
+				'{' ignore_brackets '}'
+				#!ignore
+				[
+						#ignore(C++)
+						"void" #readText(sClass) "::" "accept" '(' "DtaVisitor" '&'
+					|
+						->'\n'
+						=> {@
+	void @sClass@::accept(DtaVisitor& visitor, DtaVisitorEnvironment& env) {
+		visitor.visit@sClass@(*this, env);
+	}
+@
+						}
+				]
+			]
+			;
+
+		ignore_brackets ::=
+			[
+					#readCString
+				|
+					#readCChar
+				|
+					'{' ignore_brackets '}'
+				|
+					~'}'
+			]*
+			;
+	}, project, i, i);
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+//                                V I S I T O R
+/////////////////////////////////////////////////////////////////////////////////
+
+generate({/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2005 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@writeText('@');@free.fr
+*/
+
+#ifndef _DtaVisitor_h_
+#define _DtaVisitor_h_
+
+namespace CodeWorker {
+@
+	foreach i in this {
+		@	class @i@;
+@
+	}
+	@
+	class DtaVisitorEnvironment {
+		public:
+			inline DtaVisitorEnvironment() {}
+			virtual ~DtaVisitorEnvironment();
+	};
+
+	class DtaVisitor {
+		public:
+			inline DtaVisitor() {}
+			virtual ~DtaVisitor();
+
+@
+	foreach i in this {
+		@			virtual void visit@i@(@i@& theObject, DtaVisitorEnvironment& env);
+@
+	}
+	@	};
+}
+
+#endif
+@
+}, project, "DtaVisitor.h");
+
+generate({/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2005 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@writeText('@');@free.fr
+*/
+
+#ifdef WIN32
+#pragma warning (disable : 4786)
+#endif
+
+#include "DtaVisitor.h"
+
+namespace CodeWorker {
+	DtaVisitorEnvironment::~DtaVisitorEnvironment() {}
+	DtaVisitor::~DtaVisitor() {}
+
+@
+	foreach i in this {
+		@	void DtaVisitor::visit@i@(@i@& /*theObject*/, DtaVisitorEnvironment& /*env*/) {}
+@
+	}
+	@}
+@
+}, project, "DtaVisitor.cpp");
+
+
+/////////////////////////////////////////////////////////////////////////////////
+//                              N A V I G A T O R S
+/////////////////////////////////////////////////////////////////////////////////
+
+generate({/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2005 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@writeText('@');@free.fr
+*/
+
+#ifndef _DtaASTNavigator_h_
+#define _DtaASTNavigator_h_
+
+#include "DtaVisitor.h"
+
+@
+	setProtectedArea("declarations");
+@
+
+namespace CodeWorker {
+	class DtaASTNavigator : public DtaVisitor {
+		public:
+			inline DtaASTNavigator() {}
+			virtual ~DtaASTNavigator();
+
+@
+	foreach i in this {
+		@			virtual void visit@i@(@i@& theObject, DtaVisitorEnvironment& env);
+@
+	}
+	setProtectedArea("members");
+	@	};
+}
+
+#endif
+@
+}, project, "DtaASTNavigator.h");
+
+generate({/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2005 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@writeText('@');@free.fr
+*/
+
+#ifdef WIN32
+#pragma warning (disable : 4786)
+#endif
+
+@
+	setProtectedArea("INCLUDES");
+@
+#include "DtaASTNavigator.h"
+
+namespace CodeWorker {
+	DtaASTNavigator::~DtaASTNavigator() {}
+
+@
+	foreach i in this {
+		@	void DtaASTNavigator::visit@i@(@i@& theObject, DtaVisitorEnvironment& env) {
+@
+		setProtectedArea(i);
+@	}
+
+@
+	}
+	setProtectedArea("implementations");
+	@}
+@
+}, project, "DtaASTNavigator.cpp");

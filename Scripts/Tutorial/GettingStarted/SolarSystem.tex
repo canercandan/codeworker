@@ -1,0 +1,46 @@
+\subsection{Design of a solar system}
+We dispose of some classes both in C++ and JAVA that allow building applications working on
+notions of planets, stars and solar systems.
+
+		\subsubsection{Planet}
+
+This class represents the characteristics of a planet.
+
+		\begin{tableiii}{l|l|l}{.5}{Type}{Attribute name}{Description}
+\lineiii{double}{diameter}{the average diameter of the planet  				}
+\end{tableiii}
+
+
+		\begin{itemize}
+\item function double \textbf{getDistanceToSun}(int \textbf{iDay}, int \textbf{iMonth}, int \textbf{iYear})
+				
+
+
+This function returns the distance to the sun at a given trivial earthly date. This function
+reclaims more attributes for the planet, but we'll see it later (I'm afraid not!).
+
+			
+\end{itemize}
+
+
+		\subsubsection{Earth}
+
+This class represents our planet, for instantiating our particular solar system for instance,
+and working on geopolitical data perhaps!
+
+		\begin{tableiii}{l|l|l}{.5}{Type}{Attribute name}{Description}
+\lineiii{std::vector<std::string>}{countryNames}{the name of all countries are put into  				}
+\end{tableiii}
+
+
+		\subsubsection{SolarSystem}
+
+This class represents the solar system, with its constituents, the sun excluded for the
+moment.
+
+		\begin{tableiii}{l|l|l}{.5}{Type}{Attribute name}{Description}
+\lineiii{std::vector<Planet*>}{planets}{the planets that compose the solar system.  				}
+\end{tableiii}
+
+
+	

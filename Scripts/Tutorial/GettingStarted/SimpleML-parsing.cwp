@@ -1,0 +1,113 @@
+// syntactical clauses:
+//note: the pattern \textit{[class_declaration]*} always matches with the parsed file,
+//note: so the rule will continue in sequence in any case (supposing that no error has
+//note: occurred into clause \textit{class_declaration}) and the end of file will be
+//note: checked. If not reached, it doesn't write the message \samp{"file read successfully"},
+world ::= #ignore(C++) [class_declaration]* #empty
+			=> {
+				traceLine("file parsed successfully");
+				saveProject("Scripts/Tutorial/SolarSystem0.xml");
+			};
+//note: once keyword \samp{"class"} has been matched, there is no ambiguity : we are
+//note: handling a class declaration and the rule must continue in sequence. To require
+//note: that, instruction \samp{\#continue} is written after pattern \samp{"class"}.
+//note: If a pattern of the sequence doesn't match the parsed file, the parser throws
+//note: a syntax error automatically.
+class_declaration ::= IDENT:"class" #continue
+//note: the identifier that matches with clause call \textit{IDENT} is assigned to
+//note: the local variable \samp{sClassName} : on contrary of other types of script,
+//note: a new variable is considered as local, instead of an new attribute added to
+//note: the current node \samp{\textbf{this}},
+			IDENT:sClassName
+//note: about parsing, classes are modeled into node
+//note: \textbf{project.listOfClasses[}\textit{sClassName}\textbf{]}. Its attribute
+//note: \samp{name} contains the value of \textit{sClassName}.
+				=> insert project.listOfClasses[sClassName].name = sClassName;
+//note: if the class inherits from a parent, \samp{\textbf{':'}} is necessary followed by
+//note: an identifier (pattern \samp{\#continue}), and the identifier that matches with
+//note: clause call \textit{IDENT} is assigned to the local variable \samp{sClassName},
+			[':' #continue IDENT:sParentName
+//note: this class inherits from a parent, so the optional attribute \samp{parent}
+//note: of the class is populated with the value of \textit{sParentName},
+				=> insert project.listOfClasses[sClassName].parent = sParentName;
+			]?
+			class_body(project.listOfClasses[sClassName]);
+//note: clause \samp{class_body} expects an argument: the class node into which the
+//note: class members must be described (\samp{myClass : \textbf{node}}),
+class_body(myClass : node) ::= '{'
+		[attribute_decl(myClass) | method_decl(myClass)]* '}';
+//note: the class is populated with the characteristics of the attribute once 
+//note: its declaration has finished. Otherwise, it may confuse with the beginning
+//note: of a method declaration. To avoid this ambiguity, we should have factorized
+//note: the type declaration and the name of the member into a common clause, for
+//note: example.
+attribute_decl(myClass : node) ::=
+			=> local myType;
+			type_specifier(myType) IDENT:sAttributeName ';'
+			=> {
+//note: about parsing, attributes are modeled into node
+//note: \textbf{myClass.listOfAttributes[}\textit{sAttributeName}\textbf{]},
+				insert myClass.listOfAttributes[sAttributeName].name = sAttributeName;
+//note: the type is allocated on the stack, so it is copied into branch \samp{type}
+//note: (no node reference) integrally,
+				setall myClass.listOfAttributes[sAttributeName].type = myType;
+			};
+//note: the class is populated with the characteristics of the method once 
+//note: the opened parenthesis is recognized,
+method_decl(myClass : node) ::=
+			=> local myType;
+			[IDENT:"void" | type_specifier(myType)]
+			IDENT:sMethodName '('
+//note: from here, there is no doubt that we are parsing a method declaration,
+			#continue
+				=> {
+//note: about parsing, methods are modeled into node
+//note: \textbf{myClass.listOfMethods[}\textit{sMethodName}\textbf{]},
+					insert myClass.listOfMethods[sMethodName].name = sMethodName;
+//note: attribute \samp{name} is compulsory into a \textit{type} node, so if
+//note: condition \samp{myType.name} returns \samp{false}, there is no return
+//note: type (\samp{void}),
+					if myType.name
+						setall myClass.listOfMethods[sMethodName].type = myType;
+				}
+			[parameters_decl(myClass.listOfMethods[sMethodName])]? ')' ';';
+parameters_decl(myMethod : node) ::=
+				parameter(myMethod)
+//note: a parameter declaration is expected after the comma,
+				[',' #continue parameters_decl(myMethod)]*;
+parameter(myMethod : node) ::=
+			[parameter_mode]?:sMode
+			=> local myType;
+			type_specifier(myType)
+			IDENT:sParameterName
+				=> {
+//note: about parsing, parameters are modeled into node
+//note: \textbf{myMethod.listOfParameters[}\textit{sParameterName}\textbf{]},
+					insert myMethod.listOfParameters[sParameterName].name = sParameterName;
+					setall myMethod.listOfParameters[sParameterName].type = myType;
+					if sMode {
+						insert myMethod.listOfParameters[sParameterName].name = sMode;
+					}
+				};
+parameter_mode ::= IDENT:{"in", "inout", "out"};
+type_specifier(myType : node) ::=
+	basic_type(myType)
+//note: about parsing, \textbf{myType.isArray} contains \samp{true} if type is an array,
+	['[' #continue ']' => insert myType.isArray = true; ]?;
+basic_type(myType : node) ::=
+//note: about parsing, \textbf{myType.name} contains the name of basic type,
+	["int" | "boolean" | "double" | "string"]:myType.name
+		|
+	class_specifier(myType);
+class_specifier(myType : node) ::=
+//note: about parsing, \textbf{myType.isAggregation} contains \samp{true} if
+//note: the object is aggregated,
+	["aggregate" => insert myType.isAggregation = true; ]?
+//note: about parsing, \textbf{myType.isObject} contains \samp{true} because
+//note: this type is a class specifier,
+	IDENT:myType.name => {insert myType.isObject = true; };
+
+//note: the lexical clause \textit{IDENT} recognizes identifiers and might be replaced by
+//note: the predefined clause \samp{\#readIdentifier}, which does the same work,
+IDENT ::= #!ignore ['a'..'z'|'A'..'Z'|'_']
+					['a'..'z'|'A'..'Z'|'_'|'0'..'9']*;

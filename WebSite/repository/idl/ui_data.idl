@@ -1,0 +1,172 @@
+//Source file: ui_data.idl
+//Date:  25 March 2003
+//User Interaction Data Types for 3GPP TS 29.198-05 V4.6.0
+
+
+#ifndef __UI_DATA_DEFINED
+#define __UI_DATA_DEFINED
+
+
+
+#include "osa.idl"
+
+module org {
+	
+	module csapi {
+		
+		
+		
+		module ui {
+			
+			enum TpUIVariablePartType {
+
+				P_UI_VARIABLE_PART_INT,
+				P_UI_VARIABLE_PART_ADDRESS,
+				P_UI_VARIABLE_PART_TIME,
+				P_UI_VARIABLE_PART_DATE,
+				P_UI_VARIABLE_PART_PRICE				
+			};
+			
+			union TpUIVariableInfo switch(TpUIVariablePartType) {
+				case P_UI_VARIABLE_PART_INT: TpInt32 VariablePartInteger;
+				case P_UI_VARIABLE_PART_ADDRESS: TpString VariablePartAddress;
+				case P_UI_VARIABLE_PART_TIME: TpTime VariablePartTime;
+				case P_UI_VARIABLE_PART_DATE: TpDate VariablePartDate;
+				case P_UI_VARIABLE_PART_PRICE: TpPrice VariablePartPrice;
+			};
+			
+			typedef sequence <TpUIVariableInfo> TpUIVariableInfoSet;
+			
+			typedef TpInt32 TpUIResponseRequest;
+			
+			enum TpUIReport {
+
+				P_UI_REPORT_UNDEFINED,
+				P_UI_REPORT_INFO_SENT,
+				P_UI_REPORT_INFO_COLLECTED,
+				P_UI_REPORT_NO_INPUT,
+				P_UI_REPORT_TIMEOUT,
+				P_UI_REPORT_MESSAGE_STORED,
+				P_UI_REPORT_MESSAGE_NOT_STORED,
+				P_UI_REPORT_MESSAGE_DELETED,
+				P_UI_REPORT_MESSAGE_NOT_DELETED				
+			};
+			
+			struct TpUIMessageCriteria {
+				TpString EndSequence;
+				TpDuration MaxMessageTime;
+				TpInt32 MaxMessageSize;
+			};
+			
+			enum TpUIInfoType {
+
+				P_UI_INFO_ID,
+				P_UI_INFO_DATA,
+				P_UI_INFO_ADDRESS,
+				P_UI_INFO_BIN_DATA				
+			};
+			
+			union TpUIInfo switch(TpUIInfoType) {
+				case P_UI_INFO_ID: TpInt32 InfoID;
+				case P_UI_INFO_DATA: TpString InfoData;
+				case P_UI_INFO_ADDRESS: TpURL InfoAddress;
+				case P_UI_INFO_BIN_DATA: TpOctetSet InfoBinData;
+			};
+			
+			enum TpUIFault {
+
+				P_UI_FAULT_UNDEFINED,
+				P_UI_CALL_ENDED				
+			};
+			
+			enum TpUIEventInfoDataType {
+
+				P_UI_EVENT_DATA_TYPE_UNDEFINED,
+				P_UI_EVENT_DATA_TYPE_UNSPECIFIED,
+				P_UI_EVENT_DATA_TYPE_TEXT,
+				P_UI_EVENT_DATA_TYPE_USSD_DATA				
+			};
+			
+			struct TpUIEventInfo {
+				TpAddress OriginatingAddress;
+				TpAddress DestinationAddress;
+				TpString ServiceCode;
+				TpUIEventInfoDataType DataTypeIndication;
+				TpString DataString;
+			};
+			
+			struct TpUIEventCriteria {
+				TpAddressRange OriginatingAddress;
+				TpAddressRange DestinationAddress;
+				TpString ServiceCode;
+			};
+			
+			enum TpUIError {
+
+				P_UI_ERROR_UNDEFINED,
+				P_UI_ERROR_ILLEGAL_INFO,
+				P_UI_ERROR_ID_NOT_FOUND,
+				P_UI_ERROR_RESOURCE_UNAVAILABLE,
+				P_UI_ERROR_ILLEGAL_RANGE,
+				P_UI_ERROR_IMPROPER_USER_RESPONSE,
+				P_UI_ERROR_ABANDON,
+				P_UI_ERROR_NO_OPERATION_ACTIVE,
+				P_UI_ERROR_NO_SPACE_AVAILABLE,
+				P_UI_ERROR_RESOURCE_TIMEOUT				
+			};
+			
+			struct TpUICollectCriteria {
+				TpInt32 MinLength;
+				TpInt32 MaxLength;
+				TpString EndSequence;
+				TpDuration StartTimeout;
+				TpDuration InterCharTimeout;
+			};
+			
+			const TpInt32 P_UI_RESPONSE_REQUIRED = 1;
+			const TpInt32 P_UI_LAST_ANNOUNCEMENT_IN_A_ROW = 2;
+			const TpInt32 P_UI_FINAL_REQUEST = 4;
+			
+			
+			struct TpUIEventCriteriaResult {
+				
+				TpUIEventCriteria EventCriteria;
+				
+				TpInt32 AssignmentID;
+			};
+			
+			typedef sequence <TpUIEventCriteriaResult> TpUIEventCriteriaResultSet;
+			
+			exception P_ID_NOT_FOUND {
+				TpString ExtraInformation;
+			};
+			
+			exception P_ILLEGAL_ID {
+				TpString ExtraInformation;
+			};
+			
+			exception P_ILLEGAL_RANGE {
+				TpString ExtraInformation;
+			};
+			
+			exception P_INVALID_COLLECTION_CRITERIA {
+				TpString ExtraInformation;
+			};
+			
+			struct TpUIEventNotificationInfo {
+				TpAddress OriginatingAddress;
+				TpAddress DestinationAddress;
+				TpString ServiceCode;
+				TpUIEventInfoDataType DataTypeIndication;
+				TpOctetSet UIEventData;
+			};
+			
+			
+			
+		};
+		
+	};
+	
+};
+
+#endif

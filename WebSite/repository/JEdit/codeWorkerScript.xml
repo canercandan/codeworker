@@ -1,0 +1,105 @@
+
+<?xml version="1.0"?>
+
+<!DOCTYPE MODE SYSTEM "xmode.dtd">
+
+<MODE>
+    <PROPS>
+        <PROPERTY NAME="commentStart" VALUE="/*" />
+        <PROPERTY NAME="commentEnd" VALUE="*/" />
+		<PROPERTY NAME="lineComment" VALUE="//" />
+    </PROPS>
+
+    <RULES ESCAPE="\" IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE">
+        <SPAN TYPE="COMMENT1">
+            <BEGIN>/*</BEGIN>
+            <END>*/</END>
+        </SPAN>
+		
+		<EOL_SPAN TYPE="COMMENT2">//</EOL_SPAN>
+		
+		<SPAN TYPE="LITERAL1">
+			<BEGIN>"</BEGIN>
+			<END>"</END>
+		</SPAN>
+		
+		<SPAN TYPE="LITERAL1">
+			<BEGIN>'</BEGIN>
+			<END>'</END>
+		</SPAN>
+		
+		<!--
+		<SPAN TYPE="MARKUP" EXCLUDE_MATCH="TRUE">
+			<BEGIN>;</BEGIN>
+			<END>::=</END>
+		</SPAN>
+		-->
+	
+		<MARK_PREVIOUS TYPE="MARKUP"  EXCLUDE_MATCH="TRUE">::=</MARK_PREVIOUS>
+		
+		<MARK_PREVIOUS TYPE="MARKUP"  EXCLUDE_MATCH="TRUE"> ::=</MARK_PREVIOUS>
+		
+		<MARK_PREVIOUS TYPE="LABEL" EXCLUDE_MATCH="TRUE">:</MARK_PREVIOUS>
+		
+		<MARK_PREVIOUS TYPE="FUNCTION" EXCLUDE_MATCH="TRUE">(</MARK_PREVIOUS>
+		
+		<SEQ TYPE="OPERATOR">::=</SEQ>
+		
+		<SEQ TYPE="OPERATOR">=&gt;</SEQ>
+		
+		<SEQ TYPE="OPERATOR">!</SEQ>
+		
+		<SEQ TYPE="OPERATOR">amp;amp;</SEQ>
+		
+		<KEYWORDS>
+			
+			<!-- parse directives. -->
+			<KEYWORD1>#empty</KEYWORD1>
+			<KEYWORD1>#ignore</KEYWORD1>
+			<KEYWORD1>#include</KEYWORD1>
+			
+			<!-- keywords -->
+			<KEYWORD1>break</KEYWORD1>
+			<KEYWORD1>cascading</KEYWORD1>
+			<KEYWORD1>case</KEYWORD1>
+			<KEYWORD1>catch</KEYWORD1>
+			<KEYWORD1>continue</KEYWORD1>
+			<KEYWORD1>declare</KEYWORD1>
+			<KEYWORD1>default</KEYWORD1>
+			<KEYWORD1>do</KEYWORD1>
+			<KEYWORD1>else</KEYWORD1>
+			<KEYWORD1>first</KEYWORD1>
+			<KEYWORD1>foreach</KEYWORD1>
+			<KEYWORD1>forfile</KEYWORD1>
+			<KEYWORD1>function</KEYWORD1>
+			<KEYWORD1>if</KEYWORD1>			
+			<KEYWORD1>in</KEYWORD1>
+			<KEYWORD1>insert</KEYWORD1>
+			<KEYWORD1>last</KEYWORD1>
+			<KEYWORD1>local</KEYWORD1>
+			<KEYWORD1>merge</KEYWORD1>
+			<KEYWORD1>no-case</KEYWORD1>
+			<KEYWORD1>pushItem</KEYWORD1>
+			<KEYWORD1>ref</KEYWORD1>
+			<KEYWORD1>reverse</KEYWORD1>
+			<KEYWORD1>select</KEYWORD1>
+			<KEYWORD1>set</KEYWORD1>
+			<KEYWORD1>setall</KEYWORD1>
+			<KEYWORD1>sorted</KEYWORD1>
+			<KEYWORD1>start</KEYWORD1>
+			<KEYWORD1>switch</KEYWORD1>
+			<KEYWORD1>try</KEYWORD1>
+			<KEYWORD1>while</KEYWORD1>
+			
+			<!-- built in functions -->
+			<KEYWORD2>error</KEYWORD2>
+			<KEYWORD2>existVariable</KEYWORD2>
+			<KEYWORD2>findElement</KEYWORD2>
+			<KEYWORD2>getProperty</KEYWORD2>
+			<KEYWORD2>parseAsBNF</KEYWORD2>
+			<KEYWORD2>traceLine</KEYWORD2>
+			<KEYWORD2>traceString</KEYWORD2>
+			
+		</KEYWORDS>
+    </RULES>
+</MODE>

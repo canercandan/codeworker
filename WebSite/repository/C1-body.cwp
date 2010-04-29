@@ -1,0 +1,181 @@
+/*
+	property PURE_CPP = no #line if passed to the command line
+	property PRECOMPILED_HEADER = name of a header file to include at the beginning
+
+	C1 source:
+		- 'static inline' must be written 'inline static',
+		- preprocessing: logical split
+*/
+#include "C1-Parser.cwp"
+
+function getHeaderFilename() {
+	local sFile = canonizePath(getInputFilename());
+	local iIndex = sFile.findLastString("/c1/");
+	if $iIndex < 0$ error("C1 file '" + getInputFilename() + "' is misplaced in the file tree");
+	set sFile = sFile.subString($iIndex + 4$);
+	set iIndex = sFile.findLastString('.');
+	if $iIndex >= 0$ set sFile = sFile.leftString(iIndex);
+	return sFile + ".h";
+}
+
+function getC1Filename() {
+	local sFile = canonizePath(getInputFilename());
+	local iIndex = sFile.findLastString("/c1/");
+	if $iIndex < 0$ error("C1 file '" + getInputFilename() + "' is misplaced in the file tree");
+	set sFile = sFile.subString($iIndex + 4$);
+	return sFile;
+}
+
+#overload translation_unit	::=
+		#implicitCopy ["/*" ->"*/" =>{@@endl()@@}]? #explicitCopy
+		=> {
+			if getProperty("PRECOMPILED_HEADER") {
+				@#include "@getProperty("PRECOMPILED_HEADER")@"@endl()@@
+			}
+			local sHeaderFile = getInputFilename();
+			local iIndex = sHeaderFile.findLastString('.');
+			if $iIndex >= 0$ set sHeaderFile = sHeaderFile.leftString(iIndex);
+			set sHeaderFile += ".h";
+			@#include "@getHeaderFilename()@"@endl()+endl()@@
+		}
+		#super::translation_unit
+		=> indentText("C++");
+		;
+
+#overload C1_declaration	::=
+		#explicitCopy
+		#readIdentifier:{"public", "private"}:sType
+		'{'
+		#continue
+		[
+				#check(sType == "private")
+				#skipIgnore
+				#implicitCopy
+				body_internal_definition
+				#skipIgnore
+				#explicitCopy
+			|
+				body_internal_definition
+		]
+		'}'
+		;
+
+#overload declare_type<"namespace"> : value	::=
+		=> {@namespace @}
+		#implicitCopy
+		#readIdentifier
+		#continue
+		'{'
+		[#ignore(blanks) #skipIgnore]
+		#explicitCopy
+		[declare_type]*
+		#skipIgnore
+		#implicitCopy
+		'}'
+		#skipIgnore
+		;
+
+#overload declare_type<"class"> : value	::=
+		=> local sOldClassName = this.current_class_name;
+		class_header:this.current_class_name
+		class_body
+		->';'
+		=> set this.current_class_name = sOldClassName;
+		;
+
+#overload class_member<T>	::=
+		[
+				signature ';'
+			|
+				=>{@@T@ @}
+				member_signature_and_body
+		]
+		;
+
+#overload class_member<"virtual">	::=
+	#continue
+	member_signature_and_body
+	;
+
+#overload class_member<"friend">	::= #super::class_member<friend>;
+
+#overload class_member<"inline">	::=
+		#continue
+		signature
+		[constructor_initializer]?
+		body_definition
+		;
+
+#overload class_member<"static">	::=
+	#continue
+	#implicitCopy
+	common_member_declaration
+	[
+			'=' #continue static_member_initialization ';'
+		|
+			'(' #continue parameters ')'
+			[~'{']*
+			[
+					#check(!getProperty("PURE_CPP"))
+					#explicitCopy #skipIgnore #implicitCopy
+					=> {
+						@@endl()@#line @sub(countInputLines(), 1)@ "@getC1Filename()@"@endl()@@
+					}
+				|
+					#skipIgnore
+			]
+			body_definition
+			=> { @@endl()+endl()@@ }
+	]
+	;
+
+#overload common_member_declaration	::=
+		=> local iLocation;
+		->[
+			#readCompleteIdentifier:sId
+			=> set iLocation = $getOutputLocation() - sId.length()$;
+			!!['(' | '=']
+			=> if this.current_class_name {
+				insertText(iLocation, this.current_class_name + "::");
+			}
+		]
+		;
+
+member_signature_and_body	::=
+		=> local iLocation;
+		#implicitCopy
+		->[
+			[
+					'~'
+					=> set iLocation = $getOutputLocation() - 1$;
+					#readCompleteIdentifier:sId
+				|
+					#readCompleteIdentifier:sId
+					=> set iLocation = $getOutputLocation() - sId.length()$;
+			]
+			[
+					#check(sId == "operator")
+					#continue
+					->'('
+				|
+					'('
+			]
+			=> if this.current_class_name {
+				insertText(iLocation, this.current_class_name + "::");
+			}
+		]
+		[#readCString | ~'{']*
+		[
+				#check(!getProperty("PURE_CPP"))
+				#explicitCopy #skipIgnore #implicitCopy
+				=> {
+					@@endl()@#line @sub(countInputLines(), 1)@ "@getC1Filename()@"@endl()@@
+				}
+			|
+				#skipIgnore
+		]
+		body_definition
+		=> { @@endl()+endl()@@ }
+		;
+
+#overload preprocessor_directive	::= #implicitCopy #super::preprocessor_directive #ignore(blanks) #skipIgnore;

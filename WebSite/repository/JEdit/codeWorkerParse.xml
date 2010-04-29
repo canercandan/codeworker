@@ -1,0 +1,72 @@
+
+<?xml version="1.0"?>
+
+<!DOCTYPE MODE SYSTEM "xmode.dtd">
+
+<MODE>
+    <PROPS>
+        <PROPERTY NAME="commentStart" VALUE="/*" />
+        <PROPERTY NAME="commentEnd" VALUE="*/" />
+		<PROPERTY NAME="lineComment" VALUE="//" />
+    </PROPS>
+	
+	<RULES ESCAPE="\" IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE" DEFAULT="KEYWORD3">
+		<SPAN EXCLUDE_MATCH="TRUE" DELEGATE="CodeWorkerParse::production">
+			<BEGIN>::=</BEGIN>
+			<END>;</END>
+		</SPAN>
+	</RULES>
+	
+	<RULES SET="production" ESCAPE="\" IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE">
+	
+		<SPAN TYPE="COMMENT1">
+            <BEGIN>/*</BEGIN>
+            <END>*/</END>
+        </SPAN>
+		
+		<EOL_SPAN TYPE="COMMENT2">//</EOL_SPAN>
+	
+		<SPAN TYPE="LITERAL1">
+			<BEGIN>"</BEGIN>
+			<END>"</END>
+		</SPAN>
+		
+		<SPAN TYPE="LITERAL1">
+			<BEGIN>'</BEGIN>
+			<END>'</END>
+		</SPAN>
+		
+		<SPAN EXCLUDE_MATCH="TRUE" DELEGATE="CodeWorkerScript::MAIN">
+			<BEGIN>=>{</BEGIN>
+			<END>}</END>
+		</SPAN>
+		
+		<SPAN EXCLUDE_MATCH="TRUE" DELEGATE="CodeWorkerScript::MAIN">
+			<BEGIN>=> {</BEGIN>
+			<END>}</END>
+		</SPAN>
+		
+		<KEYWORDS>
+			
+			<!-- parse directives. -->
+			<KEYWORD1>#attach</KEYWORD1>
+			<KEYWORD1>#empty</KEYWORD1>
+			<KEYWORD1>#end</KEYWORD1>
+			<KEYWORD1>#ignore</KEYWORD1>
+			<KEYWORD1>#include</KEYWORD1>
+			<KEYWORD1>#reference</KEYWORD1>
+			<KEYWORD1>#syntax</KEYWORD1>
+			<KEYWORD1>#use</KEYWORD1>
+			
+			<KEYWORD1>#!attach</KEYWORD1>
+			<KEYWORD1>#!empty</KEYWORD1>
+			<KEYWORD1>#!end</KEYWORD1>
+			<KEYWORD1>#!ignore</KEYWORD1>
+			<KEYWORD1>#!include</KEYWORD1>
+			<KEYWORD1>#!reference</KEYWORD1>
+			<KEYWORD1>#!syntax</KEYWORD1>
+			<KEYWORD1>#!use</KEYWORD1>
+		</KEYWORDS>
+	</RULES>
+	
+</MODE>

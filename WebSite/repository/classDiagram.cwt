@@ -1,0 +1,50 @@
+@/*description:
+{
+	It parses an object design (the syntax conforms to \samp{CWML}, an object modelling language
+	that \CodeWorker\ proposes by default) and generates a class diagram as a \samp{png} picture.
+	
+	\GraphViz\ is an open source graph drawing software, called here for building the class
+	diagram. It requires the description of the graph, generated in \samp{classDiagram.txt}
+	by the script \samp{classDiagramGraphviz.cwt}.\\
+	This example cannot work without \GraphViz\ installed on the Web server.
+	
+	Note that one saves the object design in a virtual file (function \samp{createVirtualTemporaryFile()}).
+	It avoids saving the design of the client in a temporary physical file before parsing it.
+}
+
+file "examples/classDiagram.txt";
+output "examples/classDiagramResult.html";
+*/
+
+// One creates a folder on the server side to store the generated files of the client
+setWorkingPath(getEnv("REMOTE_HOST") + "/");
+
+@<HTML>
+	<BODY>
+@
+	local tempFile = createVirtualTemporaryFile(editedSpec);
+	try {
+		parseAsBNF("CWML.cwp", project, tempFile);
+		@		<H2>Class diagram</H2>
+@
+		generate("classDiagramGraphviz.cwt", project, getWorkingPath() + "classDiagram.txt");
+		system("\"c:\\Program Files\\ATT\\GraphViz\\bin\\dot.exe\" -Tpng -o" + getWorkingPath() + "classDiagram.png " + getWorkingPath() + "classDiagram.txt");
+@		<IMG src="@getWorkingPath()@classDiagram.png"/>
+		<P/>
+@
+	} catch(sError) {
+		set sError = sError.replaceString('\n', "<BR/>");
+		set sError = sError.replaceString('\r', "");
+		@		<H3>@sError@</H3>
+@
+	}
+	deleteVirtualFile(tempFile);
+@		<FORM method=post action="classDiagram.cwt">
+			<B>Requirements specification:</B>
+			<BR/>
+			<TEXTAREA name="editedSpec" cols=80 rows=25>@composeHTMLLikeString(editedSpec.replaceString('\r', ""))@</TEXTAREA>
+			<BR/>
+			<INPUT type=submit value="generate it!"/>
+		</FORM>
+	</BODY>
+</HTML>

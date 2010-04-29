@@ -1,0 +1,33 @@
+switch(this.function) {
+@
+foreach i in project.procedureList if i.mode == "parse" && i.example {
+	@	case "@i.name@":
+		{
+@
+	local lines;
+	cutString(replaceString("\r", "", i.example), "\n", lines);
+	foreach j in lines {
+		@			@j@
+@
+	}
+	@
+		}
+		break;
+@
+}
+foreach i in project.functionList if i.mode == "parse" && i.example {
+	@	case "@i.name@":
+		{
+@
+	local lines;
+	cutString(replaceString("\r", "", i.example), "\n", lines);
+	foreach j in lines {
+		@			@j@
+@
+	}
+	@
+		}
+		break;
+@
+}
+@}

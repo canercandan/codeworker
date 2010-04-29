@@ -1,0 +1,249 @@
+switch(this.function) {
+	case "goBack":
+		{
+			traceLine("we move further into the input file, just after '$'");
+			readNextText("$");
+			traceLine("and now, we go back to it");
+			goBack();
+			if !readIfEqualTo("$") error("'$' expected");
+
+		}
+		break;
+	case "setInputLocation":
+		{
+			traceLine("we jump to identifier 'potatoes' at position 12");
+			setInputLocation(12);
+			if !readIfEqualToIdentifier("_potatoes41") error("identifier '_potatoes41' expected");
+
+		}
+		break;
+	case "getLastReadChars":
+		{
+			// we move further into the input file
+			readNextText("$");
+			traceLine("getLastReadChars(12) = '" + getLastReadChars(12) + "'");
+
+		}
+		break;
+	case "getInputLocation":
+		{
+			// we move further into the input file, just after the '$' character
+			readNextText("$");
+			traceLine("The character following '$' is put at position " + getInputLocation() + ", starting at 0");
+
+		}
+		break;
+	case "lookAhead":
+		{
+			// we move further into the input file,
+			// just after 'C++: '
+			readNextText("C++: ");
+			local iPosition = getInputLocation();
+			traceLine("lookAhead('/*') = '" + lookAhead("/*") + "'");
+			if iPosition != getInputLocation() error("What did I say? The file position shouldn't have moved!");
+
+		}
+		break;
+	case "peekChar":
+		{
+			setInputLocation(10);
+			traceLine("at position 10, peekChar() = '" + peekChar() + "'");
+			if !equal(getInputLocation(), 10) error("the position of the input stream shouldn't have moved!");
+			traceLine("the position didn't change, peekChar() = '" + peekChar() + "' again");
+
+		}
+		break;
+	case "readByte":
+		{
+			while !lookAhead(":") traceText("0x" + readByte() + " ");
+
+		}
+		break;
+	case "readBytes":
+		{
+			traceLine("6 first bytes = 0x" + readBytes(6));
+
+		}
+		break;
+	case "readChar":
+		{
+			while !lookAhead(":") traceText(readChar());
+
+		}
+		break;
+	case "readCharAsInt":
+		{
+			traceLine("we move to the end of a line,");
+			readNextText("$");
+			traceLine("so carriage return or newline is " + readCharAsInt());
+
+		}
+		break;
+	case "readChars":
+		{
+			traceLine("6 first characters = '" + readChars(6) + "'");
+
+		}
+		break;
+	case "readIdentifier":
+		{
+			traceLine("we jump just before the identifier:");
+			readNextText("identifier: ");
+			traceLine("identifier = '" + readIdentifier() + "'");
+
+		}
+		break;
+	case "readIfEqualTo":
+		{
+			// we move further into the input file,
+			// just after 'C++: '
+			readNextText("C++: ");
+			local iPosition = getInputLocation();
+			traceLine("readIfEqualTo('/*') = '" + readIfEqualTo("/*") + "'");
+			if iPosition == getInputLocation() error("The file position should have moved after '/*'!");
+
+		}
+		break;
+	case "readIfEqualToIgnoreCase":
+		{
+			traceLine("readIfEqualToIgnoreCase('IDENTIFIER') = '" + readIfEqualToIgnoreCase("IDENTIFIER") + "'");
+			if !readIfEqualTo(":") error("':' expected after matching with 'IDENTIFIER'!");
+
+		}
+		break;
+	case "readIfEqualToIdentifier":
+		{
+			traceLine("readIfEqualTo('ident') = '" + readIfEqualTo("ident") + "'");
+			traceLine("readIfEqualTo('identifier') = '" + readIfEqualTo("identifier") + "'");
+
+		}
+		break;
+	case "readLine":
+		{
+			traceLine("Reads the 2 first lines:");
+			local sLine;
+			if !readLine(sLine) error("line 1 expected, instead of end of file");
+			traceLine("\t" + sLine);
+			if !readLine(sLine) error("line 2 expected, instead of end of file");
+			traceLine("\t" + sLine);
+
+		}
+		break;
+	case "readNextText":
+		{
+			traceLine("position of the input stream = " + getInputLocation());
+			if !readNextText("word:") error("where is 'word:'?");
+			traceLine("we jump to 'word:', and the new position is " + getInputLocation());
+
+		}
+		break;
+	case "readNumber":
+		{
+			traceLine("we jump just before the numbers:");
+			readNextText("numbers: ");
+			local dNumber;
+			if !readNumber(dNumber) error("integer expected!");
+			traceLine("integer = " + dNumber);
+			skipBlanks();
+			if !readNumber(dNumber) error("double expected!");
+			traceLine("double = " + dNumber);
+
+		}
+		break;
+	case "readString":
+		{
+			traceLine("we jump just before the string:");
+			readNextText("string: ");
+			local sText;
+			if !readString(sText) error("constant string expected!");
+			traceLine("string = '" + sText + "'");
+
+		}
+		break;
+	case "readUptoJustOneChar":
+		{
+			traceLine("readUptoJustOneChar('$_:') = '" + readUptoJustOneChar("$_:") + "'");
+
+		}
+		break;
+	case "readWord":
+		{
+			traceLine("we jump just before the word:");
+			readNextText("word: ");
+			traceLine("readWord() = '" + readWord() + "'");
+
+		}
+		break;
+	case "skipBlanks":
+		{
+			readNextText("blanks: ");
+			traceLine("we skip blank characters");
+			skipBlanks();
+			traceText("now, we read the string token: ");
+			local sText;
+			if !readString(sText) error("constant string expected");
+			traceLine("'" + sText + "'");
+
+		}
+		break;
+	case "skipSpaces":
+		{
+			readNextText("spaces:");
+			traceLine("we skip spaces and tabulations");
+			skipSpaces();
+			traceText("now, we read the string token: ");
+			local sText;
+			if !readString(sText) error("constant string expected");
+			traceLine("'" + sText + "'");
+
+		}
+		break;
+	case "skipEmptyCpp":
+		{
+			readNextText("C++: ");
+			traceLine("we skip C++ empty tokens");
+			skipEmptyCpp();
+			traceText("now, we read the string token: ");
+			local sText;
+			if !readString(sText) error("constant string expected");
+			traceLine("'" + sText + "'");
+
+		}
+		break;
+	case "skipEmptyCppExceptDoxygen":
+		{
+			readNextText("C++: ");
+			traceLine("we skip C++ empty tokens, except Doxygen comments");
+			skipEmptyCppExceptDoxygen();
+			traceText("now, we read the string token: ");
+			local sText;
+			if !readString(sText) error("constant string expected");
+			traceLine("'" + sText + "'");
+
+		}
+		break;
+	case "skipEmptyHTML":
+		{
+			readNextText("HTML: ");
+			traceLine("we skip HTML empty tokens");
+			skipEmptyHTML();
+			traceText("now, we read the string token: ");
+			local sText;
+			if !readString(sText) error("constant string expected");
+			traceLine("'" + sText + "'");
+
+		}
+		break;
+	case "skipEmptyLaTeX":
+		{
+			readNextText("LaTeX: ");
+			traceLine("we skip LaTeX comments");
+			skipEmptyLaTeX();
+			traceText("now, we read the string token: ");
+			local sText;
+			if !readString(sText) error("constant string expected");
+			traceLine("'" + sText + "'");
+
+		}
+		break;
+}

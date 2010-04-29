@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="http://www.codeworker.org/CodeWorker.css" />
+	</head>
+	<body class="script">
+		<pre><i>TrafficLightControl</i> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_ignore">#ignore</a>(<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_directives__ignore">C++</a>) <span class="comment">// ignore C++-like comments and whitespaces</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="comment">// a syntax error will occur if the BNF sequence fails</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><i>strategy</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a> <span class="comment">// repetition of strategies consuming</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_empty">#empty</a> <span class="comment">// end of file necessarily reached after the reading of strategies</span>
+    ;
+
+<i>strategy</i> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;strategy&quot;</span> <span class="comment">// identifier must be worth &#39;strategy&#39;</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="comment">// the rest of the BNF sequence doesn&#39;t have to fail</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sName <span class="comment">// assign the consumed id to a local variable</span>
+    <span class="comment">// the &#39;=&gt;&#39; symbol escapes the BNF to execute a non-BNF instruction</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#if">if</A> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.strategies.<A class="function" href="http://www.codeworker.org/manual_The_scripting_language.html#findElement">findElement</A>(sName) {
+        <span class="comment">// Error! The strategy already exists in the parse tree!</span>
+        <A class="procedure" href="http://www.codeworker.org/manual_The_scripting_language.html#error">error</A>(<span class="string">&quot;cannot define the strategy &#39;&quot;</span> + sName + <span class="string">&quot;&#39; twice!&quot;</span>);
+    }
+    <span class="comment">// insert the strategy to the parse tree and keep a reference</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.strategies[sName].name = sName;
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#localref">localref</A> theStrategy = <a class = "constant" href="http://www.codeworker.org/manual_The_scripting_language.html#this">this</a>.strategies[sName];
+    <span class="string">&#39;{&#39;</span>
+    <i>start_condition</i>(theStrategy) <span class="comment">// when to trigger the strategy</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><i>rule</i>(theStrategy)<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]+</a> <span class="comment">// at least one rule to parse</span>
+    <span class="string">&#39;}&#39;</span>
+    ;
+
+<i>start_condition</i>(theStrategy : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:<span class="string">&quot;start&quot;</span>     <span class="comment">// add to the parse tree the condition</span>
+    <i>condition</i>:theStrategy.start <span class="comment">// to start running the strategy</span>
+    <span class="string">&#39;;&#39;</span>
+    ;
+
+<i>rule</i>(theStrategy : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <i>condition</i>:sAntecedent <span class="comment">// the antecedent of the rule is a condition</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+    <span class="string">&quot;=&gt;&quot;</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> theStrategy.rules; <span class="comment">// add a new rule in the list</span>
+    <span class="comment">// access to the last element of the list for inserting a new attribute</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.condition = sAntecedent;
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.actions; <span class="comment">// add a new action</span>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sAction <span class="comment">// keyword of the action to execute</span>
+    <span class="comment">// call of a generic BNF non-terminal, resolved by &#39;sAction&#39;</span>
+    <i>rule_action</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&lt;</a>sAction<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&gt;</a>(theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.actions#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>)
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+        <span class="string">&#39;,&#39;</span> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="comment">// a comma separates the actions</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.actions;
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:sAction
+        <i>rule_action</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&lt;</a>sAction<a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&gt;</a>(theStrategy.rules#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>.actions#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>)
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a>
+    <span class="string">&#39;;&#39;</span>
+    ;
+
+<span class="comment">// A generic BNF non-terminal instantiated on &quot;duration&quot; constant</span>
+<i>rule_action</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&lt;</a><span class="string">&quot;duration&quot;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&gt;</a>(theAction : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#theAction">theAction</A> = <span class="string">&quot;duration&quot;</span>; <span class="comment">// type of action</span>
+    <span class="string">&#39;(&#39;</span>
+    <i>street_segment</i>(theAction.crossroad_entry) <span class="comment">// entry point</span>
+    <span class="string">&#39;,&#39;</span>
+    <i>time_sequence</i>(theAction.durations) <span class="comment">// traffic light durations</span>
+    <span class="string">&#39;)&#39;</span>
+    ;
+
+<i>rule_action</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&lt;</a><span class="string">&quot;activate&quot;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&gt;</a>(theAction : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#theAction">theAction</A> = <span class="string">&quot;activate&quot;</span>;
+    <span class="string">&#39;(&#39;</span> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:theAction.strategy <span class="string">&#39;)&#39;</span>
+    ;
+
+<i>rule_action</i><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&lt;</a><span class="string">&quot;desactivate&quot;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">&gt;</a>(theAction : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#theAction">theAction</A> = <span class="string">&quot;desactivate&quot;</span>;
+    ;
+
+<i>street_segment</i>(theSegment : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:theSegment.crossroad
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="string">&quot;-&gt;&quot;</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theSegment.direction = <span class="string">&quot;c-&gt;s&quot;</span>;
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a>:theSegment.street
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a>:theSegment.street
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a> <span class="string">&quot;-&gt;&quot;</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#insert">insert</A> theSegment.direction = <span class="string">&quot;s-&gt;c&quot;</span>;
+        <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readIdentifier">#readIdentifier</a>:theSegment.crossroad
+    ;
+
+<i>time_sequence</i>(theSequence : <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">node</a>) <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> theSequence;
+    <i>timeInSeconds</i>:theSequence#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+        <span class="string">&#39;/&#39;</span> <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#pushItem">pushItem</A> theSequence;
+        <i>timeInSeconds</i>:theSequence#<a class = "instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#_back">back</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">
+    ]+</a>
+    ;
+
+<span class="comment">// This BNF non-terminal reads a time like 1min15 and</span>
+<span class="comment">// restitutes it in seconds: the keyword &#39;value&#39; means that</span>
+<span class="comment">// the non-terminal will return its own transformation rather</span>
+<span class="comment">// than the consumed character sequence.</span>
+<i>timeInSeconds</i>:<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_declaring_a_clause">value</a> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readInteger">#readInteger</a>:iMin
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_continue">#continue</a>
+    <span class="string">&quot;min&quot;</span>
+    <span class="comment">// arithmetic expressions are enclosed between &#39;$&#39; symbols</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#timeInSeconds">timeInSeconds</A> = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>iMin * <span class="numeric">60</span><a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>;
+    <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readInteger">#readInteger</a>:iSec
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_operator__eq__amp_gt_">=&gt;</a> <A class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#timeInSeconds">timeInSeconds</A> = <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>timeInSeconds + iSec<a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#$">$</a>;
+    ;
+
+<i>condition</i> <a class="constant" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_BNF_syntax">::=</a>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_negation">!</a><span class="string">&#39;}&#39;</span> <span class="comment">// look ahead one character if no trailing brace </span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a>
+            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCString">#readCString</a> <span class="comment">// bypass string: may contain &#39;;&#39; or &#39;=&gt;&#39;</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+            <a class="directive" href="http://www.codeworker.org/manual_The_scripting_language.html#_readCChar">#readCChar</a> <span class="comment">// same reason</span>
+        <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a>
+            <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_complementary">~</a><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">[</a><span class="string">&#39;;&#39;</span> <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#parsing_alternation">|</a> <span class="string">&quot;=&gt;&quot;</span><a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]</a> <span class="comment">// consume if neither &#39;;&#39; nor &#39;=&gt;&#39; reached</span>
+    <a class="instruction" href="http://www.codeworker.org/manual_The_scripting_language.html#BNF_token_repeating_a_token">]*</a>
+    ;
+
+</pre><hr />
+		Generated by <I class="CodeWorker">CodeWorker</I> v3.11.0.1 from <a href="http://www.codeworker.org/CWscript2HTML.html">CWscript2HTML.cwp</a>.
+	</body>
+</html>

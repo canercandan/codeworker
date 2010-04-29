@@ -1,0 +1,76 @@
+@/*description:
+{
+	It generates an input file for asking \GraphViz\ to draw the class diagram of an object
+	design. The parse tree of the object design must conform to the logic structure	of
+	\samp{CWML}, the default modelling language proposed by \CodeWorker\ as illustration.
+	
+	Please refer to the documentation of \GraphViz\ to understand more about the syntax
+	of the graph description.
+}
+*/
+@digraph structs {
+	node [shape=record,style=filled,color=red3];
+@
+function serializeType(myType : node) {
+	if myType.isArray return serializeType(myType.elementType) + "[]";
+	return myType.name;
+}
+
+foreach i in cascading this.listOfPackages {
+	foreach j in i.listOfClasses {
+		@	@j.name@ [shape=record,label="{@j.name@|{@
+		local bAtLeastOne = false;
+		foreach k in j.listOfAttributes {
+			if !k.type.isObject  {
+				if !bAtLeastOne {
+					bAtLeastOne = true;
+				} else {
+					@\n@
+				}
+				@@k.name@\ :\ @serializeType(k.type)@@
+			}
+		}
+		if !bAtLeastOne {
+			@\n@
+		}
+		@}}",fillcolor=yellow,];
+@
+	}
+}
+@
+@
+foreach i in cascading this.listOfPackages {
+	foreach j in i.listOfClasses {
+		if existVariable(j.extendedClass) {
+			@	@j.name@ -> @j.extendedClass@ [arrowhead=empty,arrowsize=2.0];
+@
+		}
+		foreach k in j.listOfAttributes {
+			if k.type.isObject {
+				localref myType = k.type;
+				while myType.isArray ref myType = myType.elementType;
+				@	@j.name@ -> @myType.name@ [@
+				if k.type.isAggregate {
+					@arrowtail=diamond,@
+				}
+				local sRole = k.name;
+				if k.type.isArray {
+					if k.type.isOptional {
+						set sRole = "[0..*] " + sRole;
+					} else {
+						set sRole = "[1..*] " + sRole;
+					}
+				} else {
+					if k.type.isOptional {
+						set sRole = "[0..1] " + sRole;
+					} else {
+						set sRole = "[1] " + sRole;
+					}
+				}
+				@arrowhead=normal,arrowsize=1.0,headlabel="@sRole@"];
+@
+			}
+		}
+	}
+}
+@}

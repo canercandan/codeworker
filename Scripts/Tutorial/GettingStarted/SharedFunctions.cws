@@ -1,0 +1,105 @@
+//note: this function normalizes identifiers, so as to capitalize the first letter
+//note: and to suppress \textbf{'\_'} or dots after capitalizing the letter that follows:
+//note: \samp{average\_speed} becomes \samp{AverageSpeed}, for example. This function
+//note: is applied on attribute names for instance.
+function normalizeIdentifier(sName) {
+	if sName {
+//note: if the identifier starts with an underscore, it is preserved,
+		if startString(sName, "_")
+			return "_" + normalizeIdentifier(subString(sName, 1));
+		set sName = toUpperString(charAt(sName, 0))
+					+ subString(sName, 1);
+//note: points to the first character encountered among an underscore and a dot,
+		local iIndex = findFirstChar(sName, "_.");
+		if !isNegative(iIndex) {
+			local sNext = subString(sName, add(iIndex, 1));
+			return leftString(sName, iIndex)
+					+ normalizeIdentifier(sNext);
+		}
+	}
+	return sName;
+}
+
+//note: this function returns the C++ type of a \textit{Simple-Modeling} type node:
+//note: \begin{itemize}
+//note:		\item an object returns a pointer to it,
+//note:		\item type \samp{boolean} is written \samp{bool} in C++,
+//note:		\item type \samp{string} is written \samp{std::string} in the C++ standard library,
+//note:		\item an array is written as an instantiated class of \samp{std::vector},
+//note: \end{itemize}
+//note:
+function getType<"C++">(myType : node) {
+	local sType;
+	if myType.isObject set sType = myType.name + "*";
+	else if myType.name == "boolean" set sType = "bool";
+	else if myType.name == "string" set sType = "std::string";
+	else set sType = myType.name;
+	if myType.isArray set sType = "std::vector<" + sType + ">";
+	return sType;
+}
+
+//note: this function returns the C++ type of a \textit{Simple-Modeling} type node as
+//note: expected when passed to a method as a parameter type (\samp{sMode} is worth
+//note: \textit{"in"}, \textit{"out"}, \textit{"inout"} or empty string),
+function getParameterType<"C++">(myType : node, sMode) {
+	local sType = getType<"C++">(myType);
+	if endString(sMode, "out") set sType += "&";
+	else if (sMode == "in") set sType = "const " + sType + "&";
+	return sType;
+}
+
+//note: this function returns the JAVA type of a \textit{Simple-Modeling} type node:
+//note: \begin{itemize}
+//note:		\item an object returns its class name,
+//note:		\item type \samp{boolean} is written identically in JAVA,
+//note:		\item type \samp{string} is written \samp{String} in JAVA,
+//note:		\item an array is written as a \samp{java.util.ArrayList} interface in JAVA,
+//note: \end{itemize}
+//note:
+function getType<"JAVA">(myType : node) {
+	local sType;
+	if myType.name == "string" set sType = "String";
+	else set sType = myType.name;
+	if myType.isArray set sType = "java.util.ArrayList/*<" + sType + ">*/";
+	return sType;
+}
+
+//note: this function returns the JAVA type of a \textit{Simple-Modeling} type node as
+//note: expected when passed to a method as a parameter type (\samp{sMode} is worth
+//note: \textit{"in"}, \textit{"out"}, \textit{"inout"} or empty string, but we don't
+//note: care about \textit{"inout"} or \textit{"out"} for the moment),
+function getParameterType<"JAVA">(myType : node, sMode) {
+	return getType<"JAVA">(myType);
+}
+
+//note: this function returns a variable name whose nomenclature depends on its type,
+function getVariableName(sName, myType : node) {
+	local sPrefix;
+	if myType.isArray set sPrefix = "t";
+	if myType.isObject set sPrefix += "p";
+	else {
+//note: the \samp{switch} statement allows selection among multiple sections of code,
+//note: depending on the value of expression \samp{myType.name}, enclosed in parentheses.
+//note: If no controlling expression (announced by label \samp{case}) matches with the
+//note: value, and no \samp{default} label is present, \CodeWorker\ throws an error.
+		switch(myType.name) {
+			case "int": set sPrefix += "i";break;
+			case "double": set sPrefix += "d";break;
+			case "boolean": set sPrefix += "b";break;
+			case "string": set sPrefix += "s";break;
+		}
+	}
+	return sPrefix + normalizeIdentifier(sName);
+}
+
+//note: this function returns a unique method ID, which is composed from the name of the
+//note: method and the type of parameters, to avoid confusing protected areas from a method
+//note: to another,
+function getMethodID(myMethod : node) {
+	local sMethodID = myMethod.name;
+	foreach i in myMethod.listOfParameters {
+		set sMethodID += "." + i.type.name;
+		if i.type.isArray set sMethodID += "[]";
+	}
+	return sMethodID;
+}

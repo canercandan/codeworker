@@ -1,0 +1,142 @@
+EJB_QL ::= select_clause #continue from_clause [where_clause]?;
+
+from_clause ::= "FROM" #continue identification_variable_declaration 
+    [, identification_variable_declaration]*;
+
+identification_variable_declaration ::=
+    collection_member_declaration |
+    range_variable_declaration;
+
+collection_member_declaration ::= 
+    "IN" #continue '(' collection_valued_path_expression ')' ["AS"]? identifier;
+ 
+range_variable_declaration ::= 
+    abstract_schema_name ["AS"]? identifier;
+
+single_valued_path_expression ::=
+    [single_valued_navigation |
+    identification_variable]? '.' cmp_field |
+    single_valued_navigation;
+
+single_valued_navigation ::= 
+    identification_variable '.' [single_valued_cmr_field '.']*
+    single_valued_cmr_field;
+
+collection_valued_path_expression ::= 
+    identification_variable '.' [single_valued_cmr_field '.']*
+    collection_valued_cmr_field;
+
+select_clause ::= "SELECT" #continue ["DISTINCT"]?
+    [single_valued_path_expression |
+    "OBJECT" '(' identification_variable ')'];
+
+where_clause ::= "WHERE" #continue conditional_expression;
+
+conditional_expression ::= conditional_term |
+    conditional_expression "OR" #continue conditional_term;
+
+conditional_term ::= conditional_factor | 
+    conditional_term "AND" #continue conditional_factor;
+
+conditional_factor ::= ["NOT"]? conditional_test;
+
+conditional_test ::= conditional_primary;
+
+conditional_primary ::= 
+    simple_cond_expression | '(' conditional_expression ')';
+
+simple_cond_expression ::= 
+    comparison_expression | 
+    between_expression | 
+    like_expression |
+    in_expression | 
+    null_comparison_expression |
+    empty_collection_comparison_expression |
+    collection_member_expression;
+
+
+between_expression ::= 
+    arithmetic_expression ["NOT"]? "BETWEEN" #continue 
+    arithmetic_expression "AND" arithmetic_expression;
+
+in_expression ::= 
+    single_valued_path_expression 
+    ["NOT"]? "IN" #continue '(' string_literal [',' string_literal]* ')';
+
+like_expression ::= 
+    single_valued_path_expression 
+    ["NOT"]? "LIKE" #continue pattern_value ["ESCAPE" escape-character]?;
+
+null_comparison_expression ::= 
+    single_valued_path_expression "IS" #continue ["NOT"]? "NULL";
+
+empty_collection_comparison_expression ::= 
+    collection_valued_path_expression "IS" #continue ["NOT"]? "EMPTY";
+
+collection_member_expression ::=
+    [single_valued_navigation | identification_variable |
+    input_parameter]
+    ["NOT"]? "MEMBER" #continue ["OF"]? collection_valued_path_expression;
+
+comparison_expression ::= 
+    string_value ['=' | "<>"] #continue string_expression | 
+    boolean_value ['=' | "<>"] #continue boolean_expression | 
+    datetime_value ['=' | "<>" | '>' | '<'] #continue datetime_expression | 
+    entity_bean_value ['=' | "<>"] #continue entity_bean_expression | 
+    arithmetic_value comparison_operator
+		#continue single_value_designator;
+
+arithmetic_value ::= single_valued_path_expression |
+    functions_returning_numerics;
+
+single_value_designator ::= scalar_expression;
+
+comparison_operator ::= '=' | '>' | ">=" | '<' | "<=" | "<>";
+
+scalar_expression ::= arithmetic_expression;
+
+arithmetic_expression ::= arithmetic_term |
+    arithmetic_expression ['+' | '-'] #continue arithmetic_term;
+
+arithmetic_term ::= arithmetic_factor | 
+    arithmetic_term ['*' | '/'] #continue arithmetic_factor;
+
+arithmetic_factor ::= ['+' | '-'] #continue arithmetic_primary;
+
+arithmetic_primary ::= single_valued_path_expression | 
+    literal | '(' arithmetic_expression ')' |
+    input_parameter | functions_returning_numerics;
+
+string_value ::= single_valued_path_expression |
+    functions_returning_strings;
+
+string_expression ::= string_primary | input_expression;
+
+string_primary ::= single_valued_path_expression | literal |
+    '(' string_expression ')' | functions_returning_strings;
+
+datetime_value ::= single_valued_path_expression;
+
+datetime_expression ::= datetime_value | input_parameter;
+
+boolean_value ::= single_valued_path_expression
+
+boolean_expression ::= single_valued_path_expression | 
+   literal | input_parameter;
+
+entity_bean_value ::= 
+    single_valued_navigation | identification_variable;
+
+entity_bean_expression ::= entity_bean_value | input_parameter;
+
+functions_returning_strings ::= 
+    "CONCAT" #continue '(' string_expression ',' string_expression ')' | 
+    "SUBSTRING" #continue '(' string_expression ',' arithmetic_expression ','
+    arithmetic_expression ')';
+
+functions_returning_numerics::= 
+    "LENGTH" #continue '(' string_expression ')' |
+    "LOCATE" #continue '(' string_expression ','
+		string_expression [',' arithmetic_expression]? ')' |
+    "ABS" #continue '(' arithmetic_expression ')' |
+    "SQRT" #continue '(' arithmetic_expression ')';

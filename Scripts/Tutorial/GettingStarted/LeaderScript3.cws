@@ -1,0 +1,46 @@
+//command: -I Scripts/Tutorial -path .
+//command: -define DESIGN_FILE=GettingStarted/SolarSystem0.sml
+//command: -script GettingStarted/LeaderScript3.cws
+//hide:
+setProperty("DESIGN_FILE", "GettingStarted/SolarSystem0.sml");
+if !getProperty("DESIGN_FILE")
+	error("'-define DESIGN_FILE=file' expected on the command line");
+traceLine("'Simple Modeling' design file to parse = \""
+		  + getProperty("DESIGN_FILE") + "\"");
+//hide:
+clearVariable(project.listOfClasses);
+parseAsBNF("GettingStarted/SimpleML-parsing.cwp",
+		   project, getProperty("DESIGN_FILE"));
+#include "TreeDecoration.cws"
+
+#include "SharedFunctions.cws"
+foreach myClass in project.listOfClasses {
+	traceLine("generating class '" + myClass.name + "' ...");
+	generate("GettingStarted/CppObjectHeader.cwt", myClass, getWorkingPath() + "Scripts/Tutorial/GettingStarted/Cpp/" + myClass.name + ".h");
+	generate("GettingStarted/CppObjectBody.cwt", myClass, getWorkingPath() + "Scripts/Tutorial/GettingStarted/Cpp/" + myClass.name + ".cpp");
+	generate("GettingStarted/JAVAObject.cwt", myClass, getWorkingPath() + "Scripts/Tutorial/GettingStarted/JAVA/solarsystem/" + myClass.name + ".java");
+}
+//note: copy the default empty HTML documentation to \textit{"SolarSystem0.html"} if it doesn't exist yet,
+//highlight:
+if !existFile("Scripts/Tutorial/GettingStarted/SolarSystem0.html") {
+	copyFile("Scripts/Tutorial/GettingStarted/defaultDocumentation.html", "Scripts/Tutorial/GettingStarted/SolarSystem0.html");
+}
+//normal:
+
+//note: the \samp{myDocumentationContext} variable will be passed to the procedure \samp{expand()},
+local myDocumentationContext;
+//note: an attribute \samp{language} is added to the \samp{myDocumentationContext} variable,
+//note: which specifies whether types must be expressed in C++ or in JAVA into the HTML
+//note: documentation,
+insert myDocumentationContext.language = "C++";
+traceLine("generating the HTML documentation...");
+//note: don't forget to specify comment delimiters that are expected by an HTML file,
+//highlight:
+setCommentBegin("<!--");
+setCommentEnd("-->");
+//note: the procedure \samp{expand()} allow populating \textit{"SolarSystem0.html"}
+//note: with the characteristics of the project automatically,
+expand("GettingStarted/HTMLDocumentation.cwt",
+		myDocumentationContext, getWorkingPath()
+		+ "Scripts/Tutorial/GettingStarted/SolarSystem0.html");
+//normal:

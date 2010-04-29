@@ -1,0 +1,333 @@
+/*description:
+{
+	This script parses an object modelling file that conform to \samp{CWML}, a modelling
+	language proposed by \CodeWorker\ as an illustration.
+	
+	\samp{\textit{package_declaration} ::= \textbf{"package"} \textit{package_path} \textbf{'\{'} \textit{package_body} \textbf{'\}'}}\\
+	\samp{\textit{package_body} ::= \textit{package_declaration} | \textit{class_declaration} | \textit{service_declaration}}\\
+	\TODO\
+}
+*/
+
+translation_unit ::=
+		#ignore(C++) #continue
+		[
+				package_declaration(this)
+			|
+				service_declaration(this)
+			|
+				component_declaration
+		]*
+		#empty;
+
+package_declaration(myParentPackage : node) ::=
+		#readIdentifier:"package"
+		=> local myPackage;
+		#continue
+		package_path:listOfPaths
+		'{'
+		=> {
+ 			ref myPackage = myParentPackage;
+			foreach i in listOfPaths {
+				insert myPackage.listOfPackages[i].name = i;
+				if myPackage.sequence insert myPackage.listOfPackages[i].sequence = myPackage.sequence + "." + i;
+				else insert myPackage.listOfPackages[i].sequence = i;
+				ref myPackage = myPackage.listOfPackages[i];
+			}
+		}
+		[
+				package_declaration(myPackage)
+			|
+				class_declaration(myPackage)
+			|
+				service_declaration(myPackage)
+		]*
+		'}';
+
+package_path : list ::=
+		#readIdentifier:package_path
+		[['.' | "::"] #continue #readIdentifier:package_path]*;
+
+class_declaration(myPackage : node) : value ::=
+		[class_modifier]?:myModifiers
+		#readIdentifier:"class" #continue
+		#readIdentifier:class_declaration
+		=> merge myPackage.listOfClasses[class_declaration] = myModifiers;
+		=> localref myClass = myPackage.listOfClasses[class_declaration];
+		=> insert myClass.name = class_declaration;
+		[parent_declaration(myClass)]?
+		class_declaration_body(myClass)
+		=> {
+			pushItem this.allClasses[class_declaration].packages;
+			ref this.allClasses[class_declaration].packages#back = myPackage;
+			insert myPackage.listOfClasses[class_declaration].sequence = myPackage.sequence;
+		}
+		[';']?;
+
+class_modifier : node	::=
+		#readIdentifier:"abstract"
+		=> insert class_modifier.isAbstract = true;
+		;
+
+parent_declaration(myClass : node)	::=
+		[
+			#readIdentifier:"extends" #continue
+			#readIdentifier:myClass.extendedClass
+		]?
+		[
+			#readIdentifier:"implements" #continue
+			=> pushItem myClass.listOfInterfaces;
+			#readIdentifier:myClass.listOfInterfaces#back
+			[
+				',' #continue
+				=> pushItem myClass.listOfInterfaces;
+				#readIdentifier:myClass.listOfInterfaces#back
+			]*
+		]?
+		;
+
+class_declaration_body(myClass : node)	::=
+		'{' #continue
+		[
+				attribute_declaration(myClass)
+			|
+				method_declaration(myClass)
+		]* '}';
+
+service_declaration(myPackage : node) : value ::=
+		#readIdentifier:"service" #continue
+		#readIdentifier:service_declaration
+		=> insert myPackage.listOfServices[service_declaration].name = service_declaration;
+		service_declaration_body(myPackage.listOfServices[service_declaration])
+		=> {
+			pushItem this.allServices[service_declaration].packages;
+			ref this.allServices[service_declaration].packages#back = myPackage;
+			insert myPackage.listOfServices[service_declaration].sequence = myPackage.sequence;
+		}
+		[';']?
+		;
+
+service_declaration_body(myService : node)	::=
+		'{' #continue [method_declaration(myService)]* '}';
+
+component_declaration	::=
+		#readIdentifier:"component"
+		#continue
+		#readIdentifier:sName
+		=> if findElement(sName, this.listOfComponents) error("component '" + sName + "' has already been declared");
+		=> insert this.listOfComponents[sName].name = sName;
+		=> localref theComponent = this.listOfComponents[sName];
+		'{'
+		[
+			#readIdentifier:{"client", "server"}:sSide
+			#continue
+			':'
+			#readIdentifier:sService
+//			['.' #continue #readIdentifier]?
+			=> if !this.allServices.findElement(sService) error("unrecognized service '" + sService + "'");
+			=>	if sSide == "client" insert theComponent.client[sService] = sService;
+				else insert theComponent.server[sService] = sService;
+			[
+				',' #continue
+				#readIdentifier:sService
+//				['.' #continue #readIdentifier]?
+				=> if !this.allServices.findElement(sService) error("unrecognized service '" + sService + "'");
+				=>	if sSide == "client" insert theComponent.client[sService] = sService;
+					else insert theComponent.server[sService] = sService;
+			]*
+			';'
+		]*
+		'}'
+		[';']?
+		;
+
+type_specifier(myType : node) ::=
+		[
+				base_type_specifier(myType)
+			|
+				container_type_specifier(myType)
+			|
+				class_type(myType)
+		]
+		[array_specifier(myType)]*;
+
+base_type_specifier(myType : node)	::=
+		numeric_type(myType)
+	|
+		#readIdentifier:{"char", "string", "date", "bool", "boolean"}:myType.name
+		=> if myType.name == "bool" set myType.name = "boolean";
+	;
+
+numeric_type(myType : node)	::=
+		[numeric_type_modifier(myType)]?
+		#readIdentifier:{"byte", "short", "long", "int", "float", "double"}:myType.name;
+
+numeric_type_modifier(myType : node)	::=
+		#readIdentifier:{"positive", "negative"}:sModifier
+		=> {
+			if sModifier == "positive" insert myType.isPositive = true;
+			else insert myType.isNegative = true;
+		}
+		;
+
+class_type(myType : node)	::=
+		#readIdentifier:thePath[0]
+		[
+			['.' | "::"] #continue
+			=> pushItem thePath;
+			#readIdentifier:thePath#back
+		]*
+		=> {
+			if thePath.size() == 1 {
+				insert myType.name = thePath#back;
+				insert myType.isObject = true;
+			} else {
+				error("'class_type' with scope (" + thePath.size() + " elements) not implemented yet");
+			}
+			if !findElement(myType.name, this.allClasses) error("invalid class type '" + myType.name + "'");
+		};
+
+container_type_specifier(myType : node)	::=
+		#readIdentifier:{"list", "map", "vector"}:myType.name
+		'<' #continue
+		[
+			#check(myType.name == "map")
+			#continue
+			base_type_specifier(myType.keyType) ','
+		]?
+		type_specifier(myType.elementType)
+		'>';
+
+array_specifier(myType : node) ::=
+		'[' ']'
+		=> {
+			slideNodeContent(myType, elementType);
+			if myType.elementType.isObject insert myType.isObject = true;
+			insert myType.isArray = true;
+		};
+
+method_declaration(myClass : node)	::=
+		[method_pre_modifier(myModifiers)]*
+		type_specifier(myType)
+		#readIdentifier:sName
+		'(' #continue
+		[
+			#pushItem(listOfParameters)
+			parameter_declaration:listOfParameters#back
+			[
+				',' #continue
+				=> pushItem listOfParameters;
+				parameter_declaration:listOfParameters#back
+			]*
+		]?
+		')'
+		[method_post_modifier(myModifiers)]?
+		=>{
+			local sKey = sName;
+			setall myClass.listOfMethods[sKey] = myModifiers;
+			insert myClass.listOfMethods[sKey].name = sName;
+			setall myClass.listOfMethods[sKey].listOfParameters = listOfParameters;
+			setall myClass.listOfMethods[sKey].type = myType;
+		}
+		';';
+
+method_pre_modifier(myModifiers : node)	::=
+		#readIdentifier:{"synchronized", "abstract", "final"}:sModifier
+		=> {
+			if sModifier == "synchronized" insert myModifiers.isSynchronized = true;
+			else if sModifier == "abstract" insert myModifiers.isAbstract = true;
+			else if sModifier == "final" insert myModifiers.isFinal = true;
+		};
+
+method_post_modifier(myModifiers : node)	::=
+		#readIdentifier:"const"
+		=> insert myModifiers.isConst = true;
+		;
+
+parameter_declaration : node	::=
+		parameter_type_specifier(parameter_declaration.type) #continue
+		#readIdentifier:parameter_declaration.name;
+
+parameter_type_specifier(myType : node)	::=
+		[parameter_type_modifier(myType)]*
+		type_specifier(myType);
+
+parameter_type_modifier(myType : node) : node	::=
+		#readIdentifier:{"const", "synchronized"}:sModifier
+		=> {
+			if sModifier == "const" insert myType.isConst = true;
+			else if sModifier == "synchronized" insert myType.isSynchronized = true;
+		};
+
+attribute_declaration(myClass : node)	::=
+		attribute_type_specifier(myType) #readIdentifier:sName
+		#continue
+		['=' #continue literal:myClass.listOfAttributes[sName].default]?
+		';'
+		=> {
+			insert myClass.listOfAttributes[sName].name = sName;
+			setall myClass.listOfAttributes[sName].type = myType;
+		};
+
+attribute_type_specifier(myType : node) ::=
+		[attribute_type_modifier(myModifiers)]*
+		type_specifier(myType)
+		=> merge myType = myModifiers;
+		;
+
+attribute_type_modifier(myModifier : node)	::=
+		#readIdentifier:{"aggregate", "const", "readonly", "transient", "pertinent", "synchronized", "pkey", "optional"}:sModifier
+		=> switch(sModifier) {
+			case "aggregate": insert myModifier.isAggregate = true;break;
+			case "const": insert myModifier.isConst = true;break;
+			case "readonly": insert myModifier.isReadOnly = true;break;
+			case "transient": insert myModifier.isTransient = true;break;
+			case "pertinent": insert myModifier.isPertinent = true;break;
+			case "synchronized": insert myModifier.isSynchronized = true;break;
+			case "pkey": insert myModifier.isPrimaryKey = true;break;
+			case "optional": insert myModifier.isOptional = true;break;
+		};
+
+literal			::=	integer_literal | string_literal | character_literal | numeric_literal | boolean_literal;
+boolean_literal	::=	#readIdentifier:{"true", "false"};
+integer_literal		::=	INT | OCTAL | HEX;
+string_literal		::=	[STRING_LITERAL]+;
+character_literal	::=	CHAR_LITERAL;
+numeric_literal	::=	FLOAT;
+
+
+/* COMMON LEXICAL RULES  */
+OR			::=	'|';
+XOR			::=	'^';
+AND			::=	'&';
+NOT			::=	'!';
+LT			::=	'<';
+LSHIFT		::=	"<<";
+GT			::=	'>';
+RSHIFT		::=	">>";
+DIV			::=	'/';
+PLUS		::=	'+';
+MINUS		::=	'-';
+TILDE		::=	'~';
+STAR		::=	'*';
+MOD			::=	'%';
+
+CHAR_LITERAL	::=	#!ignore '\'' [ESC | ~'\''] '\'';
+ESC				::=	#!ignore '\\' ['n' | 't' | 'v' | 'b' | 'r' | 'f' | 'a' | '\\' | '?' | '\'' | '"' | HEX | OCTAL];
+
+DIGIT		::=	'0'..'9';
+OCTDIGIT	::=	'0'..'7';
+HEXDIGIT	::=	'0'..'9' | 'a'..'f' | 'A'..'F';
+
+
+OCTAL	::= #!ignore ['0'..'3'] [OCTDIGIT]*;
+HEX		::=	#!ignore ["0x" | "0X"] [HEXDIGIT]+;
+INT		::=	#!ignore [DIGIT]+;
+FLOAT	::=
+		#!ignore
+		[
+				'.' [DIGIT]+
+			|
+				[DIGIT]+ '.' [DIGIT]*
+		]
+		[['e' | 'E'] ['+' | '-']? [DIGIT]+]?;

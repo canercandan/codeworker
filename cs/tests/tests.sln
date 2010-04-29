@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatchingTest", "MatchingTest\MatchingTest.csproj", "{5CF6E94B-EB13-4D27-8A28-0E9354903E36}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(DPCodeReviewSolutionGUID) = preSolution
+		DPCodeReviewSolutionGUID = {00000000-0000-0000-0000-000000000000}
+	EndGlobalSection
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{5CF6E94B-EB13-4D27-8A28-0E9354903E36}.Debug.ActiveCfg = Debug|.NET
+		{5CF6E94B-EB13-4D27-8A28-0E9354903E36}.Debug.Build.0 = Debug|.NET
+		{5CF6E94B-EB13-4D27-8A28-0E9354903E36}.Release.ActiveCfg = Release|.NET
+		{5CF6E94B-EB13-4D27-8A28-0E9354903E36}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

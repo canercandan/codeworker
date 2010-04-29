@@ -1,0 +1,1704 @@
+/*description:
+{
+	Here is the complete grammar of the CodeWorker's scripting language.
+
+	It is expressed in the extended-BNF dialect of CodeWorker, so has the
+	advantage of running under \CodeWorker\ for scanning scripts, and has the
+	original feature to be auto-descriptive.
+}
+*/
+
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2003 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+//##markup##"header"
+//##begin##"header"
+ /*********************************************************************
+  *                      Grammar of CodeWorker
+  *                           version 4.5.3
+  *********************************************************************
+  *
+  * The grammar conforms to the extended-BNF notation of CodeWorker
+  *
+  *********************************************************************/
+//##end##"header"
+
+// Defines how to ignore insignificant characters between tokens.
+#ignore	::= [' ' | '\t' | '\r' | '\n' | "/*" ignoreEmbeddedComment | "//"->'\n']*;
+
+// The first production rule is the head of the grammar.
+// The context variable pointed to by 'this' holds information about the
+// type of the script to scan:
+//   - "procedural": the backbone of the scripting language,
+//   - "extended-BNF": includes also translation scripts,
+//   - "template-based": the server-page notation for generation patterns,
+// If the type is unknown, an empty string must be passed to the context
+// variable.
+translation_unit	::= script<this>;
+
+// The type of the script is unknown: the production rule tries the 3
+// types.
+// This rule is the less declarative. It specifies the current script's type
+// for scanning and catches syntax errors for looking at alternatives.
+// Note the possible use of a C++-template syntax for non-terminal symbols.
+script<"">	::=
+		#try
+			// '=>' is an escape mode to execute a procedural instruction
+			// or block.
+			=> set this = "procedural";
+			script<"procedural">
+		// We don't want to stop on error if the script wasn't recognized
+		// as a common one.
+		#catch(sError1)
+	|
+		#try
+			=> set this = "extended-BNF";
+			script<"extended-BNF">
+		#catch(sError2)
+	|
+		#try
+			=> set this = "template-based";
+			script<"template-based">
+		#catch(sError3)
+	|
+		// If none of the 3 types, the error for each of them is raised.
+		=> set this = "";
+		=> error("Not recognized as a 'CodeWorker' script:\n" +
+				 "  - procedural script:\n" + sError1 +
+				 "  - extended-BNF script:\n" + sError2 +
+				 "  - template-based script:\n" + sError3);
+	;
+
+// The non terminal 'script<"procedural">' scans a common script, such as a
+// leader script: not BNF and not template-based.
+// An error is raised if a syntax error is encountered (use of '#continue').
+script<"procedural">	::=
+		#ignore // ignore blanks and C++ comments between symbols
+		#continue // the rest of the sequence must be valid (or the scanner raises a syntax error)
+		[instruction]*
+		#empty // end of file expected; because of '#continue', a syntax error is raised if not reached
+		;
+
+// The well-named non terminal script<"extended-BNF"> scans an extended-BNF script.
+// It expects a set of:
+//   - BNF directives (case sensitive or not, ...),
+//   - functions declaration/definition,
+//   - production rules.
+// An error is raised if a syntax error is encountered (use of '#continue').
+script<"extended-BNF">	::=
+		#ignore
+		#continue
+		[BNF_instruction]+
+		#empty;
+
+BNF_instruction	::=
+			BNF_general_directive
+		|
+			FUNCTION_KEYWORD:sKeyword
+			#continue
+			instruction<sKeyword>
+		|
+			production_rule
+		;
+
+// The non terminal script<"template-based"> scans a template-based script.
+// Procedural instructions or expressions are embedded between @ symbols
+// or between <% and %>.
+// An error is raised if a syntax error is encountered (use of '#continue').
+script<"template-based">	::=
+		#continue
+		[
+			STARTING_RAW_TEXT
+			#continue
+			#ignore
+			[
+					!preprocessor expression
+					STARTING_TAG_OR_END
+				|
+					[instruction]*
+					STARTING_TAG_OR_END
+			]
+		]+;
+
+
+// Called by '#ignore'.
+ignoreEmbeddedComment	::= ->["*/" | "/*" ignoreEmbeddedComment | "//"->'\n' ignoreEmbeddedComment];
+
+//-------------------------------------------------------------
+//                          The expressions
+//-------------------------------------------------------------
+
+// A default expression (non arithmetic) that manipulates and returns
+// a string.
+expression	::=	boolean_expression<false>;
+
+// A condition for 'while', 'if', ... statements.
+boolean_expression	::= ternary_expression<""> [boolean_operator #continue ternary_expression<"">]*;
+
+// A concatenation of string expressions: the '+' is interpreted as
+// concatenation.
+concatenation_expression	::= comparison_member_expression<false>;
+
+// The template non terminal 'expression<bNumeric>' handles a string
+// expression when the template variable 'bNumeric' is worth false
+// ('false' is a keyword of the language that means an empty string),
+// and an arithmetic expression when it is instantiated with true
+// (keyword that means "true").
+// See the escape mode '$' in 'literal_expression<bNumeric>' to
+// understand how to swap in arithmetic mode.
+expression<bNumeric>	::=	boolean_expression<bNumeric>;
+
+// Generic form of a boolean expression, both for arithmetic and string
+// expressions.
+boolean_expression<bNumeric>	::= ternary_expression<bNumeric> [boolean_operator #continue ternary_expression<bNumeric>]*;
+boolean_operator	::= "&&" | "||" | "^^" | '&' | '|' | '^';
+
+// Non terminal of the C-like ternary operator '?' ':'.
+ternary_expression<bNumeric>	::= comparison_expression<bNumeric> ['?' #continue expression<bNumeric> ':' expression<bNumeric>]?;
+
+// Generic form of a comparison (both arithmetic and string).
+comparison_expression<bNumeric>	::=
+		comparison_member_expression<bNumeric>
+		[
+				comparison_operator #continue comparison_member_expression<bNumeric>
+			|
+				INSET #continue constant_set
+		]*
+		;
+comparison_operator	::=	"<=" | "<>" | ">=" | "!=" | "==" | '<' | '=' | '>';
+constant_set	::=
+		'{' #continue
+		[CONSTANT_STRING | CONSTANT_CHAR]
+		[
+			','
+			#continue
+			[CONSTANT_STRING | CONSTANT_CHAR]
+		]*
+		'}'
+		;
+
+// The generic non-terminal 'comparison_member_expression' is quite
+// particular. A comparison's member returns either a numeric (stored as
+// a string) or a string. Here, 'comparison_member_expression<true>'
+// handles an arithmetic expression. It means that it recognizes
+// arithmetic operators ('+' means addition instead of concatenation).
+comparison_member_expression<true>	::= shift_expression [sum_operator #continue shift_expression]*;
+sum_operator	::= PLUS | '-';
+
+// Binary shift operators, as in C/C++/Java ...
+shift_expression	::= factor_expression [shift_operator #continue factor_expression]*;
+shift_operator	::= "<<" | ">>";
+
+// The multiplication.
+factor_expression	::= literal_expression<true> [factor_operator #continue literal_expression<true>]*;
+factor_operator	::= '*' | '/' | '%';
+
+
+// The non-terminal 'comparison_member_expression<false>' recognizes
+// string expressions only and '+' means concatenation. Arithmetic
+// operators like '-' and '%' aren't available.
+comparison_member_expression<false>	::= literal_expression<false> [CONCAT #continue literal_expression<false>]*;
+
+
+// The generic non terminal of a literal:
+//   - string between double quotes,
+//   - expression between parenthesis,
+//   - arithmetic expression between '$' (cannot be reentrant),
+//   - bitwise negation,
+//   - constant char (interpreted as a string in CodeWorker),
+//   - boolean negation,
+//   - number (interpreted as a string in CodeWorker),
+//   - predefined constants 'true' (= "true") and 'false' (= ""),
+//   - function call,
+//   - variable expression, perhaps followed by a method call.
+literal_expression<bNumeric>	::=
+		CONSTANT_STRING
+	|
+		'(' #continue expression<bNumeric> ')'
+	|
+		'$' #continue #check(!bNumeric) expression<true> '$'
+	|
+		'~' #continue #check(bNumeric) literal_expression<true>
+	|
+		CONSTANT_CHAR
+	|
+		'!' #continue literal_expression<bNumeric>
+	|
+		#readNumeric // scans a number
+	|
+		// '#readIdentifier' is a predefined non terminal that scans
+		// a C-like identifier.
+		// - A:{"s1", ..., "sN"} means that the token must be worth
+		//   a constant string of the set,
+		// - A:var means that the token value is assigned to the
+		//   variable 'var'. If the variable doesn't exist yet, it is
+		//   declared in the local scope,
+		// - A:{"s1", ..., "sN"}:var means that the token must belong
+		//   to the set and that the value is assigned to the variable.
+		#readIdentifier:{"true", "false"}
+	|
+		function_call
+	|
+		variable_expression ['.' #continue method_call]?
+		;
+
+// Non terminal of a variable.
+variable_expression	::=
+		#readIdentifier:sIdentifier variable_expression<sIdentifier>
+	|
+		'#' #continue "evaluateVariable" '(' expression ')'
+		;
+
+// Non terminal of a script file to execute (parse/generation/interpretation).
+// Usually, it represents the file name of the script, but it may be the
+// full description of the script to execute, between brackets.
+script_file_expression<"free">	::=
+		'{' #continue [instruction]* '}'
+	|
+		expression
+		;
+
+script_file_expression<"pattern">	::=
+		'{' #continue
+		=> local bContinue = true;
+		[
+			#check(bContinue)
+			STARTING_RAW_TEXT
+			#continue
+			#ignore
+			[
+					!preprocessor expression
+					[STARTING_TAG | '}' => set bContinue = false;]
+				|
+					[instruction]*
+					[STARTING_TAG | '}' => set bContinue = false;]
+			]
+		]+
+	|
+		expression
+		;
+
+script_file_expression<"translate">	::= script_file_expression<"BNF">;
+script_file_expression<"BNF">	::=
+		'{' #continue [BNF_instruction]* '}'
+	|
+		expression
+		;
+
+// The right-side of a variable. '#!ignore' in the non-terminal declaration
+// part of the production rule means that neither blanks or C++-like comments
+// must be scanned before calling the non-terminal. Because of an ambiguity
+// on '#' and '[' with the extended-BNF syntax, whitespaces aren't allowed
+// before them in a variable expression, while a BNF directive (#...) or a
+// repeatable sequence ([...]...) must have at least a blank or comment before
+// them.
+//
+//   - points to a subnode with '.' as in C/C++/Java... for accessing
+//     the attributes of a structure,
+//   - points to an item of the current node's array,
+//   - accesses to the first/last item of the array or to the parent's node,
+//   - accesses to the nth item of the array (starting at 0),
+variable_expression<sIdentifier> : #!ignore	::=
+		[
+				#ignore '.' #readIdentifier
+				![['<' concatenation_expression '>']? '(']
+			|
+				'[' #ignore #continue expression ']'
+			|
+				'#'
+				[
+						VARIABLE_SPECIAL_ACCESSOR
+					|
+						'[' #ignore #continue expression ']'
+				]
+		]*
+		;
+
+// A method call consists of calling a function where (generally) the first
+// parameter is provided as an expression on the left-side:
+//    sText.findString('/');
+// calls the function
+//    findString(sText, '/');
+// For some predefined functions, the expression doesn't represent
+// the first parameter:
+//    list.findElement("BNF");
+// calls the function
+//    findElement("BNF", list);
+// where 'list' occupied the second position.
+method_call	::=
+		#readIdentifier:sMethodName
+		[
+				predefined_method_call<sMethodName>
+			|
+				user_method_call
+		];
+user_method_call	::=	['<' concatenation_expression '>']? '(' #continue [expression [',' #continue expression]*]? ')';
+
+// Call of a predefined/user-defined function.
+function_call	::=
+		#readIdentifier:sFunctionName
+		[
+				predefined_function_call<sFunctionName>
+			|
+				module_function_call
+			|
+				user_function_call
+		];
+module_function_call	::= "::" #readIdentifier:sFunctionName '(' #continue [expression [',' #continue expression]*]? ')';
+user_function_call	::=	['<' concatenation_expression '>']? '(' #continue [expression [',' #continue expression]*]? ')';
+
+
+//-------------------------------------------------------------
+//                          The instructions
+//-------------------------------------------------------------
+
+// The non-terminal of an instruction:
+//   - a block of instructions,
+//   - a simple statement,
+//   - a call to a predefined function,
+//   - a call to a predefined procedure,
+//   - a call to a user function,
+//   - a preprocessor directive,
+//   - a server page's raw text (between @ or %> <%).
+instruction	::=
+		'{' #continue [instruction]* '}'
+	|
+		#readIdentifier:sKeyword
+		[
+				instruction<sKeyword>
+			|
+				predefined_function_call<sKeyword> ';'
+			|
+				predefined_procedure_call<sKeyword> ';'
+			|
+				module_function_call ';'
+			|
+				user_function_call ';'
+		]
+	|
+		preprocessor
+	|
+		variable_expression '.' #continue method_call ';'
+	|
+		#check(this != "procedural")
+		STARTING_TAG
+		#!ignore
+		#continue STARTING_ENDING_RAW_TEXT
+		#ignore
+		[!preprocessor expression ![!'@' !"%>" !#empty]]?
+		;
+
+// Looks for a preprocessing directive
+preprocessor	::= '#' #readIdentifier:sKeyword preprocessor<sKeyword>;
+
+// The non-terminal 'preprocessor<"include">' includes a script file.
+preprocessor<"include">	::= #continue CONSTANT_STRING;
+
+// The non-terminal 'preprocessor<"coverage">' records the coverage of
+// an output file by a template-based script.
+preprocessor<"coverage">	::= #continue '(' variable_expression ')';
+
+// The non-terminal 'preprocessor<"matching">' records the coverage of
+// an input file by an extended-BNF script.
+preprocessor<"matching">	::= #continue '(' variable_expression ')';
+
+// The non-terminal 'preprocessor<"jointpoint">' is called into an advice
+// (Aspect-Oriented Programming with template-based scripts).
+preprocessor<"jointpoint">	::= ['(' #continue variable_expression ')']?;
+
+// The 'use' directive loads a dynamic library, whose name is the name
+// of the module ending with "cw".
+// Then, it adds new commands in CodeWorker.
+// Example: #use "PGSQL"   -> load of "PGSQLcw.dll"
+preprocessor<"use">	::= #continue #readIdentifier;
+
+// The generic form 'instruction<sIdentifier>' is called when the keyword
+// wasn't recognized as a statement. It might be an assignment.
+instruction<sIdentifier>	::=	variable_expression<sIdentifier> ['=' | "+="] #continue expression ';';
+
+//------------------ Some classical statements ------------------
+instruction<"if">	::= #continue boolean_expression instruction [ELSE #continue instruction]?;
+instruction<"do">	::= #continue instruction WHILE boolean_expression ';';
+instruction<"while">	::= #continue boolean_expression instruction;
+
+// The 'switch' statement works on strings. The 'start' label takes the
+// flow of control if the controlled sequence starts with the corresponding
+// constant expression.
+instruction<"switch">	::= #continue '(' expression ')' switch_body;
+switch_body	::=
+		'{'
+		#continue
+		[
+			[
+				DEFAULT
+			|
+				[CASE | START] #continue CONSTANT_STRING
+			]
+			':'
+			[instruction]*
+		]*
+		'}';
+
+//------------------ Some assignment operators ------------------
+
+// The right member of an assignment operator may describe a constant tree
+// to assign to the variable (the left member).
+assignment_expression	::=
+		'{'
+		#continue
+		[
+			assignment_expression
+			[',' #continue assignment_expression]*
+		]?
+		'}'
+	|
+		expression
+	;
+
+// Declare a local variable on the stack as a tree. The scope manages its
+// timelife. A value may be assigned to the variable.
+instruction<"local">	::= #continue variable_expression ['=' #continue assignment_expression]? ';';
+
+// Declare a global variable visible everywhere. A value may be assigned
+// to the variable.
+instruction<"global">	::= #continue variable_expression ['=' #continue assignment_expression]? ';';
+
+// Declare a local variable and assign a reference to another node.
+//     localref A = B;
+//   is the equivalent of:
+//     local A;
+//     ref A = B;
+instruction<"localref">	::= #continue variable_expression '=' variable_expression ';';
+
+// Copy a node to another integrally, after cleaning the destination node.
+instruction<"setall">	::= #continue variable_expression '=' variable_expression ';';
+
+// Merge a node to another integrally.
+instruction<"merge">	::= #continue variable_expression '=' variable_expression ';';
+
+// Classical assignment of a value to a node. If the node doesn't exist
+// yet, a warning is displayed but the node is created and the value
+// assigned. It is better to use 'insert' to create a node.
+instruction<"set">	::= #continue variable_expression ["+=" | '='] assignment_expression ';';
+
+// Assignment of a value to a node. If the node doesn't exist yet, it is created.
+// If nothing has to be assigned, the node is just created.
+instruction<"insert">	::= #continue variable_expression [["+=" | '='] #continue assignment_expression]? ';';
+
+// Assigns a reference to another node.
+instruction<"ref">	::= #continue variable_expression '=' variable_expression ';';
+
+// Adds a new item in an array, whose key is worth the position of the item
+// in the array (the last) starting at 0.
+instruction<"pushItem">	::= #continue variable_expression ['=' #continue expression]? ';';
+
+// The statement 'foreach' iterates items of an array.
+// It may sort items before, taking the case into account or not.
+// It may propagate the iteration on branches, which have the same
+// name as the array. Example: 'foreach i in cascading a.b.c ...'
+// will propagate the 'foreach' on 'i.c' and so on recursively.
+instruction<"foreach">	::= #continue #readIdentifier
+		IN
+		[
+				[REVERSE]?
+				SORTED
+				[NO_CASE]?
+			|
+				CASCADING
+				[#readIdentifier:{"first", "last"}]?
+		]*
+		variable_expression
+		instruction
+		;
+
+// The 'continue' statement, same meaning as in C/C++/Java.
+instruction<"continue">	::= #continue ';';
+// The 'break' statement, same meaning as in C/C++/Java.
+instruction<"break">	::= #continue ';';
+
+// The statement 'forfile' browses a directory and iterates all
+// files matching a pattern. The seach is recursive on directories
+// if 'cascading' is chosen.
+instruction<"forfile">	::= #continue #readIdentifier
+		IN
+		[
+				[REVERSE]?
+				SORTED
+				[NO_CASE]?
+			|
+				CASCADING
+				[#readIdentifier:{"first", "last"}]?
+		]*
+		expression
+		instruction
+		;
+
+// The statement 'select' crosscuts all tree nodes that match a
+// pattern of branch, in the spirit of XPath (XSL).
+instruction<"select">	::= #continue #readIdentifier
+		IN
+		[SORTED]?
+		motif_expression
+		instruction
+		;
+
+// the non-terminal 'motif_expression' defines a kind of XPath expression
+// to apply on a subtree.
+motif_expression	::=
+		[
+				'(' #continue motif_expression ')'
+			|
+				motif_and_expression
+		]
+		[
+			["||" | '|']
+			#continue
+			motif_and_expression
+		]*;
+motif_and_expression	::=	motif_concat_expression [["&&" | '&'] #continue motif_concat_expression]*;
+motif_concat_expression	::= motif_path_expression ['+' #continue motif_path_expression]*;
+motif_path_expression	::=
+		motif_step_expression
+		[
+				"..." #continue motif_ellipsis_expression
+			|
+				'.' #continue motif_step_expression
+		]*;
+motif_ellipsis_expression	::= motif_step_expression;
+motif_step_expression	::=
+		#continue
+		['*' | #readIdentifier]
+		['[' [expression]? ']']*
+		;
+
+
+//---------- Declaration / definition of user-defined functions ----------
+
+// The definition of a user-defined function starts with the keyword
+// 'function'. A function may have a kind of template form, instantiated
+// with a key between '<' and '>'.
+instruction<"function">	::= #continue #readIdentifier ['<' #continue CONSTANT_STRING '>']? '(' [function_parameter [',' #continue function_parameter]*]? ')' function_body;
+classical_function_definition	::= #readIdentifier '(' #continue function_parameters ')' function_body;
+instantiated_template_function_definition	::= #readIdentifier '<' #continue CONSTANT_STRING '>' #continue '(' function_parameters ')' function_body;
+generic_template_function_definition	::= #readIdentifier '<' #continue #readIdentifier '>' #continue '(' function_parameters ')' [template_function_body | function_body];
+function_parameters	::= [function_parameter [',' #continue function_parameter]*]?;
+function_parameter	::=	#readIdentifier [':' #continue function_parameter_type]?;
+function_parameter_type	::= #readIdentifier:{"value", "variable", "node", "reference", "index"};
+function_body	::=	#continue '{' [instruction]* '}';
+template_function_body	::=
+		"{{" #continue
+		[
+			STARTING_RAW_TEXT
+			#continue
+			#ignore
+			[
+					!preprocessor expression
+					[STARTING_TAG | '}' #break]
+				|
+					[instruction]*
+					[STARTING_TAG | '}' #break]
+			]
+		]+
+		'}'
+		;
+
+// Forward declaration of a function.
+instruction<"declare">	::= #continue FUNCTION #readIdentifier ['<' #continue CONSTANT_STRING '>']? '(' [function_parameter [',' #continue function_parameter]*]? ')' ';';
+
+// External function: binding with a C++ implementation of the function,
+// defined by the user.
+instruction<"external">	::= #continue FUNCTION #readIdentifier ['<' #continue CONSTANT_STRING '>']? '(' [function_parameter [',' #continue function_parameter]*]? ')' ';';
+
+// The hook 'readonlyHook' is called when the tool tries to save a generated
+// file but that the replaced file is locked for writing. The name of the file
+// is passed by value. It must return a non-empty value if the file have been
+// unlocked in the body (suceeded call to the source code control system).
+instruction<"readonlyHook">	::= #continue '(' #readIdentifier ')' function_body;
+
+instruction<"writefileHook">	::= #continue '(' #readIdentifier ',' #readIdentifier ',' #readIdentifier ')' function_body;
+
+// The hook 'stepintoHook' is called when entering into a BNF non-terminal call,
+// just before running the production rule.
+// It passes first the signature of the BNF clause, and then the local scope.
+instruction<"stepintoHook">	::= #continue '(' #readIdentifier ',' #readIdentifier ')' function_body;
+
+// The hook 'stepoutHook' is called when finishing a BNF non-terminal call,
+// just after running the production rule.
+// It passes the signature of the BNF clause, then the local scope and then
+// a boolean, is worth "true" if success.
+instruction<"stepoutHook">	::= #continue '(' #readIdentifier ',' #readIdentifier ',' #readIdentifier ')' function_body;
+
+// Returns the value of a user-defined function. It is never a node.
+// If no expression returned, one consider returning the value of a hidden
+// local variable having the name of the function.
+instruction<"return">	::= #continue [expression]? ';';
+
+// Classical 'try/catch' statement. The tool puts the error message into a
+// variable.
+instruction<"try">	::= #continue instruction "catch" '(' variable_expression ')' instruction;
+
+// The statement 'finally' defines a block to execute each time the flow
+// of control leaves the scope of the function, even in case of exception
+// raising.
+instruction<"finally">	::= #continue instruction;
+
+// Deprecated way to call a function, ignoring the output result.
+instruction<"nop">	::= #continue '(' function_call ')' ';';
+
+// A 'jointpoint' statement to declare into a template-based script (Aspect-oriented construct)
+instruction<"jointpoint">	::=
+	#continue
+	[#readIdentifier:"iterate"]?
+	#readIdentifier
+	['(' #continue variable_expression ')']?
+	[';' | instruction]
+	;
+
+// A 'advice' statement to declare into a template-based script (Aspect-oriented construct)
+instruction<"advice">	::=
+	#continue
+	ADVICE_TYPE
+	['(' #continue #readIdentifier ')']?
+	':' expression
+	instruction
+	;
+
+
+//---------- Statement modifiers ----------
+
+// Choose a file as the standard input (function 'inputLine()').
+instruction<"file_as_standard_input">	::= #continue '(' expression ')' instruction;
+
+// Choose a string as the standard input (function 'inputLine()').
+instruction<"string_as_standard_input">	::= #continue '(' expression ')' instruction;
+
+// Redirects all console outputs to a variable while running an instruction.
+instruction<"quiet">	::= #continue '(' variable_expression ')' instruction;
+
+// Measures the time consumed by an instruction. Use 'getLastDelay()' to
+// take the value in milliseconds after running the instruction.
+instruction<"delay">	::= #continue instruction;
+
+// Runs an instruction under the integrated debug mode, running to the
+// console.
+instruction<"debug">	::= #continue instruction;
+
+// Runs an instruction under the integrated quantify mode, measuring time
+// consuming in functions and the number of times each line of script is
+// visited.
+instruction<"quantify">	::= #continue ['(' #continue expression ')']? instruction;
+
+// The 'project' tree is the main tree of the application, a global tree.
+// To change it locally, just for running an instruction, use 'new_project'.
+instruction<"new_project">	::= #continue instruction;
+
+// In a translation or BNF script, change of the current parsed file.
+instruction<"parsed_file">	::= #continue '(' expression ')' instruction;
+
+// In a translation or BNF script, change of the current input to a parsed string.
+instruction<"parsed_string">	::= #continue '(' expression ')' instruction;
+
+// In a translation or template-based script, change of the current
+// generated file.
+instruction<"generated_file">	::= #continue '(' expression ')' instruction;
+
+// In a translation or template-based script, change of the current
+// output to an appending mode in a given file.
+instruction<"appended_file">	::= #continue '(' expression ')' instruction;
+
+// In a translation or template-based script, change of the current
+// output to a string instead of ta file.
+instruction<"generated_string">	::= #continue '(' variable_expression ')' instruction;
+
+
+//---------------------------------------------------------------------
+//                        Some lexical tokens
+//---------------------------------------------------------------------
+
+PLUS	::= '+' #!ignore !'=';
+CONCAT	::= '+' #!ignore !'=';
+
+DEFAULT	::= #readIdentifier:"default";
+CASE	::= #readIdentifier:"case";
+START	::= #readIdentifier:"start";
+CASCADING	::= #readIdentifier:"cascading";
+ELSE	::= #readIdentifier:"else";
+IN		::= #readIdentifier:"in";
+INSET	::= #readIdentifier:"in";
+NO_CASE	::= #readIdentifier:"no_case";
+REVERSE	::= #readIdentifier:"reverse";
+SORTED	::= #readIdentifier:"sorted";
+WHILE	::= #readIdentifier:"while";
+
+CONSTANT_STRING	::= #readCString;
+CONSTANT_CHAR	::= '\'' #!ignore #continue ['\\']? #readChar '\'';
+
+VARIABLE_SPECIAL_ACCESSOR ::= #readIdentifier:{"front", "back", "parent"};
+
+FUNCTION_KEYWORD	::= [FUNCTION | DECLARE | EXTERNAL | WRITEFILE_HOOK | READONLY_HOOK | STEPINTO_HOOK | STEPOUT_HOOK];
+FUNCTION	::= #readIdentifier:"function";
+DECLARE		::= #readIdentifier:"declare";
+EXTERNAL	::= #readIdentifier:"external";
+WRITEFILE_HOOK	::= #readIdentifier:"writefileHook";
+READONLY_HOOK	::= #readIdentifier:"readonlyHook";
+STEPINTO_HOOK	::= #readIdentifier:"stepintoHook";
+STEPOUT_HOOK	::= #readIdentifier:"stepoutHook";
+
+PRULE_SYMBOL	::= "::=";
+NON_TERMINAL	::=	#readIdentifier;
+ALTERNATION		::= '|';
+TR_BEGIN		::= '<';
+TR_END			::= '>';
+PIPESUP			::= "|>";
+ANDOR			::= "&|";
+
+ADVICE_TYPE		::=	#readIdentifier:{"before", "before_iteration", "around", "around_iteration", "after", "after_iteration"};
+
+STARTING_RAW_TEXT	::= ->['@' | "<%"];
+STARTING_ENDING_RAW_TEXT	::= ->['@' | "<%" | #empty];
+STARTING_TAG	::= ['@' | "%>"];
+STARTING_TAG_OR_END	::= ['@' | "%>" | #empty];
+
+
+//---------------------------------------------------------------------
+//                                BNF script
+//---------------------------------------------------------------------
+
+// A BNF directive starts with the symbol '#' and may be related to the
+// case or to the production rule for ignoring blanks between tokens...
+BNF_general_directive	::=
+		'#'
+		#readIdentifier:sKeyword
+		BNF_general_directive<sKeyword>
+		;
+
+// If not recognized as a BNF directive, it is a common preprocessor
+// directive.
+BNF_general_directive<T>	::= preprocessor<T>;
+
+// If set, the case isn't taken into account.
+BNF_general_directive<"noCase">	::= #check(true);
+
+// If set, the grammar will run in trace mode
+BNF_general_directive<"trace">	::= #check(true);
+
+// Defines the production rule for ignoring comments and blanks between
+// tokens.
+BNF_general_directive<"ignore">	::=
+		#continue
+		['[' #continue #readCString ']']?
+		PRULE_SYMBOL right_side_production_rule
+		;
+
+// Overload a non-terminal whose production rule has already been defined.
+BNF_general_directive<"overload">	::=
+		'#' #continue #readIdentifier:"ignore" BNF_general_directive<"ignore">
+	|
+		production_rule;
+
+// Only under the translation mode: means that the input stream is copied
+// to the output stream automatically while scanning (useful for program
+// transformations).
+BNF_general_directive<"implicitCopy">	::= ['(' #continue #readIdentifier ['<' #continue CONSTANT_STRING '>']? ')']?;
+
+// Only under the translation mode, chosen by default: the script specifies
+// between '@' symbols (or between '%>' '<%') the text to write in the output
+// stream.
+BNF_general_directive<"explicitCopy">	::= #check(true);
+
+BNF_general_directive<"parameters">	::=
+		#continue #readIdentifier '('
+		[clause_parameter [',' #continue clause_parameter]*]?
+		')' expression;
+
+BNF_general_directive<"transformRules">	::=
+		#continue
+		expression // the filter
+		'{' #continue [BNF_instruction]* '}' // the left member
+		'{' #continue [BNF_instruction]* '}' // the production rule
+		;
+
+BNF_general_directive<"applyBNFRule">	::=
+		#continue
+		BNF_clause_call
+		;
+
+// Definition of a production rule that may be template, resolved/instantiated
+// or not.
+// A non-terminal admits parameters (passed by value, by reference, by node) and
+// may return a value (see documentation).
+production_rule	::=
+		NON_TERMINAL
+		#continue
+		[
+			TR_BEGIN
+			#continue
+			[
+					#readIdentifier
+				|
+					CONSTANT_STRING
+			]
+			TR_END
+		]?
+		[
+			'('
+			#continue
+			[
+				clause_parameter
+				[',' #continue clause_parameter]*
+
+			]?
+			')'
+		]?
+		[
+			':'
+			BNF_clause_return_value
+		]?
+		[BNF_clause_preprocessing]?
+		PRULE_SYMBOL right_side_production_rule
+		;
+
+// Normally, what a non-terminal returns is the portion of text it has
+// scanned. Nevertheless, it is possible to specify to return a different
+// value.
+// Note: "node" and "list" aren't validated yet.
+BNF_clause_return_value	::= #readIdentifier:{"value", "node", "list"};
+
+// Preprocessing just before executing the right side of the production
+// rule.
+BNF_clause_preprocessing	::=
+		':' '#'
+		#continue
+		[
+				'!'
+				#continue
+				#readIdentifier:"ignore"
+			|
+				#readIdentifier:"ignore"
+				['(' #continue [#readCString | BNF_ignore_type] ')']?
+		];
+
+BNF_ignore_type	::= "C++/Doxygen" | "C++" | "JAVA" | "HTML" | "XML" | "blanks" | "LaTeX";
+
+// A non-terminal may accept parameters. Here are the allowed ones.
+clause_parameter	::=	#readIdentifier #continue ':' clause_parameter_type;
+clause_parameter_type	::= #readIdentifier:{"node", "value", "variable", "reference"};
+
+// Right-side of the production rule.
+right_side_production_rule	::= BNF_sequence #continue [ALTERNATION #continue BNF_sequence]* ';';
+BNF_sequence	::= [BNF_literal]+;
+
+// A BNF literal is a terminal or non-terminal or a directive.
+// 'BNF_literal<true>' means that the literal might be followed by a
+// constant (or set of constants) the token must match, or a variable
+// that will receive the scanned token.
+BNF_literal	::=	BNF_literal<true>;
+BNF_literal<bTokenCondition>	::=
+	[
+			CONSTANT_STRING
+			[#check(bTokenCondition) BNF_variable_assignation]?
+		|
+			CONSTANT_CHAR
+			[
+					".." #continue CONSTANT_CHAR
+					[#check(bTokenCondition) BNF_token_post_processing]?
+				|
+					[#check(bTokenCondition) BNF_variable_assignation]?
+			]
+		|
+			[
+					'~'
+				|
+					'^'
+				|
+					'!'
+				|
+					"->"
+					[multiplicity]?
+					[
+						'('	#continue
+						[BNF_variable_assignation]?
+						['-' BNF_variable_assignation]?
+						[BNF_sequence]?
+						')'
+					]?
+			]
+			#continue BNF_literal<false>
+			[#check(bTokenCondition) BNF_token_post_processing]?
+		|
+			'[' #continue BNF_sequence [ALTERNATION #continue BNF_sequence]* ']'
+			[multiplicity]?
+			[#check(bTokenCondition) BNF_token_post_processing]?
+		|
+			'#'
+			#continue
+			[
+					'!'
+					#continue
+					#readIdentifier:"ignore"
+				|
+					#readIdentifier:sDirective
+					BNF_directive<sDirective>:bTokenConditionAllowed
+					[
+						#check(bTokenCondition && bTokenConditionAllowed)
+						BNF_token_post_processing
+					]?
+			]
+		|
+			"=>" #continue instruction
+		|
+			BNF_clause_call
+			[#check(bTokenCondition) BNF_token_post_processing]?
+	]
+	[
+		[PIPESUP | ANDOR]
+		#continue
+		BNF_literal<bTokenCondition>
+	]?
+	;
+
+BNF_variable_assignation	::= [':' | ":+"] #continue variable_expression;
+
+multiplicity	::=
+			'?' | '+' | '*'
+		|
+			"#repeat" #continue '(' expression [',' #continue expression]? ')'
+		|
+			#readInteger [".." #continue [#readInteger | '*']]?
+		;
+
+// '#continue' means that the rest of the sequence must be valid.
+// If not, a syntax error is raised at the point where a literal
+// of the sequence doesn't match the sentence.
+BNF_directive<"continue"> : value	::= #check(true);
+
+// '#noCase' means that the case is ignored for the rest of the sequence.
+BNF_directive<"noCase"> : value	::= #check(true);
+
+// '#nextStep' fixes the cursor jump in '->' and '~' operators.
+BNF_directive<"nextStep"> : value	::= #check(true);
+
+// '#ratchet' allows that the cursor in the input stream never
+// comes back before.
+BNF_directive<"ratchet"> : value	::= #check(true);
+
+// '#super' works on non-terminals that overload a clause. It refers to
+// the overloaded clause.
+BNF_directive<"super"> : value	::=
+		#continue "::" ['#' #continue "super" "::"]* BNF_clause_call
+		=> set BNF_directive = true;
+		;
+
+// BNF directive to catch errors thrown from the sequence inlayed in
+// '#try'/'#catch'.
+BNF_directive<"try"> : value	::=
+		#continue
+		[!['#' #readIdentifier:"catch"] #continue BNF_literal]+
+		BNF_catch;
+BNF_catch	::= '#' "catch" '(' variable_expression ')';
+
+// Directive to change the input file for the rest of the sequence.
+BNF_directive<"parsedFile"> : value	::= #continue '(' expression ')' BNF_sequence;
+BNF_directive<"parsedString"> : value	::= #continue '(' expression ')' BNF_sequence;
+
+
+// Directive to change the output file for the rest of the sequence for a
+// translation script.
+BNF_directive<"generatedFile"> : value	::= #continue '(' expression ')' BNF_sequence;
+
+// Directive to change the output for the rest of the sequence for a
+// translation script. The output is written into a variable.
+BNF_directive<"generatedString"> : value	::= #continue '(' variable_expression ')' BNF_sequence;
+
+// Directive to change the output file for the rest of the sequence for a
+// translation script. The output is appended.
+BNF_directive<"appendedFile"> : value	::= #continue '(' expression ')' BNF_sequence;
+
+// Choose how to ignore insignificant characters between tokens:
+//   - C++/Java/HTML/XML/LaTeX whitespaces and comments,
+//   - blanks
+BNF_directive<"ignore"> : value	::= ['(' #continue [#readCString | BNF_ignore_type] ')']?;
+
+// leaves a repeat token, considering that it has succeeded
+BNF_directive<"break"> : value	::= #check(true);
+
+// Expects the end of the input file.
+BNF_directive<"empty"> : value	::= #check(true);
+
+// Adds a new item in an array. If the rest of the sequence fails, the item
+// is removed. If the directive had created the array node, it is removed too.
+BNF_directive<"pushItem"> : value	::= #continue '(' variable_expression ')';
+
+// Inserts a new node. If the rest of the sequence fails and if the node wasn't
+// existing before, the node is removed.
+BNF_directive<"insert"> : value	::= #continue '(' variable_expression ')';
+
+// Reads end of line. It accepts a post
+// processing for variable assignment or constant's comparison.
+BNF_directive<"EOL"> : value	::= => { set BNF_directive = true; };
+
+// Reads a byte and returns it as a two hexadecimal digits. It admits a post
+// processing for variable assignment or constant's comparison.
+BNF_directive<"readByte"> : value	::= => { set BNF_directive = true; };
+BNF_directive<"readBytes"> : value	::= => { set BNF_directive = true; };
+
+// Reads a character. It admits a post processing for variable assignment
+// or constant's comparison.
+BNF_directive<"readChar"> : value	::= => { set BNF_directive = true; };
+BNF_directive<"readChars"> : value	::= => { set BNF_directive = true; };
+
+// Reads a C-like string. It admits a post processing for variable assignment
+// or constant's comparison.
+BNF_directive<"readCString"> : value	::= => { set BNF_directive = true; };
+
+// Reads a Python-like string. It admits a post processing for variable assignment
+// or constant's comparison.
+BNF_directive<"readPythonString"> : value	::= => { set BNF_directive = true; };
+
+// Reads a C-like identifier. It admits a post processing for variable
+// assignment or constant's comparison.
+BNF_directive<"readIdentifier"> : value	::= => { set BNF_directive = true; };
+
+// Reads a C-like identifier if the position points to the beginning of an
+// identifier. It admits a post processing for variable assignment or
+// constant's comparison.
+BNF_directive<"readCompleteIdentifier"> : value	::= => { set BNF_directive = true; };
+
+// Reads an integer. It admits a post processing for variable
+// assignment or constant's comparison.
+BNF_directive<"readInteger"> : value	::= => { set BNF_directive = true; };
+
+// Reads an unsigned long and converts it between network and host representation.
+// It admits a post processing for variable assignment or constant's comparison.
+BNF_directive<"readNetworkLong"> : value	::= => { set BNF_directive = true; };
+
+// Reads an unsigned short and converts it between network and host representation.
+// It admits a post processing for variable assignment or constant's comparison.
+BNF_directive<"readNetworkShort"> : value	::= => { set BNF_directive = true; };
+
+// Reads an unsigned long in binary representation.
+// It admits a post processing for variable assignment or constant's comparison.
+BNF_directive<"readBinaryLong"> : value	::= => { set BNF_directive = true; };
+
+// Reads an unsigned short in binary representation.
+// It admits a post processing for variable assignment or constant's comparison.
+BNF_directive<"readBinaryShort"> : value	::= => { set BNF_directive = true; };
+
+// Reads an floating-point. It admits a post processing for variable
+// assignment or constant's comparison.
+BNF_directive<"readNumeric"> : value	::= => { set BNF_directive = true; };
+
+// Scans a terminal given as the result of an expression. It admits a post
+// processing for variable assignment or constant's comparison.
+BNF_directive<"readText"> : value	::= #continue '(' expression ')' => { set BNF_directive = true; };
+
+// Forces to skip insignificant characters, as specified previously to
+// the BNF directive "ignore(...) or as required between parenthesis"
+BNF_directive<"skipIgnore"> : value	::= ['(' #continue [#readCString | BNF_ignore_type] ')']?;
+
+// Checks a condition. Does nothing about scan.
+BNF_directive<"check"> : value	::= #continue '(' expression ')';
+
+// Available only in a translation script: swap to 'implicit copy' for the
+// rest of the sequence.
+BNF_directive<"implicitCopy"> : value	::= #check(true);
+
+// Available only in a translation script: swap to 'explicit copy' for the
+// rest of the sequence.
+BNF_directive<"explicitCopy"> : value	::= #check(true);
+
+// The call of a non-terminal.
+BNF_clause_call	::=
+		NON_TERMINAL
+		[TR_BEGIN #continue concatenation_expression TR_END]?
+		['(' #continue [expression [',' #continue expression]*]? ')']?
+		;
+
+// Some tokens accept a post processing. It consists of checking whether
+// the scanned value belongs to a set of constants or not, and/or assigning
+// the value to a variable.
+BNF_token_post_processing	::=
+		[
+			':'
+			[
+					'{' #continue CONSTANT_STRING [',' #continue CONSTANT_STRING]* '}'
+				|
+					CONSTANT_STRING
+			]
+		]?
+		[BNF_variable_assignation]?;
+
+
+//---------------------------------------------------------------------
+//               Predefined functions/methods/procedures
+//---------------------------------------------------------------------
+
+predefined_function_call<T>	::= #check(false);
+//##marker##"predefined_function_call"
+//##begin##"predefined_function_call"
+predefined_function_call<"flushOutputToSocket">	::=	'(' #continue expression ')';
+predefined_function_call<"acceptSocket">	::=	'(' #continue expression ')';
+predefined_function_call<"add">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"addGenerationTagsHandler">	::=	'(' #continue expression ',' script_file_expression<"BNF"> ',' script_file_expression<"pattern"> ')';
+predefined_function_call<"addToDate">	::=	'(' #continue expression ',' expression ',' expression ')';
+predefined_function_call<"byteToChar">	::=	'(' #continue expression ')';
+predefined_function_call<"bytesToLong">	::=	'(' #continue expression ')';
+predefined_function_call<"bytesToShort">	::=	'(' #continue expression ')';
+predefined_function_call<"canonizePath">	::=	'(' #continue expression ')';
+predefined_function_call<"changeDirectory">	::=	'(' #continue expression ')';
+predefined_function_call<"changeFileTime">	::=	'(' #continue expression ',' expression ',' expression ')';
+predefined_function_call<"charAt">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"charToByte">	::=	'(' #continue expression ')';
+predefined_function_call<"charToInt">	::=	'(' #continue expression ')';
+predefined_function_call<"chmod">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"ceil">	::=	'(' #continue expression ')';
+predefined_function_call<"compareDate">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"completeDate">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"completeLeftSpaces">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"completeRightSpaces">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"composeAdaLikeString">	::=	'(' #continue expression ')';
+predefined_function_call<"composeCLikeString">	::=	'(' #continue expression ')';
+predefined_function_call<"composeHTMLLikeString">	::=	'(' #continue expression ')';
+predefined_function_call<"composeSQLLikeString">	::=	'(' #continue expression ')';
+predefined_function_call<"computeMD5">	::=	'(' #continue expression ')';
+predefined_function_call<"copySmartFile">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"coreString">	::=	'(' #continue expression ',' expression ',' expression ')';
+predefined_function_call<"countStringOccurences">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"createDirectory">	::=	'(' #continue expression ')';
+predefined_function_call<"createINETClientSocket">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"createINETServerSocket">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"createIterator">	::=	'(' #continue #readIdentifier ',' variable_expression ')';
+predefined_function_call<"createReverseIterator">	::=	'(' #continue #readIdentifier ',' variable_expression ')';
+predefined_function_call<"createVirtualFile">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"createVirtualTemporaryFile">	::=	'(' #continue expression ')';
+predefined_function_call<"decodeURL">	::=	'(' #continue expression ')';
+predefined_function_call<"decrement">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"deleteFile">	::=	'(' #continue expression ')';
+predefined_function_call<"deleteVirtualFile">	::=	'(' #continue expression ')';
+predefined_function_call<"div">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"duplicateIterator">	::=	'(' #continue #readIdentifier ',' variable_expression ')';
+predefined_function_call<"encodeURL">	::=	'(' #continue expression ')';
+predefined_function_call<"endl">	::=	'(' #continue ')';
+predefined_function_call<"endString">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"equal">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"equalsIgnoreCase">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"equalTrees">	::=	'(' #continue variable_expression ',' variable_expression ')';
+predefined_function_call<"executeStringQuiet">	::=	'(' #continue variable_expression ',' expression ')';
+predefined_function_call<"existDirectory">	::=	'(' #continue expression ')';
+predefined_function_call<"existEnv">	::=	'(' #continue expression ')';
+predefined_function_call<"existFile">	::=	'(' #continue expression ')';
+predefined_function_call<"existVirtualFile">	::=	'(' #continue expression ')';
+predefined_function_call<"existVariable">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"exp">	::=	'(' #continue expression ')';
+predefined_function_call<"exploreDirectory">	::=	'(' #continue variable_expression ',' expression ',' expression ')';
+predefined_function_call<"extractGenerationHeader">	::=	'(' #continue expression ',' variable_expression ',' variable_expression ',' variable_expression ')';
+predefined_function_call<"fileCreation">	::=	'(' #continue expression ')';
+predefined_function_call<"fileLastAccess">	::=	'(' #continue expression ')';
+predefined_function_call<"fileLastModification">	::=	'(' #continue expression ')';
+predefined_function_call<"fileLines">	::=	'(' #continue expression ')';
+predefined_function_call<"fileMode">	::=	'(' #continue expression ')';
+predefined_function_call<"fileSize">	::=	'(' #continue expression ')';
+predefined_function_call<"findElement">	::=	'(' #continue expression ',' variable_expression ')';
+predefined_function_call<"findFirstChar">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"findFirstSubstringIntoKeys">	::=	'(' #continue expression ',' variable_expression ')';
+predefined_function_call<"findLastString">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"findNextString">	::=	'(' #continue expression ',' expression ',' expression ')';
+predefined_function_call<"findNextSubstringIntoKeys">	::=	'(' #continue expression ',' variable_expression ',' expression ')';
+predefined_function_call<"findString">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"first">	::=	'(' #continue #readIdentifier ')';
+predefined_function_call<"floor">	::=	'(' #continue expression ')';
+predefined_function_call<"formatDate">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"getArraySize">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"getCommentBegin">	::=	'(' #continue ')';
+predefined_function_call<"getCommentEnd">	::=	'(' #continue ')';
+predefined_function_call<"getCurrentDirectory">	::=	'(' #continue ')';
+predefined_function_call<"getEnv">	::=	'(' #continue expression ')';
+predefined_function_call<"getGenerationHeader">	::=	'(' #continue ')';
+predefined_function_call<"getHTTPRequest">	::=	'(' #continue expression ',' variable_expression ',' variable_expression ')';
+predefined_function_call<"getIncludePath">	::=	'(' #continue ')';
+predefined_function_call<"getLastDelay">	::=	'(' #continue ')';
+predefined_function_call<"getNow">	::=	'(' #continue ')';
+predefined_function_call<"getProperty">	::=	'(' #continue expression ')';
+predefined_function_call<"getShortFilename">	::=	'(' #continue expression ')';
+predefined_function_call<"getTextMode">	::=	'(' #continue ')';
+predefined_function_call<"getVariableAttributes">	::=	'(' #continue variable_expression ',' variable_expression ')';
+predefined_function_call<"getVersion">	::=	'(' #continue ')';
+predefined_function_call<"getWorkingPath">	::=	'(' #continue ')';
+predefined_function_call<"getWriteMode">	::=	'(' #continue ')';
+predefined_function_call<"hexaToDecimal">	::=	'(' #continue expression ')';
+predefined_function_call<"hostToNetworkLong">	::=	'(' #continue expression ')';
+predefined_function_call<"hostToNetworkShort">	::=	'(' #continue expression ')';
+predefined_function_call<"increment">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"indentFile">	::=	'(' #continue expression [',' expression]? ')';
+predefined_function_call<"index">	::=	'(' #continue #readIdentifier ')';
+predefined_function_call<"inf">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"inputKey">	::=	'(' #continue expression ')';
+predefined_function_call<"inputLine">	::=	'(' #continue expression [',' expression]? ')';
+predefined_function_call<"isEmpty">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"isIdentifier">	::=	'(' #continue expression ')';
+predefined_function_call<"isNegative">	::=	'(' #continue expression ')';
+predefined_function_call<"isNumeric">	::=	'(' #continue expression ')';
+predefined_function_call<"isPositive">	::=	'(' #continue expression ')';
+predefined_function_call<"joinStrings">	::=	'(' #continue variable_expression ',' expression ')';
+predefined_function_call<"key">	::=	'(' #continue #readIdentifier ')';
+predefined_function_call<"last">	::=	'(' #continue #readIdentifier ')';
+predefined_function_call<"leftString">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"lengthString">	::=	'(' #continue expression ')';
+predefined_function_call<"loadBinaryFile">	::=	'(' #continue expression [',' expression]? ')';
+predefined_function_call<"loadFile">	::=	'(' #continue expression [',' expression]? ')';
+predefined_function_call<"loadVirtualFile">	::=	'(' #continue expression ')';
+predefined_function_call<"log">	::=	'(' #continue expression ')';
+predefined_function_call<"longToBytes">	::=	'(' #continue expression ')';
+predefined_function_call<"midString">	::=	'(' #continue expression ',' expression ',' expression ')';
+predefined_function_call<"mod">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"mult">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"networkLongToHost">	::=	'(' #continue expression ')';
+predefined_function_call<"networkShortToHost">	::=	'(' #continue expression ')';
+predefined_function_call<"next">	::=	'(' #continue #readIdentifier ')';
+predefined_function_call<"not">	::=	'(' #continue expression ')';
+predefined_function_call<"octalToDecimal">	::=	'(' #continue expression ')';
+predefined_function_call<"parseFreeQuiet">	::=	'(' #continue expression ',' variable_expression ',' expression ')';
+predefined_function_call<"pathFromPackage">	::=	'(' #continue expression ')';
+predefined_function_call<"postHTTPRequest">	::=	'(' #continue expression ',' variable_expression ',' variable_expression ')';
+predefined_function_call<"pow">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"prec">	::=	'(' #continue #readIdentifier ')';
+predefined_function_call<"randomInteger">	::=	'(' #continue ')';
+predefined_function_call<"receiveBinaryFromSocket">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"receiveFromSocket">	::=	'(' #continue expression ',' variable_expression ')';
+predefined_function_call<"receiveTextFromSocket">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"relativePath">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"removeDirectory">	::=	'(' #continue expression ')';
+predefined_function_call<"removeGenerationTagsHandler">	::=	'(' #continue expression ')';
+predefined_function_call<"repeatString">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"replaceString">	::=	'(' #continue expression ',' expression ',' expression ')';
+predefined_function_call<"replaceTabulations">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"resolveFilePath">	::=	'(' #continue expression ')';
+predefined_function_call<"rightString">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"rsubString">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"scanDirectories">	::=	'(' #continue variable_expression ',' expression ',' expression ')';
+predefined_function_call<"scanFiles">	::=	'(' #continue variable_expression ',' expression ',' expression ',' expression ')';
+predefined_function_call<"sendBinaryToSocket">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"sendHTTPRequest">	::=	'(' #continue expression ',' variable_expression ')';
+predefined_function_call<"sendTextToSocket">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"selectGenerationTagsHandler">	::=	'(' #continue expression ')';
+predefined_function_call<"shortToBytes">	::=	'(' #continue expression ')';
+predefined_function_call<"sqrt">	::=	'(' #continue expression ')';
+predefined_function_call<"startString">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"sub">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"subString">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"sup">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"system">	::=	'(' #continue expression ')';
+predefined_function_call<"toLowerString">	::=	'(' #continue expression ')';
+predefined_function_call<"toUpperString">	::=	'(' #continue expression ')';
+predefined_function_call<"translateString">	::=	'(' #continue script_file_expression<"translate"> ',' variable_expression ',' expression ')';
+predefined_function_call<"trimLeft">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"trimRight">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"trim">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"truncateAfterString">	::=	'(' #continue variable_expression ',' expression ')';
+predefined_function_call<"truncateBeforeString">	::=	'(' #continue variable_expression ',' expression ')';
+predefined_function_call<"UUID">	::=	'(' #continue ')';
+predefined_function_call<"countInputCols">	::=	'(' #continue ')';
+predefined_function_call<"countInputLines">	::=	'(' #continue ')';
+predefined_function_call<"getInputFilename">	::=	'(' #continue ')';
+predefined_function_call<"getLastReadChars">	::=	'(' #continue expression ')';
+predefined_function_call<"getInputLocation">	::=	'(' #continue ')';
+predefined_function_call<"lookAhead">	::=	'(' #continue expression ')';
+predefined_function_call<"peekChar">	::=	'(' #continue ')';
+predefined_function_call<"readAdaString">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"readByte">	::=	'(' #continue ')';
+predefined_function_call<"readBytes">	::=	'(' #continue expression ')';
+predefined_function_call<"readCChar">	::=	'(' #continue ')';
+predefined_function_call<"readChar">	::=	'(' #continue ')';
+predefined_function_call<"readCharAsInt">	::=	'(' #continue ')';
+predefined_function_call<"readChars">	::=	'(' #continue expression ')';
+predefined_function_call<"readIdentifier">	::=	'(' #continue ')';
+predefined_function_call<"readIfEqualTo">	::=	'(' #continue expression ')';
+predefined_function_call<"readIfEqualToIgnoreCase">	::=	'(' #continue expression ')';
+predefined_function_call<"readIfEqualToIdentifier">	::=	'(' #continue expression ')';
+predefined_function_call<"readLine">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"readNextText">	::=	'(' #continue expression ')';
+predefined_function_call<"readNumber">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"readPythonString">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"readString">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"readUptoJustOneChar">	::=	'(' #continue expression ')';
+predefined_function_call<"readWord">	::=	'(' #continue ')';
+predefined_function_call<"skipBlanks">	::=	'(' #continue ')';
+predefined_function_call<"skipSpaces">	::=	'(' #continue ')';
+predefined_function_call<"skipEmptyCpp">	::=	'(' #continue ')';
+predefined_function_call<"skipEmptyCppExceptDoxygen">	::=	'(' #continue ')';
+predefined_function_call<"skipEmptyHTML">	::=	'(' #continue ')';
+predefined_function_call<"skipEmptyLaTeX">	::=	'(' #continue ')';
+predefined_function_call<"countOutputCols">	::=	'(' #continue ')';
+predefined_function_call<"countOutputLines">	::=	'(' #continue ')';
+predefined_function_call<"decrementIndentLevel">	::=	'(' #continue [ expression]? ')';
+predefined_function_call<"equalLastWrittenChars">	::=	'(' #continue expression ')';
+predefined_function_call<"existFloatingLocation">	::=	'(' #continue expression ',' expression ')';
+predefined_function_call<"getFloatingLocation">	::=	'(' #continue expression ')';
+predefined_function_call<"getLastWrittenChars">	::=	'(' #continue expression ')';
+predefined_function_call<"getMarkupKey">	::=	'(' #continue ')';
+predefined_function_call<"getMarkupValue">	::=	'(' #continue ')';
+predefined_function_call<"getOutputFilename">	::=	'(' #continue ')';
+predefined_function_call<"getOutputLocation">	::=	'(' #continue ')';
+predefined_function_call<"getProtectedArea">	::=	'(' #continue expression ')';
+predefined_function_call<"getProtectedAreaKeys">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"indentText">	::=	'(' #continue expression ')';
+predefined_function_call<"newFloatingLocation">	::=	'(' #continue expression ')';
+predefined_function_call<"remainingProtectedAreas">	::=	'(' #continue variable_expression ')';
+predefined_function_call<"removeFloatingLocation">	::=	'(' #continue expression ')';
+predefined_function_call<"removeProtectedArea">	::=	'(' #continue expression ')';
+//##end##"predefined_function_call"
+
+predefined_method_call<T> : value	::= #check(false);
+//##marker##"predefined_method_call"
+//##begin##"predefined_method_call"
+predefined_method_call<"flushOutputToSocket"> : value	::=	'(' #continue ')' => set predefined_method_call = "flushOutputToSocket"; ;
+predefined_method_call<"acceptSocket"> : value	::=	'(' #continue ')' => set predefined_method_call = "acceptSocket"; ;
+predefined_method_call<"add"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "add"; ;
+predefined_method_call<"addGenerationTagsHandler"> : value	::=	'(' #continue script_file_expression<"BNF"> ',' script_file_expression<"pattern"> ')' => set predefined_method_call = "addGenerationTagsHandler"; ;
+predefined_method_call<"addToDate"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "addToDate"; ;
+predefined_method_call<"byteToChar"> : value	::=	'(' #continue ')' => set predefined_method_call = "byteToChar"; ;
+predefined_method_call<"bytesToLong"> : value	::=	'(' #continue ')' => set predefined_method_call = "bytesToLong"; ;
+predefined_method_call<"bytesToShort"> : value	::=	'(' #continue ')' => set predefined_method_call = "bytesToShort"; ;
+predefined_method_call<"canonizePath"> : value	::=	'(' #continue ')' => set predefined_method_call = "canonizePath"; ;
+predefined_method_call<"changeDirectory"> : value	::=	'(' #continue ')' => set predefined_method_call = "changeDirectory"; ;
+predefined_method_call<"changeFileTime"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "changeFileTime"; ;
+predefined_method_call<"charAt"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "charAt"; ;
+predefined_method_call<"charToByte"> : value	::=	'(' #continue ')' => set predefined_method_call = "charToByte"; ;
+predefined_method_call<"charToInt"> : value	::=	'(' #continue ')' => set predefined_method_call = "charToInt"; ;
+predefined_method_call<"chmod"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "chmod"; ;
+predefined_method_call<"ceil"> : value	::=	'(' #continue ')' => set predefined_method_call = "ceil"; ;
+predefined_method_call<"compareDate"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "compareDate"; ;
+predefined_method_call<"completeDate"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "completeDate"; ;
+predefined_method_call<"completeLeftSpaces"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "completeLeftSpaces"; ;
+predefined_method_call<"completeRightSpaces"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "completeRightSpaces"; ;
+predefined_method_call<"composeAdaLikeString"> : value	::=	'(' #continue ')' => set predefined_method_call = "composeAdaLikeString"; ;
+predefined_method_call<"composeCLikeString"> : value	::=	'(' #continue ')' => set predefined_method_call = "composeCLikeString"; ;
+predefined_method_call<"composeHTMLLikeString"> : value	::=	'(' #continue ')' => set predefined_method_call = "composeHTMLLikeString"; ;
+predefined_method_call<"composeSQLLikeString"> : value	::=	'(' #continue ')' => set predefined_method_call = "composeSQLLikeString"; ;
+predefined_method_call<"computeMD5"> : value	::=	'(' #continue ')' => set predefined_method_call = "computeMD5"; ;
+predefined_method_call<"copySmartFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "copySmartFile"; ;
+predefined_method_call<"coreString"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "coreString"; ;
+predefined_method_call<"countStringOccurences"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "countStringOccurences"; ;
+predefined_method_call<"createDirectory"> : value	::=	'(' #continue ')' => set predefined_method_call = "createDirectory"; ;
+predefined_method_call<"createINETClientSocket"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "createINETClientSocket"; ;
+predefined_method_call<"createINETServerSocket"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "createINETServerSocket"; ;
+predefined_method_call<"createIterator"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "createIterator"; ;
+predefined_method_call<"createReverseIterator"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "createReverseIterator"; ;
+predefined_method_call<"createVirtualFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "createVirtualFile"; ;
+predefined_method_call<"createVirtualTemporaryFile"> : value	::=	'(' #continue ')' => set predefined_method_call = "createVirtualTemporaryFile"; ;
+predefined_method_call<"decodeURL"> : value	::=	'(' #continue ')' => set predefined_method_call = "decodeURL"; ;
+predefined_method_call<"decrement"> : value	::=	'(' #continue ')' => set predefined_method_call = "decrement"; ;
+predefined_method_call<"deleteFile"> : value	::=	'(' #continue ')' => set predefined_method_call = "deleteFile"; ;
+predefined_method_call<"deleteVirtualFile"> : value	::=	'(' #continue ')' => set predefined_method_call = "deleteVirtualFile"; ;
+predefined_method_call<"div"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "div"; ;
+predefined_method_call<"duplicateIterator"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "duplicateIterator"; ;
+predefined_method_call<"encodeURL"> : value	::=	'(' #continue ')' => set predefined_method_call = "encodeURL"; ;
+predefined_method_call<"endString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "endString"; ;
+predefined_method_call<"equal"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "equal"; ;
+predefined_method_call<"equalsIgnoreCase"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "equalsIgnoreCase"; ;
+predefined_method_call<"equalTrees"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "equalTrees"; ;
+predefined_method_call<"executeStringQuiet"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "executeStringQuiet"; ;
+predefined_method_call<"existDirectory"> : value	::=	'(' #continue ')' => set predefined_method_call = "existDirectory"; ;
+predefined_method_call<"existEnv"> : value	::=	'(' #continue ')' => set predefined_method_call = "existEnv"; ;
+predefined_method_call<"existFile"> : value	::=	'(' #continue ')' => set predefined_method_call = "existFile"; ;
+predefined_method_call<"existVirtualFile"> : value	::=	'(' #continue ')' => set predefined_method_call = "existVirtualFile"; ;
+predefined_method_call<"existVariable"> : value	::=	'(' #continue ')' => set predefined_method_call = "existVariable"; ;
+predefined_method_call<"exp"> : value	::=	'(' #continue ')' => set predefined_method_call = "exp"; ;
+predefined_method_call<"exploreDirectory"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "exploreDirectory"; ;
+predefined_method_call<"extractGenerationHeader"> : value	::=	'(' #continue variable_expression ',' variable_expression ',' variable_expression ')' => set predefined_method_call = "extractGenerationHeader"; ;
+predefined_method_call<"fileCreation"> : value	::=	'(' #continue ')' => set predefined_method_call = "fileCreation"; ;
+predefined_method_call<"fileLastAccess"> : value	::=	'(' #continue ')' => set predefined_method_call = "fileLastAccess"; ;
+predefined_method_call<"fileLastModification"> : value	::=	'(' #continue ')' => set predefined_method_call = "fileLastModification"; ;
+predefined_method_call<"fileLines"> : value	::=	'(' #continue ')' => set predefined_method_call = "fileLines"; ;
+predefined_method_call<"fileMode"> : value	::=	'(' #continue ')' => set predefined_method_call = "fileMode"; ;
+predefined_method_call<"fileSize"> : value	::=	'(' #continue ')' => set predefined_method_call = "fileSize"; ;
+predefined_method_call<"findElement"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "findElement"; ;
+predefined_method_call<"findFirstChar"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "findFirstChar"; ;
+predefined_method_call<"findFirstSubstringIntoKeys"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "findFirstSubstringIntoKeys"; ;
+predefined_method_call<"findLastString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "findLastString"; ;
+predefined_method_call<"findNextString"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "findNextString"; ;
+predefined_method_call<"findNextSubstringIntoKeys"> : value	::=	'(' #continue variable_expression ',' expression ')' => set predefined_method_call = "findNextSubstringIntoKeys"; ;
+predefined_method_call<"findString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "findString"; ;
+predefined_method_call<"first"> : value	::=	'(' #continue ')' => set predefined_method_call = "first"; ;
+predefined_method_call<"floor"> : value	::=	'(' #continue ')' => set predefined_method_call = "floor"; ;
+predefined_method_call<"formatDate"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "formatDate"; ;
+predefined_method_call<"size"> : value	::=	'(' #continue ')' => set predefined_method_call = "getArraySize"; ;
+predefined_method_call<"getArraySize"> : value	::=	'(' #continue ')' => set predefined_method_call = "getArraySize"; ;
+predefined_method_call<"getEnv"> : value	::=	'(' #continue ')' => set predefined_method_call = "getEnv"; ;
+predefined_method_call<"getHTTPRequest"> : value	::=	'(' #continue variable_expression ',' variable_expression ')' => set predefined_method_call = "getHTTPRequest"; ;
+predefined_method_call<"getProperty"> : value	::=	'(' #continue ')' => set predefined_method_call = "getProperty"; ;
+predefined_method_call<"getShortFilename"> : value	::=	'(' #continue ')' => set predefined_method_call = "getShortFilename"; ;
+predefined_method_call<"getVariableAttributes"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "getVariableAttributes"; ;
+predefined_method_call<"hexaToDecimal"> : value	::=	'(' #continue ')' => set predefined_method_call = "hexaToDecimal"; ;
+predefined_method_call<"hostToNetworkLong"> : value	::=	'(' #continue ')' => set predefined_method_call = "hostToNetworkLong"; ;
+predefined_method_call<"hostToNetworkShort"> : value	::=	'(' #continue ')' => set predefined_method_call = "hostToNetworkShort"; ;
+predefined_method_call<"increment"> : value	::=	'(' #continue ')' => set predefined_method_call = "increment"; ;
+predefined_method_call<"indentFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "indentFile"; ;
+predefined_method_call<"index"> : value	::=	'(' #continue ')' => set predefined_method_call = "index"; ;
+predefined_method_call<"inf"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "inf"; ;
+predefined_method_call<"inputKey"> : value	::=	'(' #continue ')' => set predefined_method_call = "inputKey"; ;
+predefined_method_call<"inputLine"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "inputLine"; ;
+predefined_method_call<"empty"> : value	::=	'(' #continue ')' => set predefined_method_call = "isEmpty"; ;
+predefined_method_call<"isEmpty"> : value	::=	'(' #continue ')' => set predefined_method_call = "isEmpty"; ;
+predefined_method_call<"isIdentifier"> : value	::=	'(' #continue ')' => set predefined_method_call = "isIdentifier"; ;
+predefined_method_call<"isNegative"> : value	::=	'(' #continue ')' => set predefined_method_call = "isNegative"; ;
+predefined_method_call<"isNumeric"> : value	::=	'(' #continue ')' => set predefined_method_call = "isNumeric"; ;
+predefined_method_call<"isPositive"> : value	::=	'(' #continue ')' => set predefined_method_call = "isPositive"; ;
+predefined_method_call<"joinStrings"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "joinStrings"; ;
+predefined_method_call<"key"> : value	::=	'(' #continue ')' => set predefined_method_call = "key"; ;
+predefined_method_call<"last"> : value	::=	'(' #continue ')' => set predefined_method_call = "last"; ;
+predefined_method_call<"leftString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "leftString"; ;
+predefined_method_call<"length"> : value	::=	'(' #continue ')' => set predefined_method_call = "lengthString"; ;
+predefined_method_call<"lengthString"> : value	::=	'(' #continue ')' => set predefined_method_call = "lengthString"; ;
+predefined_method_call<"loadBinaryFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "loadBinaryFile"; ;
+predefined_method_call<"loadFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "loadFile"; ;
+predefined_method_call<"loadVirtualFile"> : value	::=	'(' #continue ')' => set predefined_method_call = "loadVirtualFile"; ;
+predefined_method_call<"log"> : value	::=	'(' #continue ')' => set predefined_method_call = "log"; ;
+predefined_method_call<"longToBytes"> : value	::=	'(' #continue ')' => set predefined_method_call = "longToBytes"; ;
+predefined_method_call<"midString"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "midString"; ;
+predefined_method_call<"mod"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "mod"; ;
+predefined_method_call<"mult"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "mult"; ;
+predefined_method_call<"networkLongToHost"> : value	::=	'(' #continue ')' => set predefined_method_call = "networkLongToHost"; ;
+predefined_method_call<"networkShortToHost"> : value	::=	'(' #continue ')' => set predefined_method_call = "networkShortToHost"; ;
+predefined_method_call<"next"> : value	::=	'(' #continue ')' => set predefined_method_call = "next"; ;
+predefined_method_call<"not"> : value	::=	'(' #continue ')' => set predefined_method_call = "not"; ;
+predefined_method_call<"octalToDecimal"> : value	::=	'(' #continue ')' => set predefined_method_call = "octalToDecimal"; ;
+predefined_method_call<"parseFreeQuiet"> : value	::=	'(' #continue variable_expression ',' expression ')' => set predefined_method_call = "parseFreeQuiet"; ;
+predefined_method_call<"pathFromPackage"> : value	::=	'(' #continue ')' => set predefined_method_call = "pathFromPackage"; ;
+predefined_method_call<"postHTTPRequest"> : value	::=	'(' #continue variable_expression ',' variable_expression ')' => set predefined_method_call = "postHTTPRequest"; ;
+predefined_method_call<"pow"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "pow"; ;
+predefined_method_call<"prec"> : value	::=	'(' #continue ')' => set predefined_method_call = "prec"; ;
+predefined_method_call<"receiveBinaryFromSocket"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "receiveBinaryFromSocket"; ;
+predefined_method_call<"receiveFromSocket"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "receiveFromSocket"; ;
+predefined_method_call<"receiveTextFromSocket"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "receiveTextFromSocket"; ;
+predefined_method_call<"relativePath"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "relativePath"; ;
+predefined_method_call<"removeDirectory"> : value	::=	'(' #continue ')' => set predefined_method_call = "removeDirectory"; ;
+predefined_method_call<"removeGenerationTagsHandler"> : value	::=	'(' #continue ')' => set predefined_method_call = "removeGenerationTagsHandler"; ;
+predefined_method_call<"repeatString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "repeatString"; ;
+predefined_method_call<"replaceString"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "replaceString"; ;
+predefined_method_call<"replaceTabulations"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "replaceTabulations"; ;
+predefined_method_call<"resolveFilePath"> : value	::=	'(' #continue ')' => set predefined_method_call = "resolveFilePath"; ;
+predefined_method_call<"rightString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "rightString"; ;
+predefined_method_call<"rsubString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "rsubString"; ;
+predefined_method_call<"scanDirectories"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "scanDirectories"; ;
+predefined_method_call<"scanFiles"> : value	::=	'(' #continue expression ',' expression ',' expression ')' => set predefined_method_call = "scanFiles"; ;
+predefined_method_call<"sendBinaryToSocket"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "sendBinaryToSocket"; ;
+predefined_method_call<"sendHTTPRequest"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "sendHTTPRequest"; ;
+predefined_method_call<"sendTextToSocket"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "sendTextToSocket"; ;
+predefined_method_call<"selectGenerationTagsHandler"> : value	::=	'(' #continue ')' => set predefined_method_call = "selectGenerationTagsHandler"; ;
+predefined_method_call<"shortToBytes"> : value	::=	'(' #continue ')' => set predefined_method_call = "shortToBytes"; ;
+predefined_method_call<"sqrt"> : value	::=	'(' #continue ')' => set predefined_method_call = "sqrt"; ;
+predefined_method_call<"startString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "startString"; ;
+predefined_method_call<"sub"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "sub"; ;
+predefined_method_call<"subString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "subString"; ;
+predefined_method_call<"sup"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "sup"; ;
+predefined_method_call<"system"> : value	::=	'(' #continue ')' => set predefined_method_call = "system"; ;
+predefined_method_call<"toLowerString"> : value	::=	'(' #continue ')' => set predefined_method_call = "toLowerString"; ;
+predefined_method_call<"toUpperString"> : value	::=	'(' #continue ')' => set predefined_method_call = "toUpperString"; ;
+predefined_method_call<"translateString"> : value	::=	'(' #continue variable_expression ',' expression ')' => set predefined_method_call = "translateString"; ;
+predefined_method_call<"trimLeft"> : value	::=	'(' #continue ')' => set predefined_method_call = "trimLeft"; ;
+predefined_method_call<"trimRight"> : value	::=	'(' #continue ')' => set predefined_method_call = "trimRight"; ;
+predefined_method_call<"trim"> : value	::=	'(' #continue ')' => set predefined_method_call = "trim"; ;
+predefined_method_call<"truncateAfterString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "truncateAfterString"; ;
+predefined_method_call<"truncateBeforeString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "truncateBeforeString"; ;
+predefined_method_call<"getLastReadChars"> : value	::=	'(' #continue ')' => set predefined_method_call = "getLastReadChars"; ;
+predefined_method_call<"lookAhead"> : value	::=	'(' #continue ')' => set predefined_method_call = "lookAhead"; ;
+predefined_method_call<"readAdaString"> : value	::=	'(' #continue ')' => set predefined_method_call = "readAdaString"; ;
+predefined_method_call<"readBytes"> : value	::=	'(' #continue ')' => set predefined_method_call = "readBytes"; ;
+predefined_method_call<"readChars"> : value	::=	'(' #continue ')' => set predefined_method_call = "readChars"; ;
+predefined_method_call<"readIfEqualTo"> : value	::=	'(' #continue ')' => set predefined_method_call = "readIfEqualTo"; ;
+predefined_method_call<"readIfEqualToIgnoreCase"> : value	::=	'(' #continue ')' => set predefined_method_call = "readIfEqualToIgnoreCase"; ;
+predefined_method_call<"readIfEqualToIdentifier"> : value	::=	'(' #continue ')' => set predefined_method_call = "readIfEqualToIdentifier"; ;
+predefined_method_call<"readLine"> : value	::=	'(' #continue ')' => set predefined_method_call = "readLine"; ;
+predefined_method_call<"readNextText"> : value	::=	'(' #continue ')' => set predefined_method_call = "readNextText"; ;
+predefined_method_call<"readNumber"> : value	::=	'(' #continue ')' => set predefined_method_call = "readNumber"; ;
+predefined_method_call<"readPythonString"> : value	::=	'(' #continue ')' => set predefined_method_call = "readPythonString"; ;
+predefined_method_call<"readString"> : value	::=	'(' #continue ')' => set predefined_method_call = "readString"; ;
+predefined_method_call<"readUptoJustOneChar"> : value	::=	'(' #continue ')' => set predefined_method_call = "readUptoJustOneChar"; ;
+predefined_method_call<"decrementIndentLevel"> : value	::=	'(' #continue ')' => set predefined_method_call = "decrementIndentLevel"; ;
+predefined_method_call<"equalLastWrittenChars"> : value	::=	'(' #continue ')' => set predefined_method_call = "equalLastWrittenChars"; ;
+predefined_method_call<"existFloatingLocation"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "existFloatingLocation"; ;
+predefined_method_call<"getFloatingLocation"> : value	::=	'(' #continue ')' => set predefined_method_call = "getFloatingLocation"; ;
+predefined_method_call<"getLastWrittenChars"> : value	::=	'(' #continue ')' => set predefined_method_call = "getLastWrittenChars"; ;
+predefined_method_call<"getProtectedArea"> : value	::=	'(' #continue ')' => set predefined_method_call = "getProtectedArea"; ;
+predefined_method_call<"getProtectedAreaKeys"> : value	::=	'(' #continue ')' => set predefined_method_call = "getProtectedAreaKeys"; ;
+predefined_method_call<"indentText"> : value	::=	'(' #continue ')' => set predefined_method_call = "indentText"; ;
+predefined_method_call<"newFloatingLocation"> : value	::=	'(' #continue ')' => set predefined_method_call = "newFloatingLocation"; ;
+predefined_method_call<"remainingProtectedAreas"> : value	::=	'(' #continue ')' => set predefined_method_call = "remainingProtectedAreas"; ;
+predefined_method_call<"removeFloatingLocation"> : value	::=	'(' #continue ')' => set predefined_method_call = "removeFloatingLocation"; ;
+predefined_method_call<"removeProtectedArea"> : value	::=	'(' #continue ')' => set predefined_method_call = "removeProtectedArea"; ;
+predefined_method_call<"appendFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "appendFile"; ;
+predefined_method_call<"autoexpand"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "autoexpand"; ;
+predefined_method_call<"clearVariable"> : value	::=	'(' #continue ')' => set predefined_method_call = "clearVariable"; ;
+predefined_method_call<"compileToCpp"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "compileToCpp"; ;
+predefined_method_call<"copyFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "copyFile"; ;
+predefined_method_call<"copyGenerableFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "copyGenerableFile"; ;
+predefined_method_call<"copySmartDirectory"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "copySmartDirectory"; ;
+predefined_method_call<"cutString"> : value	::=	'(' #continue expression ',' variable_expression ')' => set predefined_method_call = "cutString"; ;
+predefined_method_call<"environTable"> : value	::=	'(' #continue ')' => set predefined_method_call = "environTable"; ;
+predefined_method_call<"error"> : value	::=	'(' #continue ')' => set predefined_method_call = "error"; ;
+predefined_method_call<"executeString"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "executeString"; ;
+predefined_method_call<"expand"> : value	::=	'(' #continue variable_expression ',' expression ')' => set predefined_method_call = "expand"; ;
+predefined_method_call<"extendExecutedScript"> : value	::=	'(' #continue ')' => set predefined_method_call = "extendExecutedScript"; ;
+predefined_method_call<"generate"> : value	::=	'(' #continue variable_expression ',' expression ')' => set predefined_method_call = "generate"; ;
+predefined_method_call<"generateString"> : value	::=	'(' #continue variable_expression ',' variable_expression ')' => set predefined_method_call = "generateString"; ;
+predefined_method_call<"insertElementAt"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "insertElementAt"; ;
+predefined_method_call<"invertArray"> : value	::=	'(' #continue ')' => set predefined_method_call = "invertArray"; ;
+predefined_method_call<"listAllGeneratedFiles"> : value	::=	'(' #continue ')' => set predefined_method_call = "listAllGeneratedFiles"; ;
+predefined_method_call<"loadProject"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "loadProject"; ;
+predefined_method_call<"openLogFile"> : value	::=	'(' #continue ')' => set predefined_method_call = "openLogFile"; ;
+predefined_method_call<"parseAsBNF"> : value	::=	'(' #continue variable_expression ',' expression ')' => set predefined_method_call = "parseAsBNF"; ;
+predefined_method_call<"parseStringAsBNF"> : value	::=	'(' #continue variable_expression ',' expression ')' => set predefined_method_call = "parseStringAsBNF"; ;
+predefined_method_call<"parseFree"> : value	::=	'(' #continue variable_expression ',' expression ')' => set predefined_method_call = "parseFree"; ;
+predefined_method_call<"produceHTML"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "produceHTML"; ;
+predefined_method_call<"putEnv"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "putEnv"; ;
+predefined_method_call<"randomSeed"> : value	::=	'(' #continue ')' => set predefined_method_call = "randomSeed"; ;
+predefined_method_call<"removeAllElements"> : value	::=	'(' #continue ')' => set predefined_method_call = "removeAllElements"; ;
+predefined_method_call<"removeElement"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "removeElement"; ;
+predefined_method_call<"removeFirstElement"> : value	::=	'(' #continue ')' => set predefined_method_call = "removeFirstElement"; ;
+predefined_method_call<"removeLastElement"> : value	::=	'(' #continue ')' => set predefined_method_call = "removeLastElement"; ;
+predefined_method_call<"removeRecursive"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "removeRecursive"; ;
+predefined_method_call<"removeVariable"> : value	::=	'(' #continue ')' => set predefined_method_call = "removeVariable"; ;
+predefined_method_call<"saveBinaryToFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "saveBinaryToFile"; ;
+predefined_method_call<"saveProject"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "saveProject"; ;
+predefined_method_call<"saveProjectTypes"> : value	::=	'(' #continue ')' => set predefined_method_call = "saveProjectTypes"; ;
+predefined_method_call<"saveToFile"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "saveToFile"; ;
+predefined_method_call<"setCommentBegin"> : value	::=	'(' #continue ')' => set predefined_method_call = "setCommentBegin"; ;
+predefined_method_call<"setCommentEnd"> : value	::=	'(' #continue ')' => set predefined_method_call = "setCommentEnd"; ;
+predefined_method_call<"setGenerationHeader"> : value	::=	'(' #continue ')' => set predefined_method_call = "setGenerationHeader"; ;
+predefined_method_call<"setIncludePath"> : value	::=	'(' #continue ')' => set predefined_method_call = "setIncludePath"; ;
+predefined_method_call<"setNow"> : value	::=	'(' #continue ')' => set predefined_method_call = "setNow"; ;
+predefined_method_call<"setProperty"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "setProperty"; ;
+predefined_method_call<"setTextMode"> : value	::=	'(' #continue ')' => set predefined_method_call = "setTextMode"; ;
+predefined_method_call<"setVersion"> : value	::=	'(' #continue ')' => set predefined_method_call = "setVersion"; ;
+predefined_method_call<"setWriteMode"> : value	::=	'(' #continue ')' => set predefined_method_call = "setWriteMode"; ;
+predefined_method_call<"setWorkingPath"> : value	::=	'(' #continue ')' => set predefined_method_call = "setWorkingPath"; ;
+predefined_method_call<"sleep"> : value	::=	'(' #continue ')' => set predefined_method_call = "sleep"; ;
+predefined_method_call<"slideNodeContent"> : value	::=	'(' #continue variable_expression ')' => set predefined_method_call = "slideNodeContent"; ;
+predefined_method_call<"sortArray"> : value	::=	'(' #continue ')' => set predefined_method_call = "sortArray"; ;
+predefined_method_call<"traceLine"> : value	::=	'(' #continue ')' => set predefined_method_call = "traceLine"; ;
+predefined_method_call<"traceObject"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "traceObject"; ;
+predefined_method_call<"traceText"> : value	::=	'(' #continue ')' => set predefined_method_call = "traceText"; ;
+predefined_method_call<"translate"> : value	::=	'(' #continue variable_expression ',' expression ',' expression ')' => set predefined_method_call = "translate"; ;
+predefined_method_call<"attachInputToSocket"> : value	::=	'(' #continue ')' => set predefined_method_call = "attachInputToSocket"; ;
+predefined_method_call<"detachInputFromSocket"> : value	::=	'(' #continue ')' => set predefined_method_call = "detachInputFromSocket"; ;
+predefined_method_call<"setInputLocation"> : value	::=	'(' #continue ')' => set predefined_method_call = "setInputLocation"; ;
+predefined_method_call<"allFloatingLocations"> : value	::=	'(' #continue ')' => set predefined_method_call = "allFloatingLocations"; ;
+predefined_method_call<"attachOutputToSocket"> : value	::=	'(' #continue ')' => set predefined_method_call = "attachOutputToSocket"; ;
+predefined_method_call<"detachOutputFromSocket"> : value	::=	'(' #continue ')' => set predefined_method_call = "detachOutputFromSocket"; ;
+predefined_method_call<"incrementIndentLevel"> : value	::=	'(' #continue ')' => set predefined_method_call = "incrementIndentLevel"; ;
+predefined_method_call<"insertText"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "insertText"; ;
+predefined_method_call<"insertTextOnce"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "insertTextOnce"; ;
+predefined_method_call<"insertTextToFloatingLocation"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "insertTextToFloatingLocation"; ;
+predefined_method_call<"insertTextOnceToFloatingLocation"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "insertTextOnceToFloatingLocation"; ;
+predefined_method_call<"overwritePortion"> : value	::=	'(' #continue expression ',' expression ')' => set predefined_method_call = "overwritePortion"; ;
+predefined_method_call<"populateProtectedArea"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "populateProtectedArea"; ;
+predefined_method_call<"resizeOutputStream"> : value	::=	'(' #continue ')' => set predefined_method_call = "resizeOutputStream"; ;
+predefined_method_call<"setFloatingLocation"> : value	::=	'(' #continue expression ')' => set predefined_method_call = "setFloatingLocation"; ;
+predefined_method_call<"setOutputLocation"> : value	::=	'(' #continue ')' => set predefined_method_call = "setOutputLocation"; ;
+predefined_method_call<"setProtectedArea"> : value	::=	'(' #continue ')' => set predefined_method_call = "setProtectedArea"; ;
+predefined_method_call<"writeBytes"> : value	::=	'(' #continue ')' => set predefined_method_call = "writeBytes"; ;
+predefined_method_call<"writeText"> : value	::=	'(' #continue ')' => set predefined_method_call = "writeText"; ;
+predefined_method_call<"writeTextOnce"> : value	::=	'(' #continue ')' => set predefined_method_call = "writeTextOnce"; ;
+predefined_method_call<"closeSocket"> : value	::=	'(' #continue ')' => set predefined_method_call = "closeSocket"; ;
+//##end##"predefined_method_call"
+
+predefined_procedure_call<T>	::= #check(false);
+//##marker##"predefined_procedure_call"
+//##begin##"predefined_procedure_call"
+predefined_procedure_call<"appendFile">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"autoexpand">	::=	'(' #continue expression ',' variable_expression ')';
+predefined_procedure_call<"clearVariable">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"compileToCpp">	::=	'(' #continue expression ',' expression ',' expression ')';
+predefined_procedure_call<"copyFile">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"copyGenerableFile">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"copySmartDirectory">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"cutString">	::=	'(' #continue expression ',' expression ',' variable_expression ')';
+predefined_procedure_call<"environTable">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"error">	::=	'(' #continue expression ')';
+predefined_procedure_call<"executeString">	::=	'(' #continue variable_expression ',' expression ')';
+predefined_procedure_call<"expand">	::=	'(' #continue script_file_expression<"pattern"> ',' variable_expression ',' expression ')';
+predefined_procedure_call<"extendExecutedScript">	::=	'(' #continue expression ')';
+predefined_procedure_call<"generate">	::=	'(' #continue script_file_expression<"pattern"> ',' variable_expression ',' expression ')';
+predefined_procedure_call<"generateString">	::=	'(' #continue script_file_expression<"pattern"> ',' variable_expression ',' variable_expression ')';
+predefined_procedure_call<"insertElementAt">	::=	'(' #continue variable_expression ',' expression ',' expression ')';
+predefined_procedure_call<"invertArray">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"listAllGeneratedFiles">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"loadProject">	::=	'(' #continue expression [',' variable_expression]? ')';
+predefined_procedure_call<"openLogFile">	::=	'(' #continue expression ')';
+predefined_procedure_call<"parseAsBNF">	::=	'(' #continue script_file_expression<"BNF"> ',' variable_expression ',' expression ')';
+predefined_procedure_call<"parseStringAsBNF">	::=	'(' #continue script_file_expression<"BNF"> ',' variable_expression ',' expression ')';
+predefined_procedure_call<"parseFree">	::=	'(' #continue script_file_expression<"free"> ',' variable_expression ',' expression ')';
+predefined_procedure_call<"produceHTML">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"putEnv">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"randomSeed">	::=	'(' #continue expression ')';
+predefined_procedure_call<"removeAllElements">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"removeElement">	::=	'(' #continue variable_expression ',' expression ')';
+predefined_procedure_call<"removeFirstElement">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"removeLastElement">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"removeRecursive">	::=	'(' #continue variable_expression ',' expression ')';
+predefined_procedure_call<"removeVariable">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"saveBinaryToFile">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"saveProject">	::=	'(' #continue expression [',' variable_expression]? ')';
+predefined_procedure_call<"saveProjectTypes">	::=	'(' #continue expression ')';
+predefined_procedure_call<"saveToFile">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"setCommentBegin">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setCommentEnd">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setGenerationHeader">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setIncludePath">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setNow">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setProperty">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"setTextMode">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setVersion">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setWriteMode">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setWorkingPath">	::=	'(' #continue expression ')';
+predefined_procedure_call<"sleep">	::=	'(' #continue expression ')';
+predefined_procedure_call<"slideNodeContent">	::=	'(' #continue variable_expression ',' variable_expression ')';
+predefined_procedure_call<"sortArray">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"traceEngine">	::=	'(' #continue ')';
+predefined_procedure_call<"traceLine">	::=	'(' #continue expression ')';
+predefined_procedure_call<"traceObject">	::=	'(' #continue variable_expression [',' expression]? ')';
+predefined_procedure_call<"traceStack">	::=	'(' #continue ')';
+predefined_procedure_call<"traceText">	::=	'(' #continue expression ')';
+predefined_procedure_call<"translate">	::=	'(' #continue script_file_expression<"translate"> ',' variable_expression ',' expression ',' expression ')';
+predefined_procedure_call<"attachInputToSocket">	::=	'(' #continue expression ')';
+predefined_procedure_call<"detachInputFromSocket">	::=	'(' #continue expression ')';
+predefined_procedure_call<"goBack">	::=	'(' #continue ')';
+predefined_procedure_call<"setInputLocation">	::=	'(' #continue expression ')';
+predefined_procedure_call<"allFloatingLocations">	::=	'(' #continue variable_expression ')';
+predefined_procedure_call<"attachOutputToSocket">	::=	'(' #continue expression ')';
+predefined_procedure_call<"detachOutputFromSocket">	::=	'(' #continue expression ')';
+predefined_procedure_call<"incrementIndentLevel">	::=	'(' #continue [ expression]? ')';
+predefined_procedure_call<"insertText">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"insertTextOnce">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"insertTextToFloatingLocation">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"insertTextOnceToFloatingLocation">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"overwritePortion">	::=	'(' #continue expression ',' expression ',' expression ')';
+predefined_procedure_call<"populateProtectedArea">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"resizeOutputStream">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setFloatingLocation">	::=	'(' #continue expression ',' expression ')';
+predefined_procedure_call<"setOutputLocation">	::=	'(' #continue expression ')';
+predefined_procedure_call<"setProtectedArea">	::=	'(' #continue expression ')';
+predefined_procedure_call<"writeBytes">	::=	'(' #continue expression ')';
+predefined_procedure_call<"writeText">	::=	'(' #continue expression ')';
+predefined_procedure_call<"writeTextOnce">	::=	'(' #continue expression ')';
+predefined_procedure_call<"closeSocket">	::=	'(' #continue expression ')';
+//##end##"predefined_procedure_call"

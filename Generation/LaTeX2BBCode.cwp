@@ -1,0 +1,332 @@
+/* "CodeWorker":	a scripting language for parsing and generating text.
+
+Copyright (C) 1996-1997, 1999-2002 Cédric Lemaire
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+To contact the author: codeworker@free.fr
+*/
+
+function writeBBCode(cChar) {
+	@@cChar@@
+}
+
+function getSectionNumber() {
+	local sText;
+	foreach i in this.sectionNumbers {
+		if !first(i) sText += '.';
+		sText += i;
+	}
+	return sText;
+}
+
+function incrementSectionNumber(iSectionLevel) {
+	while $this.sectionNumbers.size() > iSectionLevel + 1$ this.sectionNumbers.removeLastElement();
+	if $this.sectionNumbers.size() <= iSectionLevel$ {
+		do pushItem this.sectionNumbers = 1; while $this.sectionNumbers.size() <= iSectionLevel$;
+	} else {
+		increment(this.sectionNumbers#back);
+	}
+	return getSectionNumber();
+}
+
+
+LaTeX2HTML ::= parsingMode<this.sParsingMode>;
+parsingMode<"description"> ::= blanks #continue ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) command] | '$' mathEscape | paragraphJump | #readChar:cChar => writeBBCode(cChar);]* #empty;
+parsingMode<"chapter"> ::=
+		#ignore(LaTeX)
+		[
+			"\\newcommand" ignoreBraces [blanks '[' [~']']* ']']* ignoreBraces
+				|
+			"\\special" ignoreBraces
+				|
+			~"\\pdfchapter"
+				|
+			"\\pdfchapter"
+			#continue
+			[
+				'*' 
+					|
+				rawCompoundText:sName
+				[
+					=>	if this.sChapterName && this.sChapterName != sName break;
+					chapterContent(sName)
+						|
+					!#empty
+				]
+			]
+		]*
+		#continue
+		#empty
+		;
+
+rawCompoundText:value ::= blanks #!ignore '{' [~'}']*:rawCompoundText '}';
+compoundText ::= blanks '{' #continue ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) command] | '$' mathEscape | paragraphJump | ~'}':cChar => writeBBCode(cChar); ]* '}';
+mathEscape ::= ['\\' #continue commandMath | paragraphJump | ~'$']* '$';
+commandMath ::= "backslash" => writeText("\\"); | "triangle" => writeText("^"); | "hat" => {writeText("^");};
+
+command ::=	[
+				"begin" #continue begin | "makebox" #continue makeBox |
+				"textit" #continue textIt | "textbf" #continue textBf | "samp" #continue samp |
+				"textrm" #continue textRm | "tiny" #continue tiny | "textsc" #continue textSc |
+				"texttt" #continue textTt | "footnote" #continue footNote |
+				"label" #continue label | "pdflabel" #continue label |
+				"index" #continue index | "ref" #continue reference |
+				"email" #continue email
+			]
+				|
+			#!ignore specialCommand;
+begin ::=	blanks '{' blanks #continue #readIdentifier:sBegin blanks '}'
+			beginContent<sBegin>
+			"\\end" blanks '{' blanks #readIdentifier blanks '}';
+beginContent<"description"> ::= beginContent<"itemize">;
+beginContent<"itemize"> ::=
+	=> {@[list]@ writeText(endl());}
+	=> local bFirst = true;
+	[
+		'\\' #!ignore ['%' => {@%@} | #ignore(LaTeX) commandItemize(bFirst)]
+			|
+		'$' mathEscape | paragraphJump | ~'\\':cChar => writeBBCode(cChar);
+	]*
+	=> {
+		if !bFirst {
+			writeText(endl());
+		}
+		@[/list]@
+		writeText(endl());
+	};
+commandItemize(bFirst : node) ::=
+		"item" => {
+			if bFirst set bFirst = false;
+			else {
+				writeText(endl());
+			}
+			@[*]@
+		}
+			|
+		!"end" #continue command;
+beginContent<"alltt"> ::=
+		=> {@[color=green]@}
+		[
+			'\\' !"end" #continue command | '$' mathEscape
+				|
+			~'\\':cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					writeText(endl());
+				} else if cChar == "\t" {
+					@    @
+				} else {
+					writeBBCode(cChar);
+				}
+			}
+		]*
+		=> {@[/color]@};
+beginContent<"verbatim"> ::=
+		=> {@[code]@}
+		[
+			~"\\end":cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					writeText(endl());
+				} else if cChar == "\t" {
+					@    @
+				} else {
+					writeBBCode(cChar);
+				}
+			}
+		]*
+		=> {@[/code]@};
+beginContent<"center"> ::=
+		[
+			'\\' !"end" #continue command | '$' mathEscape
+				|
+			~'\\':cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					writeText(endl());
+				} else if cChar == "\t" {
+					@    @
+				} else {
+					writeBBCode(cChar);
+				}
+			}
+		]*
+		;
+beginContent<"tableii"> ::=
+		[blanks '{' [~'}']* '}']2
+		[
+			compoundText
+			=> {
+				@        @
+			}
+		]*
+		 => writeText(endl());
+		[blanks '\\' !"end" #continue commandTableii]*
+		blanks
+		=> writeText(endl());
+		;
+commandTableii ::=
+		"lineii"
+		[
+			compoundText
+			=> {
+				@        @
+			}
+		]*
+		;
+beginContent<"tableiii"> ::=
+		[blanks '{' [~'}']* '}']2
+		[
+			compoundText
+			=> {
+				@        @
+			}
+		]*
+		=> writeText(endl());
+		[blanks '\\' !"end" #continue commandTableiii]*
+		blanks
+		=> writeText(endl());
+		;
+commandTableiii ::=
+		"lineiii"
+		[
+			compoundText
+			=> {
+				@        @
+			}
+		]*
+		;
+makeBox ::=
+		blanks #continue '['
+		NUMBER:dLength
+		=> {
+			local iSize = floor(mult(dLength, 5));
+			@@repeatString(" ", iSize)@@
+		}
+		[~']']* ']'
+		[blanks '[' [~']']* ']'] [compoundText]?;
+textIt ::= => {@[i]@} compoundText => {@[/i]@};
+textBf ::= => {@[b]@} compoundText => {@[/b]@};
+textRm ::= compoundText;
+footNote ::= #continue =>{@ (@} compoundText =>{@)@};
+samp ::=  => {@[color=blue][i]@}compoundText => {@[/i][/color]@};
+tiny ::=
+		=> {@[size=8][color=green]@}
+		[
+			compoundText
+				|
+			['\\' #continue command | '$' mathEscape | paragraphJump | ~'}':cChar => writeBBCode(cChar); ]*
+		]
+		=> {@[/color][/size]@};
+textSc ::= => {@[u]@} compoundText => {@[/u]@};
+textTt ::=
+		blanks '{' blanks => {@[color=green]@}
+		[
+			'\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) command]
+				|
+			'$' mathEscape
+				|
+			~'}':cChar => if cChar != "\r" {
+				if cChar == "\n" {
+					writeText(endl());
+				} else {
+					writeBBCode(cChar);
+				}
+			}
+		]*
+		'}'
+		=> {@[/color]@};
+label ::= #generatedString(null) compoundText:sLabel;
+index ::= rawCompoundText:sIndex;
+reference ::=
+		=> local sText;
+		[
+			#generatedString(sText)
+			compoundText
+			=> set sText = sText.coreString(1, 1);
+		]
+		=> {@@sText@@};
+email ::=
+			'{' #ignore(blanks) "\\WebSite\\" '}'
+			=> writeText("[email]codeworker@free.fr[/email]");
+		|
+			=> {@[email]@}
+			compoundText
+			=> {@[/email]@}
+		;
+
+chapterContent(sName : value) ::=
+		=> {
+			writeText(endl());
+			@[size=16]@sName@[/size]@
+			writeText(endl());
+		}
+		[!["\\pdfchapter" | "\\printindex" | "\\end"] ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) chapterCommand] | '$' mathEscape | paragraphJump | ~'\\':cChar => writeBBCode(cChar);]]*;
+chapterCommand ::=	"pdfsection" #continue #ignore(LaTeX) section | command;
+paragraphJump ::= [['\r']? '\n']2..* => {writeText(endl()); @<P/>@ writeText(endl());};
+section ::=
+		=> local sName;
+		[#generatedString(sName) compoundText]
+		=> {
+			writeText(endl());
+			@[size=14]@incrementSectionNumber(0)@ @sName@[/size]@
+			writeText(endl());
+		}
+		#continue
+		[!["\\pdfchapter"| "\\pdfsection" | "\\printindex" | "\\end"] ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) sectionCommand] | '$' mathEscape | paragraphJump | ~'\\':cChar => writeBBCode(cChar);]]*;
+sectionCommand ::=	["pdfsubsection" | "subsection"] #continue subsection | command;
+subsection ::=
+		=> local sName;
+		[#generatedString(sName) compoundText]
+		=> {
+			writeText(endl());
+			@[size=12]@incrementSectionNumber(1)@ @sName@[/size]@
+			writeText(endl());
+		}
+		#continue
+		[!["\\pdfchapter"| "\\pdfsection" | "\\pdfsubsection" | "\\subsection" | "\\printindex" | "\\end"] ['\\' #continue #!ignore ['%' => {@%@} | #ignore(LaTeX) subsectionCommand] | '$' mathEscape | paragraphJump | ~'\\':cChar => writeBBCode(cChar);]]*;
+subsectionCommand ::=	["pdfsubsubsection" | "subsubsection"] #continue subsubsection | command;
+subsubsection ::=
+		=> local sName;
+		[#generatedString(sName) compoundText]
+		=> {
+			writeText(endl());
+			@[size=11][b]@incrementSectionNumber(2)@ @sName@[/b][/size]@
+			writeText(endl());
+		}
+		#continue
+		[!["\\pdfchapter"| "\\pdfsection" | "\\pdfsubsection" | "\\subsection" | "\\pdfsubsubsection" | "\\subsubsection" | "\\printindex" | "\\end"] ['\\' #continue command | '$' mathEscape | paragraphJump | ~'\\':cChar => writeBBCode(cChar);]]*;
+
+
+specialCommand ::=
+		"CodeWorker\\" => {@[color=#900b09]CodeWorker[/color]@} |
+		"SWORD\\" => {@[url=http://savannah.nongnu.org/projects/sword]SWORD[/url]@} |
+		"GraphViz\\" => {@[url=http://www.research.att.com/sw/tools/graphviz]GraphViz[/url]@} |
+		"ACE\\" => {@[url=http://www.cs.wustl.edu/~schmidt/ACE.html]ACE[/url]@} |
+		"libCURL\\" => {@[url=http://curl.haxx.se/libcurl/]libcurl[/url]@} |
+		"JEdit\\" => {@[url=http://www.jedit.org]JEdit[/url]@} |
+		"TLcleaveland\\" => {@[url=http://www.craigc.com]TL[/url]@} |
+		"TODO\\" => {@[color=red][b]TO DO[/b][/color]@} |
+		"arobas" => {writeText("@");} | 
+		"WebSite\\" => {writeText("[email]codeworker@free.fr[/email]");} |
+		'{' => {@{@} | '}' => {@}@} | '@' => {writeText("@");} | '#' => {@#@} |
+		'_' => {@_@} | '&' => {@&@} | '%' => {@%@} |
+		'^' => {@^@} | '~' ['{' '}']? => {@~@} | "'e" => {@é@} |
+		'\\' [' '| '\t' | '\r']* ['\n']? => {writeText(endl());} |
+		'\"' => {@"@} | '$' => {@$@};
+
+ignoreBraces ::= blanks '{' [ignoreBraces | ~'}']* '}';
+
+blanks ::= [' '| '\t' | '\r' | '\n']*;
+DIGIT	::=	'0'..'9';
+NUMBER	::=	#!ignore [DIGIT]+ ['.' [DIGIT]+]? [['e' | 'E'] ['+' | '-']? [DIGIT]+]?;

@@ -1,0 +1,51 @@
+// iterate all strategy file having the extension ".tlc"
+forfile strategyFile in "*.tlc" {
+	// The BNF parse script "TrafficLight.cwp" applies on the strategy file
+	// and populates the global variable 'project'.
+	parseAsBNF("TrafficLight.cwp", project, strategyFile);
+
+	// Iterate all strategies and generates a C++ header and body but also
+	// a picture for each.
+	// The template-based script applies on a sub node of the parse tree,
+	// corresponding to the specification of the current strategy, and generates
+	// a C++ file or a Graphviz input file.
+	foreach i in project.strategies {
+		generate("TrafficLight-headerC++.cwt", i, "output/" + i.name + ".h");
+		generate("TrafficLight-bodyC++.cwt", i, "output/" + i.name + ".cpp");
+		// Generate the input file for Graphviz, which will build a PNG picture
+		generate("TrafficLight-Graphviz.cwt", i, i.name + ".grz");
+		system("../../../bin/dot.exe -Tpng -o " + i.name + ".png " + i.name + ".grz");
+	}
+
+
+	// The translation script "TrafficLight2OpenOffice20.cwp" applies on the
+	// strategy file and generates the content of an Open Office 2.0 text
+	// document. We didn't put here the zip compression of the generated file
+	// with some others and its renaming to a ".odt" extension.
+	translate("TrafficLight2OpenOffice20.cwp", project, strategyFile, "OpenOffice2.0/content.xml");
+}
+
+// strategies for test are injected directly into the Java simulator
+expand("TrafficLight-embeddedJava.cwt", project, "TrafficLightSimulator.java");
+
+// Save the parse tree to a XML file, just for showing the structure of the tree
+saveProject("strategies.xml");
+
+//--------------------------------------------------------------------------------
+
+forfile i in "*.cw*" {
+	local theOptions;
+	insert theOptions.docURL = "http://www.codeworker.org/";
+	translate("../../repository/CWScript2HTML.cwp", theOptions, i, "highlighting/" + i + ".html");
+}
+
+setCommentBegin("<!--");
+setCommentEnd("-->");
+project.clearVariable();
+translate("../../../Generation/CWcode2Codeworker.cwp", project, "tutorialSite.txt", "tutorial.html");
+translate("utils/DevCom2CW.cwp", project, "tutorial.html", "tutorial.html");
+//translate("../../../Generation/CWcode2Freshmeat.cwp", project, "tutorial.txt", "tutorial.html");
+//translate("utils/jeffcovey.cwp", project, "tutorial.html", "tutorial.html");
+setCommentBegin("//");
+setCommentEnd("\n");
+
