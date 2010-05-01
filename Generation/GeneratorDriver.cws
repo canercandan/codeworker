@@ -405,7 +405,7 @@ function copyJavaFiles(sTargetDir : value) {
 		if i.endString(".dll") && $sTargetDir.findString("/CWsrc/") >= 0$ continue;
 		copyFile(i, sTargetDir + "/" + i);
 	}
-	if existFile("../trial.cws") system("..\\codeworker ../trial.cws " + sTargetDir);
+	if false && existFile("../trial.cws") system("..\\codeworker ../trial.cws " + sTargetDir);
 }
 
 function copyDotNetFiles(sTargetDir : value) {
@@ -416,7 +416,7 @@ function copyDotNetFiles(sTargetDir : value) {
 		if i.endString(".suo") continue;
 		copyFile(i, sTargetDir + "/" + i);
 	}
-	if existFile("../trial.cws") system("..\\codeworker ../trial.cws " + sTargetDir);
+	if false && existFile("../trial.cws") system("..\\codeworker ../trial.cws " + sTargetDir);
 }
 
 function copyWinBinaries() {
@@ -841,7 +841,7 @@ if getProperty("makeBinDir") {
 	// Windows binaries
 	traceLine("\tCreating directory '" + project.winBinaries + "'...");
 	copyWinBinaries();
-	if existFile("../trial.cws") system("..\\codeworker ../trial.cws " + project.winBinaries);
+	if false && existFile("../trial.cws") system("..\\codeworker ../trial.cws " + project.winBinaries);
 
 	// JNI library
 	insert project.javaBinaries = getEnv("TMP") + "/CWjava/CodeWorker" + replaceString('.', '_', getVersion());
@@ -858,7 +858,7 @@ if getProperty("makeBinDir") {
 
 if getProperty("makeVersion") {
 	traceLine("Building the version " + getVersion() + "...");
-	if existFile("../trial.cws") system("..\\codeworker ../trial.cws " + project.sources);
+	if false && existFile("../trial.cws") system("..\\codeworker ../trial.cws " + project.sources);
 	if $compareDate(fileLastModification("Documentation/CodeWorker.pdf"), fileLastModification("Documentation/CodeWorker.tex")) <= 0$ error("'Documentation/CodeWorker.pdf' is too old; generate it again!");
 	local theExeDate = fileLastModification("Release/CodeWorker.exe");
 	local theFiles;

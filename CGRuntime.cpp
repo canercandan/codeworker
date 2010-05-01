@@ -26,7 +26,7 @@ To contact the author: codeworker@free.fr
 //##markup##"EXECUTABLE_VERSION"
 //##begin##"EXECUTABLE_VERSION"
 //##protect##"EXECUTABLE_VERSION"
-#define EXECUTABLE_VERSION	"4.5.3"
+#define EXECUTABLE_VERSION	"4.5.4"
 //##protect##"EXECUTABLE_VERSION"
 //##end##"EXECUTABLE_VERSION"
 #define EXECUTABLE_NAME		"CodeWorker"
@@ -62,9 +62,11 @@ To contact the author: codeworker@free.fr
 //for 'Sleep'
 #	include <windows.h>
 #else
-#	include <features.h>
-#	if defined(__cplusplus) && __GNUC_PREREQ (4, 3)
-#		include <cstdlib>
+#	if defined(__cplusplus) && defined(__GNUC_PREREQ)
+#		if __GNUC_PREREQ (4, 3)
+#			include <features.h>
+#			include <cstdlib>
+#		endif
 #	endif
 #	include <unistd.h>
 #	include <utime.h>

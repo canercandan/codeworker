@@ -22,6 +22,16 @@
   > est-il possible de les enlever ?
 */
 
+version "4.5.4"
+	abstract
+		"New way for preventing against multiple inclusion of a script file and add of conditional preprocessor directives."
+
+	30apr2010	feature
+		"Manual control against multiple inclusion of a script file: use the \\textbf{\\#if existFunction} preprocessor directive."
+
+	30apr2010	feature
+		"Preprocessor directives are enriched with \\textbf{\\#if} \\textit{predicate} ... \\textbf{\\#else} ... \\textbf{\\#end}."
+
 version "4.5.3"
 	abstract
 		"Bug fixes and improvement of the generation headers."

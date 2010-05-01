@@ -23,10 +23,12 @@ To contact the author: codeworker@free.fr
 #define _ScpStream_h_
 
 #ifndef WIN32
-#	include <features.h>
-#	if defined(__cplusplus) && __GNUC_PREREQ (4, 3)
-#		include <cstring>
-#		include <cstdlib>
+#	if defined(__cplusplus) && defined(__GNUC_PREREQ)
+#		if __GNUC_PREREQ (4, 3)
+#			include <features.h>
+#			include <cstring>
+#			include <cstdlib>
+#		endif
 #	endif
 #endif
 

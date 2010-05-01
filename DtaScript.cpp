@@ -495,13 +495,37 @@ namespace CodeWorker {
 			script.skipEmpty();
 			std::string sScriptFileName;
 			if (!script.readString(sScriptFileName)) throw UtlException(script, "syntax error: constant string expected");
-			// protect against the multi-inclusion in the same script file
-			std::set<std::string>::const_iterator	itIncluded;
-			itIncluded = _setOfIncludedFiles.find(sScriptFileName);
-			if (itIncluded == _setOfIncludedFiles.end()) {
-				_setOfIncludedFiles.insert(sScriptFileName);
-				parseFile(sScriptFileName.c_str(), &block);
+			parseFile(sScriptFileName.c_str(), &block);
+		} else if (sDirective == "#if") {
+			script.skipEmpty();
+			bool bNot = script.isEqualTo('!');
+			script.skipEmpty();
+			std::string sPredicat;
+			if (!script.readIdentifier(sPredicat)) throw UtlException(script, "syntax error: #if predicat expected");
+			bool bCondition = true;
+			if (sPredicat == "existFunction") {
+				script.skipEmpty();
+				if (!script.isEqualTo('(')) throw UtlException(script, "syntax error: '(' expected");
+				script.skipEmpty();
+				std::string sFunction;
+				if (!script.readIdentifier(sFunction)) throw UtlException(script, "syntax error: identifier expected (function name)");
+				script.skipEmpty();
+				if (!script.isEqualTo(')')) throw UtlException(script, "syntax error: ')' expected");
+				bCondition = (block.getFunction(sFunction, "", false) != NULL);
+			} else {
+				throw UtlException(script, "syntax error: unknown #if predicat named '"+sPredicat+"'");
 			}
+			if (bNot) bCondition = !bCondition;
+			if (!bCondition) {
+				ignorePreprocessorThenElseBlock(script);
+			}
+		} else if (sDirective == "#else") {
+			ignorePreprocessorThenElseBlock(script);
+			script.isEqualTo('#');
+			script.skipEmpty();
+			if (!script.isEqualToIdentifier("end")) throw UtlException(script, "#end directive expected, instead of #" + sDirective);
+		} else if (sDirective == "#end") {
+			if (!script.findString("\n")) throw UtlException(script, "syntax error on '#end': end of line expected");
 		} else if (sDirective == "#use") {
 			script.skipEmpty();
 			std::string sPackageName;
@@ -570,13 +594,39 @@ namespace CodeWorker {
 			int iLocation = script.getInputLocation();
 			computeReferenceMagicNumber(script, getFilenamePtr(), sKey);
 			script.setInputLocation(iLocation);
-		} else if (sDirective == "#end") {
-			if (!script.findString("\n")) throw UtlException(script, "syntax error on '#end': end of line expected");
 		} else if (sDirective == "#syntax") {
 			parseSyntax(block, script);
 		} else {
 			throw UtlException(script, "unknown preprocessor directive '" + sDirective + "' found");
 		}
+	}
+
+	void DtaScript::ignorePreprocessorThenElseBlock(ScpStream& script) {
+		while (script.findString("\n")) {
+			script.skipEmpty();
+			int iLocation = script.getInputLocation();
+			if (script.isEqualTo('#')) {
+				script.skipEmpty();
+				std::string sDirective;
+				if (!script.readIdentifier(sDirective)) continue;
+				if (sDirective == "if") {
+					ignorePreprocessorThenElseBlock(script);
+					script.isEqualTo('#');
+					script.skipEmpty();
+					script.readIdentifier(sDirective);
+					if (sDirective == "else") {
+						ignorePreprocessorThenElseBlock(script);
+						script.isEqualTo('#');
+						script.skipEmpty();
+						if (!script.isEqualToIdentifier("end")) throw UtlException(script, "#end directive expected, instead of #" + sDirective);
+					}
+				} else if (sDirective == "else" || sDirective == "end") {
+					script.setInputLocation(iLocation);
+					return;
+				}
+			}
+		}
+		throw UtlException(script, "a conditional preprocessor directive #if should be ended");
 	}
 
 	void DtaScript::handleUnknownCommand(const std::string& sCommand, ScpStream& script, GrfBlock& block) {

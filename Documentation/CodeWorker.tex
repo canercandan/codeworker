@@ -75,13 +75,13 @@
 \date{Last update: 
 %##markup##"today"
 %##begin##"today"
-april 27, 2010
+may 01, 2010
 %##end##"today"
 }
 \release{\\
 %##markup##"version"
 %##begin##"version"
-4.5.3
+4.5.4
 %##end##"version"
 }
 \setreleaseinfo{}		% empty for final release
@@ -3140,14 +3140,14 @@ generating the HTML documentation...}
 \textbf{Profiling results:}
 
 \texttt{-- quantify session --\\
-quantify execution time = 427ms\\
+quantify execution time = 438ms\\
 User defined functions:\\
 \makebox[0.4cm][l]{}populateHeaderDeclarations(...) file "c:/Projects/generator/Scripts/Tutorial/GettingStarted/CppObjectHeader.cwt" at 29: 7 occurences in 0ms\\
 \makebox[0.4cm][l]{}getMethodID(...) file "c:/Projects/generator/Scripts/Tutorial/GettingStarted/SharedFunctions.cws" at 98: 3 occurences in 0ms\\
 \makebox[0.4cm][l]{}getParameterType(...) file "c:/Projects/generator/Scripts/Tutorial/GettingStarted/SharedFunctions.cws" at 44: 3 occurences in 0ms\\
 \makebox[0.4cm][l]{}getType(...) file "c:/Projects/generator/Scripts/Tutorial/GettingStarted/SharedFunctions.cws" at 31: 13 occurences in 0ms\\
-\makebox[0.4cm][l]{}getVariableName(...) file "c:/Projects/generator/Scripts/Tutorial/GettingStarted/SharedFunctions.cws" at 76: 26 occurences in 1ms\\
-\makebox[0.4cm][l]{}normalizeIdentifier(...) file "c:/Projects/generator/Scripts/Tutorial/GettingStarted/SharedFunctions.cws" at 5: 39 occurences in 0ms\\
+\makebox[0.4cm][l]{}getVariableName(...) file "c:/Projects/generator/Scripts/Tutorial/GettingStarted/SharedFunctions.cws" at 76: 26 occurences in 2ms\\
+\makebox[0.4cm][l]{}normalizeIdentifier(...) file "c:/Projects/generator/Scripts/Tutorial/GettingStarted/SharedFunctions.cws" at 5: 39 occurences in 1ms\\
 Predefined functions:\\
 \makebox[0.4cm][l]{}charAt(...): 39 occurrences\\
 \makebox[0.4cm][l]{}composeHTMLLikeString(...): 7 occurrences\\
@@ -3525,6 +3525,38 @@ the directive at the point where it appears by the contents of the file specifie
 constant string \textit{filename}. The preprocessor looks for the file in the current
 directory and then searches along the path specified by the \samp{-I} option on the command
 line.
+
+\index{preprocessor directives!if}
+\index{\#if}
+\index{\#else}
+\index{\#end}
+\pdfsubsubsection{Conditionally processing a part of the script}
+The \samp{\textbf{\#include} [\textbf{!}]? \textit{predicat} ( \textit{parameters} )} announces the beginning
+of some script lines that have to be processed by the interpreter only if a condition occurs.
+This conditional area ends with the directive \samp{\textbf{\#end}}.
+An alternative block of lines can be optionally specified inside the conditional area, starting
+with the directive \samp{\textbf{\#else}}. It will be compiled only if the condition fails.
+
+The condition is a predicat, or its negation if the \textbf{'!'} symbol preceeds the predicat.
+
+Only one predicat is accepted for the moment:
+\begin{itemize}
+	\item \samp{\textbf{existFunction(} \textit{function-name} \textbf{)}}: the condition occurs if
+		the function named \textit{function-name} already exists in the scope.
+\end{itemize}
+
+\textbf{Example:}\\
+\texttt{
+\textbf{\#if existFunction}(f)\\
+function g() \{\\
+	\makebox[0.4cm][r]{}return "result of f(): " + f();\\
+\}\\
+\#else\\
+function f() \{\\
+	\makebox[0.4cm][r]{}return "f() was missing: declare it now";\\
+\}\\
+\#end\\
+}
 
 \index{preprocessor directives!use}
 \index{\#use}
@@ -5249,7 +5281,7 @@ traceLine("time of execution = " + getLastDelay() + " seconds");
 \texttt{creating node 'element 3'\\
 creating node 'element 2'\\
 creating node 'element 1'\\
-time of execution = 0.000037079177335661762 seconds}
+time of execution = 0.000036282342017391922 seconds}
 
 %##end##"execute:local list;\nlocal iIndex = 4;\ndelay while isPositive(decrement(iIndex)) {\n\tpushItem list = \"element \" + iIndex;\n\ttraceLine(\"creating node '\" + list#back + \"'\");\n}\ntraceLine(\"time of execution = \" + getLastDelay() + \" seconds\");"
 
@@ -5833,8 +5865,8 @@ traceLine("another manner: " + getNow() + " -> " + newDate);}
 \textbf{Output:}
 
 \texttt{Substract 2 months and add 20 hours to the current date-time:\\
-one manner: 27apr2010 20:42:00.500 -> 28feb2010 16:42:00.500\\
-another manner: 27apr2010 20:42:00.500 -> 28feb2010 16:42:00.500}
+one manner: 01may2010 20:42:00.500 -> 02mar2010 16:42:00.500\\
+another manner: 01may2010 20:42:00.500 -> 02mar2010 16:42:00.500}
 
 
 \textbf{See also:}
@@ -6146,7 +6178,7 @@ if \$changeFileTime("readme.txt", oldAccessTime, oldModifTime) < 0\$\\
 \textbf{Output:}
 
 \texttt{old modification time of 'readme.txt' = '02may2008 06:51:36'\\
-new modification time of 'readme.txt' = '27apr2010 20:42:00'}
+new modification time of 'readme.txt' = '01may2010 20:42:00'}
 
 
 \textbf{See also:}
@@ -6365,7 +6397,7 @@ traceLine("compareDate('" + date2 + "', getNow()) = " + compareDate(date2, now))
 
 \textbf{Output:}
 
-\texttt{getNow() = '27apr2010 20:42:00.500'\\
+\texttt{getNow() = '01may2010 20:42:00.500'\\
 compareDate('19jan2003 20:12:00.000', getNow()) = -1\\
 compareDate('28dec2012 07:30:00.000', getNow()) = 1}
 
@@ -6467,11 +6499,11 @@ traceLine("december 31, 2003 = '" + completeDate("december 31, 2003", "\%B \%d, 
 
 \textbf{Output:}
 
-\texttt{Today date with reset time = '27apr2010'\\
-Today date (Excel-like) = '40295.862506'\\
-Preceding day = '26apr2010 20:42:00.518'\\
-15th of the current month = '15apr2010'\\
-august of this year = '27aug2010'\\
+\texttt{Today date with reset time = '01may2010'\\
+Today date (Excel-like) = '40299.862506'\\
+Preceding day = '30apr2010 20:42:00.518'\\
+15th of the current month = '15may2010'\\
+august of this year = '01aug2010'\\
 15/04 = '15apr2010'\\
 december 31, 2003 = '31dec2003'}
 
@@ -8082,7 +8114,7 @@ traceLine("last access to '" + sFileName + "' = " + sLastAccessTime);}
 
 \textbf{Output:}
 
-\texttt{last access to 'Documentation/CodeWorker.tex' = 27apr2010 22:45:36}
+\texttt{last access to 'Documentation/CodeWorker.tex' = 01may2010 17:43:08}
 
 
 \textbf{See also:}
@@ -8117,7 +8149,7 @@ traceLine("last modification of '" + sFileName + "' = " + sLastModificationTime)
 
 \textbf{Output:}
 
-\texttt{last modification of 'Documentation/CodeWorker.tex' = 27apr2010 22:32:22}
+\texttt{last modification of 'Documentation/CodeWorker.tex' = 01may2010 06:39:54}
 
 
 \textbf{See also:}
@@ -8223,7 +8255,7 @@ traceLine("size of '" + sFileName + "' = " + iSize + " characters");}
 
 \textbf{Output:}
 
-\texttt{size of 'Documentation/CodeWorker.tex' = 929693 characters}
+\texttt{size of 'Documentation/CodeWorker.tex' = 926201 characters}
 
 
 \textbf{See also:}
@@ -8581,8 +8613,8 @@ traceLine("the hour only = '" + formatDate(getNow(), "\%H") + "'");}
 
 \textbf{Output:}
 
-\texttt{release of the documentation = '27apr2010 20:42:00.500'\\
-a new format = 'april 27, 2010'\\
+\texttt{release of the documentation = '01may2010 20:42:00.500'\\
+a new format = 'may 01, 2010'\\
 the hour only = '20'}
 
 
@@ -8864,7 +8896,7 @@ Use the \samp{putenv} function to modify the value of an environment variable.
 
 \textbf{Output:}
 
-\texttt{PATH='C:$\backslash$Program Files$\backslash$MiKTeX 2.8$\backslash$miktex$\backslash$bin;C:$\backslash$WINDOWS$\backslash$system32;C:$\backslash$WINDOWS;C:$\backslash$WINDOWS$\backslash$System32$\backslash$Wbem;C:$\backslash$Program Files$\backslash$ATI Technologies$\backslash$ATI Control Panel;C:$\backslash$Program Files$\backslash$Fichiers communs$\backslash$Roxio Shared$\backslash$DLLShared;C:$\backslash$win32App$\backslash$ATT$\backslash$Graphviz$\backslash$bin;C:$\backslash$win32App$\backslash$ATT$\backslash$Graphviz$\backslash$bin$\backslash$tools;C:$\backslash$Program Files$\backslash$QuickTime$\backslash$QTSystem$\backslash$;C:$\backslash$Program Files$\backslash$Bitvise Tunnelier'}
+\texttt{PATH='C:$\backslash$Program Files$\backslash$MiKTeX 2.8$\backslash$miktex$\backslash$bin;C:$\backslash$WINDOWS$\backslash$system32;C:$\backslash$WINDOWS;C:$\backslash$WINDOWS$\backslash$System32$\backslash$Wbem;C:$\backslash$Program Files$\backslash$ATI Technologies$\backslash$ATI Control Panel;C:$\backslash$Program Files$\backslash$Fichiers communs$\backslash$Roxio Shared$\backslash$DLLShared;C:$\backslash$win32App$\backslash$ATT$\backslash$Graphviz$\backslash$bin;C:$\backslash$win32App$\backslash$ATT$\backslash$Graphviz$\backslash$bin$\backslash$tools;C:$\backslash$Program Files$\backslash$QuickTime$\backslash$QTSystem$\backslash$;C:$\backslash$Program Files$\backslash$Bitvise Tunnelier;C:$\backslash$Program Files$\backslash$TortoiseSVN$\backslash$bin'}
 
 
 \textbf{See also:}
@@ -8963,7 +8995,7 @@ script to execute:\\
 \makebox[0.8cm][l]{}\\
 class to generate = 'Planet'\\
 generated text:\\
-//\#\#generation header\#\#CodeWorker\#\#4.5.3\#\#27apr2010 22:45:41\#\#"c:/Projects/generator/Scripts/Tutorial/GettingStarted/Tiny-JAVA.cwt"\#\#\\
+//\#\#generation header\#\#CodeWorker\#\#4.5.4\#\#01may2010 17:43:15\#\#"c:/Projects/generator/Scripts/Tutorial/GettingStarted/Tiny-JAVA.cwt"\#\#\\
 //\#\#header start\#\#\\
 //Popeye's Village\\
 //Knights of Malta\\
@@ -9075,7 +9107,7 @@ traceLine("time of execution = " + getLastDelay() + " seconds");}
 \texttt{creating node 'element 3'\\
 creating node 'element 2'\\
 creating node 'element 1'\\
-time of execution = 0.000037804847562826542 seconds}
+time of execution = 0.00003787654232808957 seconds}
 
 
 \textbf{See also:}
@@ -9100,7 +9132,7 @@ at \ref{formatDate()}.
 
 \textbf{Output:}
 
-\texttt{now is '27apr2010 20:42:00.500'}
+\texttt{now is '01may2010 20:42:00.500'}
 
 
 \pdflabel{today()}
@@ -9258,7 +9290,7 @@ Returns the \textit{version number} of the \CodeWorker\ interpreter or, if a
 
 \textbf{Output:}
 
-\texttt{The version of the interpreter is '4.5.3'}
+\texttt{The version of the interpreter is '4.5.4'}
 
 
 \textbf{See also:}
@@ -12015,7 +12047,7 @@ script to execute:\\
 \makebox[0.8cm][l]{}\\
 class to generate = 'Earth'\\
 generated text:\\
-//\#\#generation header\#\#CodeWorker\#\#4.5.3\#\#27apr2010 22:45:42\#\#"c:/Projects/generator/Scripts/Tutorial/GettingStarted/Tiny-JAVA.cwt"\#\#\\
+//\#\#generation header\#\#CodeWorker\#\#4.5.4\#\#01may2010 17:43:16\#\#"c:/Projects/generator/Scripts/Tutorial/GettingStarted/Tiny-JAVA.cwt"\#\#\\
 //\#\#header start\#\#\\
 //Popeye's Village\\
 //Olive hates spinash\\
@@ -12105,7 +12137,7 @@ setNow(sOldFrozenTime);}
 
 \textbf{Output:}
 
-\texttt{now = 27apr2010 20:42:00.500\\
+\texttt{now = 01may2010 20:42:00.500\\
 one freezes the time to '19jan2003 06:30:00.100'\\
 now = '19jan2003 06:30:00.100' is frozen to this value}
 
@@ -12217,7 +12249,7 @@ setVersion(sVersion);}
 
 \textbf{Output:}
 
-\texttt{The version of scripts is '4.5.3'\\
+\texttt{The version of scripts is '4.5.4'\\
 Now, the version of scripts is '1.5.2'}
 
 
@@ -12582,7 +12614,7 @@ and executes the following script:\\
 traceLine("This text comes from an external $\backslash$"CodeWorker$\backslash$"");\\
 \\
 the trace was put into a file:\\
-CodeWorker v4.5.3 (LGPL), parses and generates source code easily;\\
+CodeWorker v4.5.4 (LGPL), parses and generates source code easily;\\
 Copyright (C) 1996-2008 Cedric Lemaire; see 'http://www.codeworker.org'.\\
 This text comes from an external "CodeWorker"\\
 }
@@ -13057,8 +13089,8 @@ traceLine("generation of another one = '" + UUID() + "'");}
 
 \textbf{Output:}
 
-\texttt{generation of an UUID = 'ac650cdf-fe19-4b03-9f2b-15e446b55558'\\
-generation of another one = '08b6ab42-63a4-4517-840f-c7e306e0bfbe'}
+\texttt{generation of an UUID = '0e1a0233-fca1-49c2-ac2b-89787e0f65cd'\\
+generation of another one = '96200880-fa1a-4379-8201-52070fe4e2d5'}
 \end{itemize}
 %##end##"common script functions"
 

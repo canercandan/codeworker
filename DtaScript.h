@@ -71,7 +71,6 @@ namespace CodeWorker {
 		const char* _tcFilePtr;
 		std::list<GrfBlock*> _stackOfParsedBlocks;
 		bool _bNumericalExpression;
-		std::set<std::string> _setOfIncludedFiles;
 
 
 	protected:
@@ -174,6 +173,8 @@ namespace CodeWorker {
 		virtual void parseGeneratedFile(GrfBlock& /*block*/, ScpStream& script);
 		virtual void parseGeneratedString(GrfBlock& /*block*/, ScpStream& script);
 		virtual void parseAppendedFile(GrfBlock& /*block*/, ScpStream& script);
+
+		void ignorePreprocessorThenElseBlock(ScpStream& script);
 
 		static int computeReferenceMagicNumber(ScpStream& script, const char* tcFilename, const std::string& sKey);
 		static int computeReferenceMagicNumber(ScpStream& theStream, const std::string& sKey);
