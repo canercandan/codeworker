@@ -23,12 +23,16 @@ To contact the author: codeworker@free.fr
 #define _ScpStream_h_
 
 #ifndef WIN32
-#	if defined(__cplusplus) && defined(__GNUC_PREREQ)
-#		if __GNUC_PREREQ (4, 3)
-#			include <features.h>
-#			include <cstring>
-#			include <cstdlib>
+#	ifndef __GNUC_PREREQ
+#		if defined __GNUC__ && defined __GNUC_MINOR__
+#			define __GNUC_PREREQ(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+#		else
+#			define __GNUC_PREREQ(maj, min) 0
 #		endif
+#	endif
+#	if defined(__cplusplus) && __GNUC_PREREQ (4, 3)
+#		include <cstring>
+#		include <cstdlib>
 #	endif
 #endif
 
