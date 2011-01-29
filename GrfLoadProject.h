@@ -57,6 +57,7 @@ class ExprScriptVariable;
 
 //##protect##"interface"
 			static void parseTextFile(std::istream& theStream, DtaScriptVariable* pNode);
+	                static void parseXMLFile(std::istream& theStream, DtaScriptVariable* pNode);
 //##protect##"interface"
 
 			virtual void compileCpp(CppCompilerEnvironment& theCompilerEnvironment) const;
@@ -66,6 +67,7 @@ class ExprScriptVariable;
 
 //##protect##"declarations"
 			static bool populateConstantTree(std::istream& theStream, DtaScriptVariable& theNode);
+	                static bool populateConstantTreeToXML(std::istream& theStream, DtaScriptVariable& theNode);
 //##protect##"declarations"
 	};
 }

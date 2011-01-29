@@ -915,7 +915,8 @@ SEQUENCE_INTERRUPTION_LIST CGRuntime::loadProject(const std::string& sXMLorTXTFi
 	std::ifstream* pFile = CodeWorker::openInputFileFromIncludePath(sXMLorTXTFileName.c_str(), sCompleteFileName);
 	if (pFile == NULL) throw UtlException("unable to open file \"" + sXMLorTXTFileName + "\" for reading");
 	if (sXMLorTXTFileName.rfind(".xml") == sXMLorTXTFileName.size() - 4) {
-		throw UtlException("loadProject() isn't able to load yet a parse tree previously saved to XML");
+	    //throw UtlException("loadProject() isn't able to load yet a parse tree previously saved to XML");
+		GrfLoadProject::parseXMLFile(*pFile, pNodeToLoad);
 	} else {
 		GrfLoadProject::parseTextFile(*pFile, pNodeToLoad);
 	}

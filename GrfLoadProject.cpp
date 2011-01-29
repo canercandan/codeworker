@@ -71,6 +71,95 @@ namespace CodeWorker {
 		populateConstantTree(theStream, *pNode);
 	}
 
+	void GrfLoadProject::parseXMLFile(std::istream& theStream, DtaScriptVariable* pNode) {
+
+		if (!CodeWorker::isEqualTo(theStream, '<'))
+		  throw UtlException(theStream, "excepted char '<' missing");
+
+		std::string	sNodeName;
+
+		if (!CodeWorker::readIdentifier(theStream, sNodeName))
+		  throw UtlException(theStream, "complete name of the parse tree to load is expected");
+
+		if (!CodeWorker::isEqualTo(theStream, '>'))
+		  throw UtlException(theStream, "excepted char '>' missing");
+
+		CodeWorker::skipEmpty(theStream);
+
+		populateConstantTreeToXML(theStream, *pNode);
+
+	}
+
+	bool GrfLoadProject::populateConstantTreeToXML(std::istream& theStream, DtaScriptVariable& theNode) {
+		std::string sValue;
+		CodeWorker::skipEmpty(theStream);
+		if (CodeWorker::isEqualTo(theStream, '&')) {
+			// reference to a node
+			CodeWorker::skipEmpty(theStream);
+			if (!CodeWorker::isEqualToIdentifier(theStream, "ref")) {
+				throw UtlException(theStream, "reference node should be announced by '&ref'");
+			}
+			CodeWorker::skipEmpty(theStream);
+			std::string sReferenceNode;
+			if (!CodeWorker::readString(theStream, sReferenceNode)) {
+				throw UtlException(theStream, "reference node expected between double quotes");
+			}
+			CodeWorker::skipEmpty(theStream);
+			if (CodeWorker::isEqualTo(theStream, '=')) {
+				CodeWorker::skipEmpty(theStream);
+				if (!CodeWorker::readString(theStream, sValue)) {
+					throw UtlException(theStream, "syntax error: value expected between double quotes");
+				}
+			}
+		} else {
+			CodeWorker::readString(theStream, sValue);
+		}
+		theNode.setValue(sValue.c_str());
+		CodeWorker::skipEmpty(theStream);
+		if (!CodeWorker::isEqualTo(theStream, '{')) {
+			return false;
+		}
+		CodeWorker::skipEmpty(theStream);
+		if (!CodeWorker::isEqualTo(theStream, '}')) {
+			do {
+				CodeWorker::skipEmpty(theStream);
+				if (CodeWorker::isEqualTo(theStream, '.')) {
+					CodeWorker::skipEmpty(theStream);
+					std::string sAttribute;
+					if (!CodeWorker::readIdentifier(theStream, sAttribute)) {
+						throw UtlException(theStream, "attribute name expected");
+					}
+					CodeWorker::skipEmpty(theStream);
+					if (!CodeWorker::isEqualTo(theStream, '=')) {
+						throw UtlException(theStream, "syntax error, '=' expected");
+					}
+					populateConstantTree(theStream, *theNode.insertNode(sAttribute.c_str()));
+				} else if (CodeWorker::isEqualTo(theStream, '[')) {
+					do {
+						CodeWorker::skipEmpty(theStream);
+						if (CodeWorker::readString(theStream, sValue) && skipEmpty(theStream) && CodeWorker::isEqualTo(theStream, ':')) {
+							// "key" : "value" or "node"
+							populateConstantTree(theStream, *theNode.addElement(sValue));
+						} else {
+							populateConstantTree(theStream, *theNode.pushItem(sValue));
+						}
+						CodeWorker::skipEmpty(theStream);
+					} while (CodeWorker::isEqualTo(theStream, ','));
+					if (!CodeWorker::isEqualTo(theStream, ']')) {
+						throw UtlException(theStream, "syntax error, ']' expected");
+					}
+				} else {
+					throw UtlException(theStream, "syntax error");
+				}
+				CodeWorker::skipEmpty(theStream);
+			} while (CodeWorker::isEqualTo(theStream, ','));
+			if (!CodeWorker::isEqualTo(theStream, '}')) {
+				throw UtlException(theStream, "syntax error, '}' expected");
+			}
+		}
+		return true;
+	}
+
 	bool GrfLoadProject::populateConstantTree(std::istream& theStream, DtaScriptVariable& theNode) {
 		std::string sValue;
 		CodeWorker::skipEmpty(theStream);
